@@ -1203,30 +1203,3 @@ h3 {
 .pptBarArea {
   min-width: 0;
 }
-
-
-/* N_93 overdue marker after bar and role form fix */
-
-.overdueLabelAfterBar {
-  position: absolute;
-  top: 2px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  padding: 3px 7px;
-  font-size: 10px;
-  z-index: 2;
-}
-
-.overdueLabelUnderBar {
-  display: none !important;
-}
-
-.pptBarTrack {
-  overflow: visible;
-}
-
-.pptRow.overdue {
-  overflow: visible;
-}

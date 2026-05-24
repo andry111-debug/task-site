@@ -7,7 +7,6 @@ const ROLE_LABELS = {
   designer: "Проектанты",
   customer_service: "Служба заказчика",
   external: "Сторонние люди",
-  employee: "Проектанты",
 };
 
 const ROLE_OPTIONS = [
@@ -16,15 +15,6 @@ const ROLE_OPTIONS = [
   { value: "customer_service", label: "Служба заказчика" },
   { value: "external", label: "Сторонние люди" },
 ];
-
-function normalizeAccountRole(role) {
-  if (role === "employee") return "designer";
-  if (role === "projectant" || role === "proektant") return "designer";
-  if (role === "customer" || role === "client" || role === "zakazchik") return "customer_service";
-  if (role === "other" || role === "guest" || role === "external_people") return "external";
-  if (["admin", "designer", "customer_service", "external"].includes(role)) return role;
-  return "designer";
-}
 
 const scheduleItems = [
   {
@@ -1204,17 +1194,6 @@ function getPptBarStyle(item, bounds) {
   };
 }
 
-function getPptOverdueLabelStyle(item, bounds) {
-  const barStyle = getPptBarStyle(item, bounds);
-  const leftValue = parseFloat(barStyle.left || "0");
-  const widthValue = parseFloat(barStyle.width || "0");
-  const labelLeft = Math.min(leftValue + widthValue + 0.8, 87);
-
-  return {
-    left: `${labelLeft}%`,
-  };
-}
-
 function shortenEventText(text) {
   if (!text) return "";
   return text.length > 46 ? `${text.slice(0, 46)}...` : text;
@@ -1387,10 +1366,7 @@ function App() {
 
       if (error) throw error;
 
-      setAccounts((data || []).map((account) => ({
-        ...account,
-        role: normalizeAccountRole(account.role),
-      })));
+      setAccounts(data || []);
     } catch (error) {
       setNotice(`Ошибка загрузки учетных записей: ${error.message}`);
     } finally {
@@ -1466,7 +1442,7 @@ function App() {
       name: accountForm.name.trim(),
       login: accountForm.login.trim(),
       pin_code: accountForm.pin_code.trim(),
-      role: normalizeAccountRole(accountForm.role),
+      role: accountForm.role,
       active: true,
     };
 
@@ -1491,15 +1467,10 @@ function App() {
   async function updateAccount(account, patch) {
     setNotice("");
 
-    const normalizedPatch = {
-      ...patch,
-      ...(patch.role ? { role: normalizeAccountRole(patch.role) } : {}),
-    };
-
     try {
       const { error } = await supabase
         .from("employees")
-        .update(normalizedPatch)
+        .update(patch)
         .eq("id", account.id);
 
       if (error) throw error;
@@ -2254,16 +2225,9 @@ function App() {
                           <span>{formatDate(item.start)} — {formatDate(item.end)}</span>
                         </div>
                       )}
-                      {overdue && (
-                        <b
-                          className="overdueLabel overdueLabelAfterBar"
-                          style={getPptOverdueLabelStyle(item, pptBounds)}
-                        >
-                          Срок прошёл
-                        </b>
-                      )}
                     </div>
 
+                    {overdue && <b className="overdueLabel overdueLabelUnderBar">Срок прошёл</b>}
 
                     {item.events.length > 0 ? (
                       <div className="pptEventList">
@@ -2379,7 +2343,7 @@ function App() {
 
                   <div className="accountControls">
                     <select
-                      value={normalizeAccountRole(account.role)}
+                      value={account.role}
                       onChange={(event) =>
                         updateAccount(account, { role: event.target.value })
                       }
