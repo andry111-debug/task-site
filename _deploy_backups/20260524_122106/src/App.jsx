@@ -1272,30 +1272,26 @@ function App() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [accountForm, setAccountForm] = useState(createEmptyAccount());
   const [passwordChanges, setPasswordChanges] = useState({});
-  const [scheduleRows, setScheduleRows] = useState(scheduleItems);
   const [pptItems, setPptItems] = useState(() => getLocalPptItems());
   const [pptDraftItems, setPptDraftItems] = useState(() => getLocalPptItems());
   const [isPptEditing, setIsPptEditing] = useState(false);
   const [pptMessage, setPptMessage] = useState("");
-  const [editTarget, setEditTarget] = useState(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [extendValue, setExtendValue] = useState("");
 
-  const scheduleBounds = useMemo(() => getScheduleBounds(scheduleRows), [scheduleRows]);
+  const scheduleBounds = useMemo(() => getScheduleBounds(scheduleItems), []);
 
   const summary = useMemo(() => {
-    const total = scheduleRows.length || 1;
+    const total = scheduleItems.length;
     const average = Math.round(
-      scheduleRows.reduce((sum, item) => sum + item.progress, 0) / total
+      scheduleItems.reduce((sum, item) => sum + item.progress, 0) / total
     );
-    const completed = scheduleRows.filter((item) => item.progress >= 100).length;
+    const completed = scheduleItems.filter((item) => item.progress >= 100).length;
 
     return {
       total,
       average,
       completed,
     };
-  }, [scheduleRows]);
+  }, []);
 
 
   const pptBounds = useMemo(() => {
@@ -1636,276 +1632,6 @@ function App() {
     setPptMessage("Исходный график ППТ восстановлен.");
   }
 
-  function openScheduleItemEdit(itemIndex) {
-    const item = scheduleRows[itemIndex];
-    if (!item) return;
-
-    setEditTarget({ type: "schedule", index: itemIndex });
-    setRenameValue(item.title || "");
-    setExtendValue(item.end || "");
-    setActiveTab("editItem");
-  }
-
-  function openPptItemEdit(itemIndex) {
-    const item = pptItems[itemIndex];
-    if (!item || item.type === "group") return;
-
-    setEditTarget({ type: "ppt", index: itemIndex });
-    setRenameValue(item.title || "");
-    setExtendValue(item.end || "");
-    setActiveTab("editItem");
-  }
-
-  function getEditItem() {
-    if (!editTarget) return null;
-    return editTarget.type === "schedule"
-      ? scheduleRows[editTarget.index]
-      : pptItems[editTarget.index];
-  }
-
-  async function renameEditItem() {
-    const value = renameValue.trim();
-
-    if (!editTarget || !value) {
-      setNotice("Введите новое наименование пункта.");
-      return;
-    }
-
-    if (editTarget.type === "schedule") {
-      setScheduleRows((current) =>
-        current.map((item, index) =>
-          index === editTarget.index ? { ...item, title: value } : item
-        )
-      );
-      setNotice("Пункт графика переименован.");
-      return;
-    }
-
-    const next = pptItems.map((item, index) =>
-      index === editTarget.index ? normalizePptItem({ ...item, title: value }) : item
-    );
-
-    setPptItems(next);
-    setPptDraftItems(clonePptItems(next));
-    saveLocalPptItems(next);
-    await savePptItemsToSupabase(next, "Пункт графика ППТ переименован.");
-  }
-
-  async function deleteEditItem() {
-    if (!editTarget) return;
-
-    const confirmed = window.confirm("Удалить выбранный пункт графика?");
-    if (!confirmed) return;
-
-    if (editTarget.type === "schedule") {
-      setScheduleRows((current) => current.filter((_, index) => index !== editTarget.index));
-      setEditTarget(null);
-      setActiveTab("schedule");
-      setNotice("Пункт графика удалён.");
-      return;
-    }
-
-    const next = pptItems.filter((_, index) => index !== editTarget.index);
-    setPptItems(next);
-    setPptDraftItems(clonePptItems(next));
-    saveLocalPptItems(next);
-    setEditTarget(null);
-    setActiveTab("ppt");
-    await savePptItemsToSupabase(next, "Пункт графика ППТ удалён.");
-  }
-
-  async function extendEditItem() {
-    if (!editTarget || !extendValue) {
-      setNotice("Укажите новую дату окончания.");
-      return;
-    }
-
-    if (editTarget.type === "schedule") {
-      setScheduleRows((current) =>
-        current.map((item, index) =>
-          index === editTarget.index ? { ...item, end: extendValue } : item
-        )
-      );
-      setNotice("Срок пункта продлён.");
-      return;
-    }
-
-    const item = pptItems[editTarget.index];
-    if (!item) return;
-
-    const periodIndex = findNearestPptPeriodIndex(extendValue);
-    const newEvent = {
-      periodIndex,
-      text: `Продлено до ${formatDate(extendValue)}`,
-    };
-
-    const next = pptItems.map((currentItem, index) => {
-      if (index !== editTarget.index) return currentItem;
-
-      return normalizePptItem({
-        ...currentItem,
-        events: [...(currentItem.events || []), newEvent],
-      });
-    });
-
-    setPptItems(next);
-    setPptDraftItems(clonePptItems(next));
-    saveLocalPptItems(next);
-    await savePptItemsToSupabase(next, "Срок пункта графика ППТ продлён.");
-  }
-
-  async function savePptItemsToSupabase(items, successMessage) {
-    if (isSupabaseReady && supabase) {
-      try {
-        const { error } = await supabase
-          .from("ppt_schedule")
-          .upsert(
-            {
-              id: 1,
-              data: items,
-              updated_by: currentUser?.login || null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" }
-          );
-
-        if (error) throw error;
-
-        setPptMessage(successMessage);
-        setNotice(successMessage);
-        return;
-      } catch {
-        setPptMessage(`${successMessage} Изменение сохранено локально, но не записано в Supabase.`);
-        setNotice(`${successMessage} Изменение сохранено локально, но не записано в Supabase.`);
-        return;
-      }
-    }
-
-    setPptMessage(`${successMessage} Изменение сохранено локально.`);
-    setNotice(`${successMessage} Изменение сохранено локально.`);
-  }
-
-  function findNearestPptPeriodIndex(dateValue) {
-    const target = dateToTime(dateValue);
-
-    let bestIndex = 0;
-    let bestDistance = Number.POSITIVE_INFINITY;
-
-    pptPeriods.forEach((period, index) => {
-      const startDistance = Math.abs(dateToTime(period.start) - target);
-      const endDistance = Math.abs(dateToTime(period.end) - target);
-      const distance = Math.min(startDistance, endDistance);
-
-      if (distance < bestDistance) {
-        bestIndex = index;
-        bestDistance = distance;
-      }
-    });
-
-    return bestIndex;
-  }
-
-  function renderEditItemPage() {
-    const item = getEditItem();
-
-    if (!item) {
-      return (
-        <section className="contentStack">
-          <div className="sectionHeader">
-            <div>
-              <p className="eyebrow">Редактирование</p>
-              <h2>Пункт графика не выбран</h2>
-            </div>
-            <button className="secondaryButton" onClick={() => setActiveTab("schedule")}>
-              Вернуться к графику
-            </button>
-          </div>
-        </section>
-      );
-    }
-
-    const sourceTab = editTarget.type === "schedule" ? "schedule" : "ppt";
-
-    return (
-      <section className="contentStack">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">Редактирование пункта</p>
-            <h2>{item.code} — {item.title}</h2>
-          </div>
-          <button className="secondaryButton" onClick={() => setActiveTab(sourceTab)}>
-            Назад к графику
-          </button>
-        </div>
-
-        {notice && <div className="noticeBox">{notice}</div>}
-
-        <div className="editItemCard">
-          <div className="editItemInfo">
-            <div>
-              <span>Код</span>
-              <strong>{item.code}</strong>
-            </div>
-            <div>
-              <span>Начало</span>
-              <strong>{item.start ? formatDate(item.start) : "—"}</strong>
-            </div>
-            <div>
-              <span>Окончание</span>
-              <strong>{item.end ? formatDate(item.end) : "—"}</strong>
-            </div>
-            {item.duration && (
-              <div>
-                <span>Срок</span>
-                <strong>{item.duration}</strong>
-              </div>
-            )}
-          </div>
-
-          <div className="editActionGrid">
-            <div className="editActionBlock">
-              <h3>Переименовать</h3>
-              <label>
-                Новое наименование
-                <input
-                  value={renameValue}
-                  onChange={(event) => setRenameValue(event.target.value)}
-                  placeholder="Введите новое наименование"
-                />
-              </label>
-              <button className="primaryButton" onClick={renameEditItem}>
-                Переименовать
-              </button>
-            </div>
-
-            <div className="editActionBlock">
-              <h3>Продлить</h3>
-              <label>
-                Новая дата окончания
-                <input
-                  type="date"
-                  value={extendValue || ""}
-                  onChange={(event) => setExtendValue(event.target.value)}
-                />
-              </label>
-              <button className="secondaryButton" onClick={extendEditItem}>
-                Продлить
-              </button>
-            </div>
-
-            <div className="editActionBlock dangerBlock">
-              <h3>Удалить</h3>
-              <p>Пункт будет удалён из текущего графика. Для ППТ изменение сохраняется в Supabase при наличии таблицы.</p>
-              <button className="dangerButton" onClick={deleteEditItem}>
-                Удалить
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   function renderLoginPage() {
     return (
       <main className="loginOnlyPage">
@@ -1982,7 +1708,7 @@ function App() {
               <p>Пока заполнено тестовыми сроками. После загрузки реального перечня заменим разделы и даты.</p>
             </div>
             <div className="dateRange">
-              {formatDate(scheduleRows[0]?.start || "2026-01-01")} — {formatDate(scheduleRows[scheduleRows.length - 1]?.end || "2026-01-01")}
+              {formatDate(scheduleItems[0].start)} — {formatDate(scheduleItems[scheduleItems.length - 1].end)}
             </div>
           </div>
 
@@ -1994,16 +1720,11 @@ function App() {
           </div>
 
           <div className="ganttList">
-            {scheduleRows.map((item, index) => {
+            {scheduleItems.map((item) => {
               const overdue = isDeadlinePassed(item.end);
 
               return (
-              <article
-                className={overdue ? "ganttRow overdue clickableRow" : "ganttRow clickableRow"}
-                key={item.code}
-                onClick={() => openScheduleItemEdit(index)}
-                title="Открыть редактирование пункта"
-              >
+              <article className={overdue ? "ganttRow overdue" : "ganttRow"} key={item.code}>
                 <div className="taskMeta">
                   <strong>{item.code}</strong>
                   <span>{item.title}</span>
@@ -2205,12 +1926,7 @@ function App() {
               }
 
               return (
-                <article
-                  className={overdue ? "pptRow overdue clickableRow" : "pptRow clickableRow"}
-                  key={`${item.code}-${index}`}
-                  onClick={() => openPptItemEdit(index)}
-                  title="Открыть редактирование пункта"
-                >
+                <article className={overdue ? "pptRow overdue" : "pptRow"} key={`${item.code}-${index}`}>
                   <div className="pptTaskMeta">
                     <strong>{item.code}</strong>
                     <span>{item.title}</span>
@@ -2438,7 +2154,6 @@ function App() {
 
       {activeTab === "schedule" && renderSchedulePage()}
       {activeTab === "ppt" && renderPptPage()}
-      {activeTab === "editItem" && renderEditItemPage()}
       {activeTab === "accounts" && renderAccountManagement()}
     </main>
   );
