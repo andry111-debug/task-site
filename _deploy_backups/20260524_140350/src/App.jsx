@@ -17,48 +17,6 @@ const ROLE_OPTIONS = [
   { value: "external", label: "Сторонние люди" },
 ];
 
-const ACCESS_ELEMENTS = [
-  { key: "schedule", label: "График проектирования" },
-  { key: "ppt", label: "График ППТ" },
-  { key: "accounts", label: "Управление учетными записями" },
-];
-
-const ROLE_DEFAULT_ACCESS = {
-  admin: ["schedule", "ppt", "accounts"],
-  designer: ["schedule", "ppt"],
-  customer_service: ["schedule", "ppt"],
-  external: ["schedule"],
-  employee: ["schedule", "ppt"],
-};
-
-function normalizeAccessElements(value, role = "designer") {
-  const allowedKeys = ACCESS_ELEMENTS.map((item) => item.key);
-  const fallback = ROLE_DEFAULT_ACCESS[normalizeAccountRole(role)] || ["schedule"];
-
-  if (!value) return fallback;
-
-  let parsed = value;
-
-  if (typeof value === "string") {
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      parsed = value.split(",").map((item) => item.trim());
-    }
-  }
-
-  if (!Array.isArray(parsed)) return fallback;
-
-  const cleaned = parsed.filter((item) => allowedKeys.includes(item));
-  return cleaned.length ? cleaned : fallback;
-}
-
-function hasAccess(user, elementKey) {
-  if (!user) return false;
-  if (user.role === "admin") return true;
-  return normalizeAccessElements(user.allowed_elements, user.role).includes(elementKey);
-}
-
 function normalizeAccountRole(role) {
   if (role === "employee") return "designer";
   if (role === "projectant" || role === "proektant") return "designer";
@@ -1183,7 +1141,6 @@ function createEmptyAccount() {
     login: "",
     pin_code: "",
     role: "designer",
-    allowed_elements: ROLE_DEFAULT_ACCESS.designer,
   };
 }
 
@@ -1430,14 +1387,10 @@ function App() {
 
       if (error) throw error;
 
-      setAccounts((data || []).map((account) => {
-        const role = normalizeAccountRole(account.role);
-        return {
-          ...account,
-          role,
-          allowed_elements: normalizeAccessElements(account.allowed_elements, role),
-        };
-      }));
+      setAccounts((data || []).map((account) => ({
+        ...account,
+        role: normalizeAccountRole(account.role),
+      })));
     } catch (error) {
       setNotice(`Ошибка загрузки учетных записей: ${error.message}`);
     } finally {
@@ -1486,22 +1439,8 @@ function App() {
         return;
       }
 
-      const role = normalizeAccountRole(data.role);
-      const normalizedUser = {
-        ...data,
-        role,
-        allowed_elements: normalizeAccessElements(data.allowed_elements, role),
-      };
-
-      setCurrentUser(normalizedUser);
-      const firstAvailableTab = hasAccess(normalizedUser, "schedule")
-        ? "schedule"
-        : hasAccess(normalizedUser, "ppt")
-          ? "ppt"
-          : hasAccess(normalizedUser, "accounts")
-            ? "accounts"
-            : "schedule";
-      setActiveTab(firstAvailableTab);
+      setCurrentUser(data);
+      setActiveTab("schedule");
       await loadAccounts();
     } catch (error) {
       setLoginError(`Ошибка входа: ${error.message}`);
@@ -1528,7 +1467,6 @@ function App() {
       login: accountForm.login.trim(),
       pin_code: accountForm.pin_code.trim(),
       role: normalizeAccountRole(accountForm.role),
-      allowed_elements: normalizeAccessElements(accountForm.allowed_elements, accountForm.role),
       active: true,
     };
 
@@ -1556,9 +1494,6 @@ function App() {
     const normalizedPatch = {
       ...patch,
       ...(patch.role ? { role: normalizeAccountRole(patch.role) } : {}),
-      ...(patch.allowed_elements
-        ? { allowed_elements: normalizeAccessElements(patch.allowed_elements, patch.role || account.role) }
-        : {}),
     };
 
     try {
@@ -1618,36 +1553,6 @@ function App() {
     } catch (error) {
       setNotice(`Ошибка удаления учетной записи: ${error.message}`);
     }
-  }
-
-  async function toggleAccountAccess(account, elementKey) {
-    const currentAccess = normalizeAccessElements(account.allowed_elements, account.role);
-    const hasElement = currentAccess.includes(elementKey);
-    const nextAccess = hasElement
-      ? currentAccess.filter((item) => item !== elementKey)
-      : [...currentAccess, elementKey];
-
-    if (nextAccess.length === 0) {
-      setNotice("У пользователя должен быть доступ хотя бы к одному элементу.");
-      return;
-    }
-
-    await updateAccount(account, { allowed_elements: nextAccess });
-  }
-
-  function toggleFormAccess(elementKey) {
-    setAccountForm((current) => {
-      const currentAccess = normalizeAccessElements(current.allowed_elements, current.role);
-      const hasElement = currentAccess.includes(elementKey);
-      const nextAccess = hasElement
-        ? currentAccess.filter((item) => item !== elementKey)
-        : [...currentAccess, elementKey];
-
-      return {
-        ...current,
-        allowed_elements: nextAccess.length ? nextAccess : currentAccess,
-      };
-    });
   }
 
   function startPptEditing() {
@@ -2102,27 +2007,7 @@ function App() {
     );
   }
 
-  function renderAccessDenied(elementName) {
-    return (
-      <section className="contentStack">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">Доступ ограничен</p>
-            <h2>Нет доступа: {elementName}</h2>
-          </div>
-          <button className="secondaryButton" onClick={logout}>
-            Выйти
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   function renderSchedulePage() {
-    if (!hasAccess(currentUser, "schedule")) {
-      return renderAccessDenied("График проектирования");
-    }
-
     return (
       <section className="contentStack">
         <div className="sectionHeader">
@@ -2203,10 +2088,6 @@ function App() {
   }
 
   function renderPptPage() {
-    if (!hasAccess(currentUser, "ppt")) {
-      return renderAccessDenied("График ППТ");
-    }
-
     const visiblePptItems = isPptEditing ? pptDraftItems : pptItems;
 
     return (
@@ -2435,8 +2316,8 @@ function App() {
   }
 
   function renderAccountManagement() {
-    if (!hasAccess(currentUser, "accounts")) {
-      return renderAccessDenied("Управление учетными записями");
+    if (!isAdmin) {
+      return null;
     }
 
     return (
@@ -2496,11 +2377,7 @@ function App() {
                 <select
                   value={accountForm.role}
                   onChange={(event) =>
-                    setAccountForm({
-                      ...accountForm,
-                      role: event.target.value,
-                      allowed_elements: ROLE_DEFAULT_ACCESS[event.target.value] || ["schedule"],
-                    })
+                    setAccountForm({ ...accountForm, role: event.target.value })
                   }
                 >
                   {ROLE_OPTIONS.map((role) => (
@@ -2510,20 +2387,6 @@ function App() {
                   ))}
                 </select>
               </label>
-
-              <div className="accessEditor">
-                <strong>Доступные элементы</strong>
-                {ACCESS_ELEMENTS.map((element) => (
-                  <label className="accessCheckbox" key={element.key}>
-                    <input
-                      type="checkbox"
-                      checked={normalizeAccessElements(accountForm.allowed_elements, accountForm.role).includes(element.key)}
-                      onChange={() => toggleFormAccess(element.key)}
-                    />
-                    {element.label}
-                  </label>
-                ))}
-              </div>
 
               <button className="primaryButton" type="submit">
                 Добавить
@@ -2541,20 +2404,6 @@ function App() {
                     <strong>{account.name}</strong>
                     <span>Логин: {account.login}</span>
                     <small>{ROLE_LABELS[account.role] || account.role}</small>
-                  </div>
-
-                  <div className="accountAccessList">
-                    {ACCESS_ELEMENTS.map((element) => (
-                      <label className="accessCheckbox" key={element.key}>
-                        <input
-                          type="checkbox"
-                          checked={normalizeAccessElements(account.allowed_elements, account.role).includes(element.key)}
-                          disabled={account.role === "admin"}
-                          onChange={() => toggleAccountAccess(account, element.key)}
-                        />
-                        {element.label}
-                      </label>
-                    ))}
                   </div>
 
                   <div className="accountControls">
@@ -2642,25 +2491,21 @@ function App() {
       </header>
 
       <nav className="tabs">
-        {hasAccess(currentUser, "schedule") && (
-          <button
-            className={activeTab === "schedule" ? "tabButton active" : "tabButton"}
-            onClick={() => setActiveTab("schedule")}
-          >
-            График проектирования
-          </button>
-        )}
+        <button
+          className={activeTab === "schedule" ? "tabButton active" : "tabButton"}
+          onClick={() => setActiveTab("schedule")}
+        >
+          График проектирования
+        </button>
 
-        {hasAccess(currentUser, "ppt") && (
-          <button
-            className={activeTab === "ppt" ? "tabButton active" : "tabButton"}
-            onClick={() => setActiveTab("ppt")}
-          >
-            График ППТ
-          </button>
-        )}
+        <button
+          className={activeTab === "ppt" ? "tabButton active" : "tabButton"}
+          onClick={() => setActiveTab("ppt")}
+        >
+          График ППТ
+        </button>
 
-        {hasAccess(currentUser, "accounts") && (
+        {isAdmin && (
           <button
             className={activeTab === "accounts" ? "tabButton active" : "tabButton"}
             onClick={() => setActiveTab("accounts")}
