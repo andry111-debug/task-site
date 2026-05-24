@@ -299,282 +299,6 @@ const buildingPages = [
   { id: "bus-platform", number: "21", title: "Пассажирский автобусный перрон с навесом", sourcePage: 21, area: "площадь не указана" },
 ];
 
-const buildingAssets = {
-  "cross-dock-office": {
-    "view": "/building-assets/cross-dock-office/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа, офисная часть + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-2.jpg"
-      },
-      {
-        "title": "План 3 этажа, венткамера + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-3.jpg"
-      }
-    ]
-  },
-  "cross-dock-typical": {
-    "view": "/building-assets/cross-dock-typical/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cross-dock-typical/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/cross-dock-typical/plan-2.jpg"
-      }
-    ]
-  },
-  "freezer-warehouse": {
-    "view": "/building-assets/freezer-warehouse/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликации",
-        "image": "/building-assets/freezer-warehouse/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа",
-        "image": "/building-assets/freezer-warehouse/plan-2.jpg"
-      }
-    ]
-  },
-  "doc-pavilion-fish-meat": {
-    "view": "/building-assets/doc-pavilion-fish-meat/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликации",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-1.jpg"
-      },
-      {
-        "title": "План 2-4 этажа + экспликации",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-2.jpg"
-      },
-      {
-        "title": "План техподполья + экспликации",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg"
-      }
-    ]
-  },
-  "doc-pavilion-flowers-grocery": {
-    "view": "/building-assets/doc-pavilion-flowers-grocery/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликации",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-2.jpg"
-      },
-      {
-        "title": "План 3 этажа, венткамера + экспликации",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg"
-      },
-      {
-        "title": "План технического подвала",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg"
-      }
-    ]
-  },
-  "multitemp-warehouse": {
-    "view": "/building-assets/multitemp-warehouse/view.jpg",
-    "floors": [
-      {
-        "title": "План складского модуля + экспликация",
-        "image": "/building-assets/multitemp-warehouse/plan-1.jpg"
-      },
-      {
-        "title": "Вариант компоновки на 20 модулей",
-        "image": "/building-assets/multitemp-warehouse/plan-2.jpg"
-      },
-      {
-        "title": "Технический блок и экспликация",
-        "image": "/building-assets/multitemp-warehouse/plan-3.jpg"
-      }
-    ]
-  },
-  "light-industrial": {
-    "view": "/building-assets/light-industrial/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-2.jpg"
-      },
-      {
-        "title": "План 3-4 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-3.jpg"
-      }
-    ]
-  },
-  "fast-trade-pavilion": {
-    "view": "/building-assets/fast-trade-pavilion/view.jpg",
-    "floors": [
-      {
-        "title": "План быстровозводимого павильона",
-        "image": "/building-assets/fast-trade-pavilion/plan-1.jpg"
-      },
-      {
-        "title": "Вариант компоновки 2х павильонов",
-        "image": "/building-assets/fast-trade-pavilion/plan-2.jpg"
-      },
-      {
-        "title": "Вариант компоновки 3х павильонов + экспликация",
-        "image": "/building-assets/fast-trade-pavilion/plan-3.jpg"
-      }
-    ]
-  },
-  "office-admin-block": {
-    "view": "/building-assets/office-admin-block/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/office-admin-block/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/office-admin-block/plan-2.jpg"
-      }
-    ]
-  },
-  "construction-market-pavilion": {
-    "view": "/building-assets/construction-market-pavilion/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/construction-market-pavilion/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/construction-market-pavilion/plan-2.jpg"
-      }
-    ]
-  },
-  "food-retail-market": {
-    "view": "/building-assets/food-retail-market/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/food-retail-market/plan-1.jpg"
-      }
-    ]
-  },
-  "trade-pavilion": {
-    "view": "/building-assets/trade-pavilion/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/trade-pavilion/plan-1.jpg"
-      }
-    ]
-  },
-  "food-court-terrace": {
-    "view": "/building-assets/food-court-terrace/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/food-court-terrace/plan-1.jpg"
-      }
-    ]
-  },
-  "cold-warehouse-wood-metal": {
-    "view": "/building-assets/cold-warehouse-wood-metal/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cold-warehouse-wood-metal/plan-1.jpg"
-      }
-    ]
-  },
-  "cold-trade-pavilion": {
-    "view": "/building-assets/cold-trade-pavilion/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cold-trade-pavilion/plan-1.jpg"
-      }
-    ]
-  },
-  "motel-80": {
-    "view": "/building-assets/motel-80/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/motel-80/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/motel-80/plan-2.jpg"
-      }
-    ]
-  },
-  "hostel-228": {
-    "view": "/building-assets/hostel-228/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/hostel-228/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/hostel-228/plan-2.jpg"
-      }
-    ]
-  },
-  "canteen-60": {
-    "view": "/building-assets/canteen-60/view.jpg",
-    "floors": [
-      {
-        "title": "План столовой + экспликация",
-        "image": "/building-assets/canteen-60/plan-1.jpg"
-      }
-    ]
-  },
-  "garage-aho": {
-    "view": "/building-assets/garage-aho/view.jpg",
-    "floors": [
-      {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/garage-aho/plan-1.jpg"
-      },
-      {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/garage-aho/plan-2.jpg"
-      }
-    ]
-  },
-  "toilet-shower": {
-    "view": "/building-assets/toilet-shower/view.jpg",
-    "floors": [
-      {
-        "title": "План здания туалет-душевые + экспликация",
-        "image": "/building-assets/toilet-shower/plan-1.jpg"
-      }
-    ]
-  },
-  "bus-platform": {
-    "view": "/building-assets/bus-platform/view.jpg",
-    "floors": [
-      {
-        "title": "План пассажирского автобусного перрона",
-        "image": "/building-assets/bus-platform/plan-1.jpg"
-      },
-      {
-        "title": "Навес и схема размещения",
-        "image": "/building-assets/bus-platform/plan-2.jpg"
-      }
-    ]
-  }
-};
-
 const buildingDetails = {
   "cross-dock-office": {
     "description": "Кросс-док с офисной частью предназначен для сортировки, предпродажной подготовки, оптово-розничной торговли и краткосрочного хранения продукции плодоовощной группы при регулируемом температурном режиме +10…+14 °C. Здание рассчитано на 40 док-шелтеров и 40 автомобилей, имеет санитарно-бытовые помещения, хозяйственные помещения для уборочной техники и административные помещения.",
@@ -2005,7 +1729,6 @@ function App() {
   const [isPptEditing, setIsPptEditing] = useState(false);
   const [pptMessage, setPptMessage] = useState("");
   const [selectedBuildingId, setSelectedBuildingId] = useState(buildingPages[0]?.id || "");
-  const [imageViewer, setImageViewer] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [extendValue, setExtendValue] = useState("");
@@ -2732,7 +2455,7 @@ function App() {
     return (
       <main className="loginOnlyPage">
         <form className="loginCard" onSubmit={handleLogin}>
-          <h1>ОПР Донецкий. Управление проектом</h1>
+          <h1>Вход</h1>
 
           {!isSupabaseReady && (
             <div className="warningBox">
@@ -3225,14 +2948,6 @@ function App() {
     );
   }
 
-  function openImageViewer(src, title) {
-    setImageViewer({ src, title });
-  }
-
-  function closeImageViewer() {
-    setImageViewer(null);
-  }
-
   function renderBuildingDetailPage() {
     if (!hasAccess(currentUser, "buildings")) {
       return renderAccessDenied("Страница здания");
@@ -3243,13 +2958,8 @@ function App() {
 
     const details = buildingDetails[building.id] || {
       description: "Описание будет добавлено после уточнения исходных данных.",
-      floors: [],
-      explication: [],
-    };
-
-    const assets = buildingAssets[building.id] || {
-      view: "",
-      floors: [],
+      floors: ["Поэтажные планы будут добавлены после загрузки графических материалов."],
+      explication: ["Экспликация будет добавлена после загрузки исходных планов."],
     };
 
     return (
@@ -3281,22 +2991,14 @@ function App() {
 
         <div className="buildingPageGrid">
           <div className="buildingVisualCard">
-            <p className="eyebrow">Вид здания</p>
-            {assets.view ? (
-              <button
-                className="buildingImageButton"
-                onClick={() => openImageViewer(assets.view, `${building.title}. Вид здания`)}
-              >
-                <img src={assets.view} alt={`${building.title}. Вид здания`} />
-              </button>
-            ) : (
-              <div className="buildingImagePlaceholder">
-                <strong>Картинка здания</strong>
-                <span>Изображение будет добавлено после обработки листа</span>
-              </div>
-            )}
+            <div className="buildingImageFrame">
+              <img
+                src={`/building-images/${building.id}.jpg`}
+                alt={`Лист объекта: ${building.title}`}
+              />
+            </div>
             <div className="buildingImageCaption">
-              Нажмите на изображение, чтобы открыть его крупно.
+              Лист из файла «Объекты ОПР Донецкий»: картинка здания, поэтажные планы и экспликации.
             </div>
           </div>
 
@@ -3308,26 +3010,17 @@ function App() {
         </div>
 
         <div className="buildingDataGrid">
-          <div className="buildingDataCard buildingPlansCard">
+          <div className="buildingDataCard">
             <div className="cardHeaderLine">
-              <p className="eyebrow">Планы и экспликации</p>
+              <p className="eyebrow">Планы</p>
               <h3>Поэтажные планы</h3>
             </div>
 
-            <div className="floorImageList">
-              {assets.floors.map((floor, index) => (
-                <article className="floorImageItem" key={`${building.id}-floor-image-${index}`}>
-                  <div className="floorImageHeader">
-                    <strong>{floor.title}</strong>
-                    {details.floors[index] && <span>{details.floors[index]}</span>}
-                  </div>
-
-                  <button
-                    className="buildingImageButton floorImageButton"
-                    onClick={() => openImageViewer(floor.image, `${building.title}. ${floor.title}`)}
-                  >
-                    <img src={floor.image} alt={`${building.title}. ${floor.title}`} />
-                  </button>
+            <div className="floorPlanList">
+              {details.floors.map((floor, index) => (
+                <article className="floorPlanItem" key={`${building.id}-floor-${index}`}>
+                  <div className="floorPlanThumb">План {index + 1}</div>
+                  <p>{floor}</p>
                 </article>
               ))}
             </div>
@@ -3335,7 +3028,7 @@ function App() {
 
           <div className="buildingDataCard">
             <div className="cardHeaderLine">
-              <p className="eyebrow">Экспликация из ОПЗ</p>
+              <p className="eyebrow">Экспликация</p>
               <h3>Основные помещения и зоны</h3>
             </div>
 
@@ -3618,18 +3311,6 @@ function App() {
       {activeTab === "buildingDetail" && renderBuildingDetailPage()}
       {activeTab === "editItem" && renderEditItemPage()}
       {activeTab === "accounts" && renderAccountManagement()}
-
-      {imageViewer && (
-        <div className="imageViewerOverlay" onClick={closeImageViewer}>
-          <div className="imageViewerDialog" onClick={(event) => event.stopPropagation()}>
-            <div className="imageViewerHeader">
-              <strong>{imageViewer.title}</strong>
-              <button onClick={closeImageViewer}>Закрыть</button>
-            </div>
-            <img src={imageViewer.src} alt={imageViewer.title} />
-          </div>
-        </div>
-      )}
     </main>
   );
 }
