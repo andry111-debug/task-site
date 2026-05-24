@@ -1,292 +1,496 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
-const initialEmployees = [
-  { id: 1, name: 'Иван Петров', role: 'Мастер участка' },
-  { id: 2, name: 'Сергей Иванов', role: 'Электромонтажник' },
-  { id: 3, name: 'Алексей Смирнов', role: 'Техник' },
-];
+function getTodayIso() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
 
-const initialTasks = [
-  {
-    id: 1,
-    employeeId: 1,
-    title: 'Проверить журнал заявок',
-    description: 'Открыть список заявок, отметить срочные позиции и передать их в работу.',
-    dueDate: 'Сегодня',
-    done: false,
-    comment: '',
-  },
-  {
-    id: 2,
-    employeeId: 1,
-    title: 'Проверить выполнение работ за вчера',
-    description: 'Сверить план и фактическое выполнение по участку.',
-    dueDate: 'Сегодня',
-    done: true,
-    comment: 'Проверено, одна задача перенесена.',
-  },
-  {
-    id: 3,
-    employeeId: 2,
-    title: 'Осмотреть щит освещения',
-    description: 'Проверить визуально состояние автоматики, маркировку и наличие замечаний.',
-    dueDate: 'Сегодня',
-    done: false,
-    comment: '',
-  },
-  {
-    id: 4,
-    employeeId: 2,
-    title: 'Передать фотоотчёт',
-    description: 'Загрузить фотографии выполненных работ в общий чат.',
-    dueDate: 'Сегодня',
-    done: false,
-    comment: '',
-  },
-  {
-    id: 5,
-    employeeId: 3,
-    title: 'Проверить складские остатки',
-    description: 'Сверить наличие расходных материалов и записать недостающее.',
-    dueDate: 'Сегодня',
-    done: false,
-    comment: '',
-  },
-];
-
-function App() {
-  const [screen, setScreen] = useState('home');
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(1);
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem('task-site-tasks');
-    return saved ? JSON.parse(saved) : initialTasks;
-  });
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [newTaskEmployeeId, setNewTaskEmployeeId] = useState(1);
-
-  const selectedEmployee = useMemo(
-    () => initialEmployees.find((employee) => employee.id === selectedEmployeeId),
-    [selectedEmployeeId]
-  );
-
-  const employeeTasks = useMemo(
-    () => tasks.filter((task) => task.employeeId === selectedEmployeeId),
-    [tasks, selectedEmployeeId]
-  );
-
-  const completedCount = tasks.filter((task) => task.done).length;
-  const totalCount = tasks.length;
-  const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-
-  function saveTasks(nextTasks) {
-    setTasks(nextTasks);
-    localStorage.setItem('task-site-tasks', JSON.stringify(nextTasks));
+function getSavedUser() {
+  try {
+    const value = localStorage.getItem('task_site_user');
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
   }
+}
 
-  function toggleTask(taskId) {
-    const nextTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, done: !task.done } : task
-    );
-    saveTasks(nextTasks);
-  }
+const today = getTodayIso();
 
-  function updateComment(taskId, comment) {
-    const nextTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, comment } : task
-    );
-    saveTasks(nextTasks);
-  }
+export default function App() {
+  const [user, setUser] = useState(getSavedUser);
+  const [page, setPage] = useState(user?.role === 'admin' ? 'admin' : user ? 'employee' : 'home');
+  const [message, setMessage] = useState('');
 
-  function addTask(event) {
-    event.preventDefault();
+  const logout = () => {
+    localStorage.removeItem('task_site_user');
+    setUser(null);
+    setPage('home');
+    setMessage('');
+  };
 
-    if (!newTaskTitle.trim()) {
-      return;
-    }
-
-    const nextTask = {
-      id: Date.now(),
-      employeeId: Number(newTaskEmployeeId),
-      title: newTaskTitle.trim(),
-      description: newTaskDescription.trim() || 'Описание не заполнено.',
-      dueDate: 'Сегодня',
-      done: false,
-      comment: '',
-    };
-
-    saveTasks([nextTask, ...tasks]);
-    setNewTaskTitle('');
-    setNewTaskDescription('');
-  }
-
-  function resetDemoData() {
-    saveTasks(initialTasks);
-    setSelectedEmployeeId(1);
-  }
+  const handleLoginSuccess = (loggedUser) => {
+    localStorage.setItem('task_site_user', JSON.stringify(loggedUser));
+    setUser(loggedUser);
+    setPage(loggedUser.role === 'admin' ? 'admin' : 'employee');
+    setMessage('');
+  };
 
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
-          <p className="eyebrow">Тестовый сайт</p>
-          <h1>Задачи сотрудников</h1>
-        </div>
-        <div className="topbar-actions">
-          <button className="ghost-button" onClick={() => setScreen('home')}>Главная</button>
-          <button className="ghost-button" onClick={() => setScreen('employee')}>Сотрудник</button>
-          <button className="primary-button" onClick={() => setScreen('admin')}>Админ</button>
-        </div>
+        <button className="brand" type="button" onClick={() => setPage('home')}>
+          <span>Тестовый сайт</span>
+          <strong>Задачи сотрудников</strong>
+        </button>
+        <nav>
+          <button type="button" onClick={() => setPage('home')}>Главная</button>
+          <button type="button" onClick={() => setPage(user ? 'employee' : 'login')}>Сотрудник</button>
+          <button className="primary" type="button" onClick={() => setPage(user?.role === 'admin' ? 'admin' : 'login')}>Админ</button>
+          {user && <button type="button" onClick={logout}>Выйти</button>}
+        </nav>
       </header>
 
-      {screen === 'home' && (
-        <section className="hero card">
-          <div>
-            <p className="eyebrow">Первая рабочая версия</p>
-            <h2>Проверяем сценарий: задача → выполнение → контроль</h2>
-            <p>
-              Это локальный тестовый сайт. Данные пока хранятся в браузере на этом компьютере.
-              Следующим шагом подключим базу данных Supabase и разместим сайт на хостинге.
-            </p>
-            <div className="hero-actions">
-              <button className="primary-button" onClick={() => setScreen('employee')}>Войти как сотрудник</button>
-              <button className="secondary-button" onClick={() => setScreen('admin')}>Войти как админ</button>
-            </div>
-          </div>
-          <div className="stats-card">
-            <span>Выполнено</span>
-            <strong>{progress}%</strong>
-            <p>{completedCount} из {totalCount} задач закрыто</p>
-          </div>
-        </section>
-      )}
+      {!isSupabaseConfigured && <ConfigWarning />}
+      {message && <div className="notice">{message}</div>}
 
-      {screen === 'employee' && (
-        <section className="layout-grid">
-          <aside className="card sidebar-card">
-            <p className="eyebrow">Выбор сотрудника</p>
-            <h2>Кабинет сотрудника</h2>
-            <label className="field-label" htmlFor="employee-select">Сотрудник</label>
-            <select
-              id="employee-select"
-              value={selectedEmployeeId}
-              onChange={(event) => setSelectedEmployeeId(Number(event.target.value))}
-            >
-              {initialEmployees.map((employee) => (
-                <option key={employee.id} value={employee.id}>{employee.name}</option>
-              ))}
-            </select>
-            <p className="muted-text">{selectedEmployee?.role}</p>
-          </aside>
-
-          <section className="card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Сегодня</p>
-                <h2>Мои задачи</h2>
-              </div>
-              <span className="badge">{employeeTasks.length} задач</span>
-            </div>
-
-            <div className="task-list">
-              {employeeTasks.map((task) => (
-                <article key={task.id} className={`task-card ${task.done ? 'is-done' : ''}`}>
-                  <div className="task-main">
-                    <label className="checkbox-row">
-                      <input
-                        type="checkbox"
-                        checked={task.done}
-                        onChange={() => toggleTask(task.id)}
-                      />
-                      <span>{task.title}</span>
-                    </label>
-                    <p>{task.description}</p>
-                  </div>
-                  <textarea
-                    value={task.comment}
-                    onChange={(event) => updateComment(task.id, event.target.value)}
-                    placeholder="Комментарий по выполнению"
-                  />
-                </article>
-              ))}
-            </div>
-          </section>
-        </section>
-      )}
-
-      {screen === 'admin' && (
-        <section className="layout-grid admin-grid">
-          <section className="card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Администратор</p>
-                <h2>Добавить задачу</h2>
-              </div>
-            </div>
-
-            <form className="task-form" onSubmit={addTask}>
-              <label className="field-label" htmlFor="task-employee">Сотрудник</label>
-              <select
-                id="task-employee"
-                value={newTaskEmployeeId}
-                onChange={(event) => setNewTaskEmployeeId(Number(event.target.value))}
-              >
-                {initialEmployees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>{employee.name}</option>
-                ))}
-              </select>
-
-              <label className="field-label" htmlFor="task-title">Название задачи</label>
-              <input
-                id="task-title"
-                value={newTaskTitle}
-                onChange={(event) => setNewTaskTitle(event.target.value)}
-                placeholder="Например: проверить оборудование"
-              />
-
-              <label className="field-label" htmlFor="task-description">Описание</label>
-              <textarea
-                id="task-description"
-                value={newTaskDescription}
-                onChange={(event) => setNewTaskDescription(event.target.value)}
-                placeholder="Что именно нужно сделать"
-              />
-
-              <button className="primary-button" type="submit">Добавить задачу</button>
-            </form>
-          </section>
-
-          <section className="card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Контроль</p>
-                <h2>Статус выполнения</h2>
-              </div>
-              <button className="ghost-button" onClick={resetDemoData}>Сбросить демо</button>
-            </div>
-
-            <div className="status-list">
-              {tasks.map((task) => {
-                const employee = initialEmployees.find((item) => item.id === task.employeeId);
-                return (
-                  <article key={task.id} className="status-row">
-                    <div>
-                      <strong>{task.title}</strong>
-                      <p>{employee?.name} · {task.comment || 'Комментарий не заполнен'}</p>
-                    </div>
-                    <span className={`status-pill ${task.done ? 'done' : 'pending'}`}>
-                      {task.done ? 'Выполнено' : 'В работе'}
-                    </span>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        </section>
-      )}
+      {page === 'home' && <Home user={user} setPage={setPage} />}
+      {page === 'login' && <Login onSuccess={handleLoginSuccess} setMessage={setMessage} />}
+      {page === 'employee' && <EmployeePage user={user} setPage={setPage} setMessage={setMessage} />}
+      {page === 'admin' && <AdminPage user={user} setPage={setPage} setMessage={setMessage} />}
     </main>
   );
 }
 
-export default App;
+function ConfigWarning() {
+  return (
+    <section className="warning-card">
+      <strong>Supabase ещё не подключён.</strong>
+      <p>
+        Создай файл .env.local в корне проекта и укажи VITE_SUPABASE_URL и VITE_SUPABASE_KEY.
+        После этого перезапусти npm.cmd run dev.
+      </p>
+    </section>
+  );
+}
+
+function Home({ user, setPage }) {
+  return (
+    <section className="hero">
+      <div>
+        <p className="eyebrow">Первая версия с базой Supabase</p>
+        <h1>Проверяем сценарий: задача → выполнение → контроль</h1>
+        <p>
+          Данные теперь должны храниться в Supabase. Можно войти под тестовым сотрудником,
+          отметить выполнение задач и посмотреть результат в кабинете администратора.
+        </p>
+        <div className="actions">
+          <button className="primary" type="button" onClick={() => setPage(user ? 'employee' : 'login')}>
+            Войти как сотрудник
+          </button>
+          <button type="button" onClick={() => setPage(user?.role === 'admin' ? 'admin' : 'login')}>
+            Войти как админ
+          </button>
+        </div>
+      </div>
+      <div className="stats-card">
+        <span>Сегодня</span>
+        <strong>{today}</strong>
+        <small>Рабочая дата для теста</small>
+      </div>
+    </section>
+  );
+}
+
+function Login({ onSuccess, setMessage }) {
+  const [login, setLogin] = useState('ivan');
+  const [pin, setPin] = useState('1234');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+
+    if (!isSupabaseConfigured) {
+      setMessage('Сначала подключи Supabase через .env.local.');
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('employees')
+      .select('id, name, login, role')
+      .eq('login', login.trim())
+      .eq('pin_code', pin.trim())
+      .eq('active', true)
+      .maybeSingle();
+
+    setLoading(false);
+
+    if (error) {
+      setMessage(`Ошибка входа: ${error.message}`);
+      return;
+    }
+
+    if (!data) {
+      setMessage('Пользователь не найден. Проверь логин и PIN.');
+      return;
+    }
+
+    onSuccess(data);
+  };
+
+  return (
+    <section className="panel narrow-panel">
+      <p className="eyebrow">Вход</p>
+      <h1>Войти в тестовый кабинет</h1>
+      <form className="form" onSubmit={submit}>
+        <label>
+          Логин
+          <input value={login} onChange={(event) => setLogin(event.target.value)} placeholder="ivan" />
+        </label>
+        <label>
+          PIN-код
+          <input value={pin} onChange={(event) => setPin(event.target.value)} placeholder="1234" />
+        </label>
+        <button className="primary" type="submit" disabled={loading}>
+          {loading ? 'Проверка...' : 'Войти'}
+        </button>
+      </form>
+      <div className="hint-box">
+        <strong>Тестовые входы</strong>
+        <p>Админ: admin / 1111</p>
+        <p>Сотрудник: ivan / 1234</p>
+        <p>Сотрудник: sergey / 2345</p>
+      </div>
+    </section>
+  );
+}
+
+function EmployeePage({ user, setPage, setMessage }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setPage('login');
+      return;
+    }
+    loadEmployeeTasks();
+  }, [user?.id]);
+
+  const loadEmployeeTasks = async () => {
+    if (!isSupabaseConfigured || !user) return;
+    setLoading(true);
+    setMessage('');
+
+    const { data: assignments, error } = await supabase
+      .from('assignments')
+      .select('id, task_id, assigned_date, tasks(id, title, description)')
+      .eq('employee_id', user.id)
+      .eq('assigned_date', today)
+      .eq('active', true)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      setLoading(false);
+      setMessage(`Ошибка загрузки задач: ${error.message}`);
+      return;
+    }
+
+    const assignmentIds = assignments.map((item) => item.id);
+    let statusMap = new Map();
+
+    if (assignmentIds.length > 0) {
+      const { data: statuses, error: statusError } = await supabase
+        .from('task_status')
+        .select('id, assignment_id, is_done, comment, work_date')
+        .in('assignment_id', assignmentIds)
+        .eq('work_date', today);
+
+      if (statusError) {
+        setLoading(false);
+        setMessage(`Ошибка загрузки статусов: ${statusError.message}`);
+        return;
+      }
+
+      statusMap = new Map(statuses.map((status) => [status.assignment_id, status]));
+    }
+
+    setItems(assignments.map((assignment) => ({
+      ...assignment,
+      status: statusMap.get(assignment.id) || { is_done: false, comment: '' },
+    })));
+    setLoading(false);
+  };
+
+  const updateStatus = async (assignmentId, changes) => {
+    const current = items.find((item) => item.id === assignmentId);
+    const nextStatus = {
+      assignment_id: assignmentId,
+      work_date: today,
+      is_done: changes.is_done ?? current?.status?.is_done ?? false,
+      comment: changes.comment ?? current?.status?.comment ?? '',
+    };
+
+    const { error } = await supabase
+      .from('task_status')
+      .upsert(nextStatus, { onConflict: 'assignment_id,work_date' });
+
+    if (error) {
+      setMessage(`Не удалось сохранить: ${error.message}`);
+      return;
+    }
+
+    setItems((prev) => prev.map((item) => (
+      item.id === assignmentId
+        ? { ...item, status: { ...item.status, ...nextStatus } }
+        : item
+    )));
+  };
+
+  const doneCount = useMemo(() => items.filter((item) => item.status?.is_done).length, [items]);
+
+  if (!user) return null;
+
+  return (
+    <section className="panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Кабинет сотрудника</p>
+          <h1>{user.name}</h1>
+          <p>Задачи на сегодня: {today}</p>
+        </div>
+        <div className="progress-card">
+          <strong>{items.length ? Math.round((doneCount / items.length) * 100) : 0}%</strong>
+          <span>{doneCount} из {items.length} задач выполнено</span>
+        </div>
+      </div>
+
+      <button type="button" onClick={loadEmployeeTasks} disabled={loading}>
+        {loading ? 'Обновление...' : 'Обновить задачи'}
+      </button>
+
+      <div className="task-list">
+        {items.map((item) => (
+          <article className={`task-item ${item.status?.is_done ? 'done' : ''}`} key={item.id}>
+            <label className="check-line">
+              <input
+                type="checkbox"
+                checked={Boolean(item.status?.is_done)}
+                onChange={(event) => updateStatus(item.id, { is_done: event.target.checked })}
+              />
+              <span>
+                <strong>{item.tasks?.title}</strong>
+                <small>{item.tasks?.description}</small>
+              </span>
+            </label>
+            <textarea
+              value={item.status?.comment || ''}
+              onChange={(event) => setItems((prev) => prev.map((row) => (
+                row.id === item.id
+                  ? { ...row, status: { ...row.status, comment: event.target.value } }
+                  : row
+              )))}
+              onBlur={(event) => updateStatus(item.id, { comment: event.target.value })}
+              placeholder="Комментарий по задаче"
+            />
+          </article>
+        ))}
+        {!loading && items.length === 0 && <p className="empty">На сегодня задач нет.</p>}
+      </div>
+    </section>
+  );
+}
+
+function AdminPage({ user, setPage, setMessage }) {
+  const [employees, setEmployees] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [employeeForm, setEmployeeForm] = useState({ name: '', login: '', pin_code: '' });
+  const [taskForm, setTaskForm] = useState({ title: '', description: '' });
+
+  useEffect(() => {
+    if (!user) {
+      setPage('login');
+      return;
+    }
+    if (user.role !== 'admin') {
+      setPage('employee');
+      setMessage('Раздел администратора доступен только админу.');
+      return;
+    }
+    loadAdminData();
+  }, [user?.id]);
+
+  const loadAdminData = async () => {
+    if (!isSupabaseConfigured) return;
+    setLoading(true);
+    setMessage('');
+
+    const [employeesResult, tasksResult, assignmentsResult] = await Promise.all([
+      supabase.from('employees').select('id, name, login, pin_code, role, active').eq('active', true).order('created_at', { ascending: true }),
+      supabase.from('tasks').select('id, title, description, active').eq('active', true).order('created_at', { ascending: true }),
+      supabase.from('assignments').select('id, employee_id, task_id, employees(name), tasks(title), task_status(is_done, comment, work_date)').eq('assigned_date', today).order('created_at', { ascending: true }),
+    ]);
+
+    if (employeesResult.error || tasksResult.error || assignmentsResult.error) {
+      setMessage(
+        employeesResult.error?.message || tasksResult.error?.message || assignmentsResult.error?.message
+      );
+      setLoading(false);
+      return;
+    }
+
+    setEmployees(employeesResult.data || []);
+    setTasks(tasksResult.data || []);
+    setAssignments(assignmentsResult.data || []);
+    setLoading(false);
+  };
+
+  const ensureStatusRows = async (rows) => {
+    if (!rows?.length) return;
+    const statusRows = rows.map((row) => ({
+      assignment_id: row.id,
+      work_date: today,
+      is_done: false,
+      comment: '',
+    }));
+    await supabase.from('task_status').upsert(statusRows, { onConflict: 'assignment_id,work_date' });
+  };
+
+  const addEmployee = async (event) => {
+    event.preventDefault();
+    setMessage('');
+
+    const { data: employee, error } = await supabase
+      .from('employees')
+      .insert({ ...employeeForm, role: 'employee', active: true })
+      .select('id')
+      .single();
+
+    if (error) {
+      setMessage(`Не удалось добавить сотрудника: ${error.message}`);
+      return;
+    }
+
+    if (tasks.length > 0) {
+      const rows = tasks.map((task) => ({
+        employee_id: employee.id,
+        task_id: task.id,
+        assigned_date: today,
+        active: true,
+      }));
+      const { data: newAssignments, error: assignmentError } = await supabase
+        .from('assignments')
+        .upsert(rows, { onConflict: 'employee_id,task_id,assigned_date' })
+        .select('id');
+
+      if (!assignmentError) await ensureStatusRows(newAssignments);
+    }
+
+    setEmployeeForm({ name: '', login: '', pin_code: '' });
+    await loadAdminData();
+  };
+
+  const addTask = async (event) => {
+    event.preventDefault();
+    setMessage('');
+
+    const { data: task, error } = await supabase
+      .from('tasks')
+      .insert({ ...taskForm, active: true })
+      .select('id')
+      .single();
+
+    if (error) {
+      setMessage(`Не удалось добавить задачу: ${error.message}`);
+      return;
+    }
+
+    const staff = employees.filter((employee) => employee.role === 'employee');
+    if (staff.length > 0) {
+      const rows = staff.map((employee) => ({
+        employee_id: employee.id,
+        task_id: task.id,
+        assigned_date: today,
+        active: true,
+      }));
+      const { data: newAssignments, error: assignmentError } = await supabase
+        .from('assignments')
+        .upsert(rows, { onConflict: 'employee_id,task_id,assigned_date' })
+        .select('id');
+
+      if (!assignmentError) await ensureStatusRows(newAssignments);
+    }
+
+    setTaskForm({ title: '', description: '' });
+    await loadAdminData();
+  };
+
+  if (!user || user.role !== 'admin') return null;
+
+  return (
+    <section className="panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Кабинет администратора</p>
+          <h1>Контроль задач</h1>
+          <p>Дата контроля: {today}</p>
+        </div>
+        <button type="button" onClick={loadAdminData} disabled={loading}>
+          {loading ? 'Обновление...' : 'Обновить'}
+        </button>
+      </div>
+
+      <div className="admin-grid">
+        <form className="form card" onSubmit={addEmployee}>
+          <h2>Добавить сотрудника</h2>
+          <label>Имя<input value={employeeForm.name} onChange={(event) => setEmployeeForm({ ...employeeForm, name: event.target.value })} required /></label>
+          <label>Логин<input value={employeeForm.login} onChange={(event) => setEmployeeForm({ ...employeeForm, login: event.target.value })} required /></label>
+          <label>PIN<input value={employeeForm.pin_code} onChange={(event) => setEmployeeForm({ ...employeeForm, pin_code: event.target.value })} required /></label>
+          <button className="primary" type="submit">Добавить</button>
+        </form>
+
+        <form className="form card" onSubmit={addTask}>
+          <h2>Добавить задачу</h2>
+          <label>Название<input value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required /></label>
+          <label>Описание<textarea value={taskForm.description} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} /></label>
+          <button className="primary" type="submit">Добавить</button>
+        </form>
+      </div>
+
+      <div className="table-card">
+        <h2>Статусы выполнения</h2>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Сотрудник</th>
+                <th>Задача</th>
+                <th>Статус</th>
+                <th>Комментарий</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assignments.map((row) => {
+                const status = row.task_status?.find((item) => item.work_date === today) || row.task_status?.[0];
+                return (
+                  <tr key={row.id}>
+                    <td>{row.employees?.name}</td>
+                    <td>{row.tasks?.title}</td>
+                    <td>{status?.is_done ? 'Выполнено' : 'Не выполнено'}</td>
+                    <td>{status?.comment || ''}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
