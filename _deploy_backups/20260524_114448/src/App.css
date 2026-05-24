@@ -509,54 +509,45 @@ h3 {
 }
 
 
-.pptToolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #dce6f5;
-  box-shadow: 0 16px 44px rgba(35, 54, 90, 0.08);
+.pptSummaryGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .pptChartCard {
-  overflow: visible;
+  overflow: hidden;
 }
 
 .pptScale {
   display: grid;
-  grid-template-columns: repeat(17, minmax(0, 1fr));
-  gap: 3px;
-  margin: 22px 0 12px 280px;
+  grid-template-columns: repeat(17, minmax(72px, 1fr));
+  gap: 4px;
+  margin: 22px 0 12px 300px;
   color: #526789;
   font-weight: 900;
-  font-size: 9px;
-  line-height: 1.15;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0;
-  min-width: 0;
+  letter-spacing: 0.03em;
+  min-width: 1180px;
 }
 
 .pptScale span {
-  padding: 7px 4px;
-  border-radius: 9px;
+  padding: 8px 6px;
+  border-radius: 10px;
   background: #eef3fb;
   text-align: center;
-  word-break: break-word;
 }
 
 .pptList {
   display: grid;
   gap: 8px;
-  overflow: visible;
-  padding-bottom: 0;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 
 .pptGroupRow {
-  min-width: 0;
+  min-width: 1480px;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
+  grid-template-columns: 72px 1fr;
   gap: 14px;
   align-items: center;
   padding: 14px 16px;
@@ -575,10 +566,10 @@ h3 {
 }
 
 .pptRow {
-  min-width: 0;
+  min-width: 1480px;
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
   align-items: start;
   padding: 14px 16px;
   border-radius: 20px;
@@ -589,7 +580,6 @@ h3 {
 .pptTaskMeta {
   display: grid;
   gap: 5px;
-  min-width: 0;
 }
 
 .pptTaskMeta strong {
@@ -617,7 +607,6 @@ h3 {
 .pptBarArea {
   display: grid;
   gap: 8px;
-  min-width: 0;
 }
 
 .pptBarTrack {
@@ -638,7 +627,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 48px;
+  min-width: 96px;
   padding: 0 10px;
   color: #ffffff;
   font-weight: 900;
@@ -667,85 +656,12 @@ h3 {
   font-weight: 800;
 }
 
-.pptEditorCard {
-  display: grid;
-  gap: 18px;
-  padding: 24px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 20px 60px rgba(35, 54, 90, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-}
-
-.pptEditorCard p {
-  color: #526789;
-  margin-top: 6px;
-  line-height: 1.5;
-}
-
-.pptEditorList {
-  display: grid;
-  gap: 12px;
-}
-
-.pptEditorRow {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 22px;
-  background: #f7faff;
-  border: 1px solid #dce6f5;
-}
-
-.pptEditorRow.group {
-  background: #eef3fb;
-}
-
-.pptEditorFields {
-  display: grid;
-  grid-template-columns: 100px minmax(220px, 1fr) 140px minmax(180px, 1fr);
-  gap: 12px;
-  align-items: end;
-}
-
-.pptEditorRow.group .pptEditorFields {
-  grid-template-columns: 100px minmax(220px, 1fr);
-}
-
-.pptEventEditor {
-  display: grid;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #dce6f5;
-}
-
-.pptEventEditorHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.pptEventEditorRow {
-  display: grid;
-  grid-template-columns: 190px minmax(220px, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-}
-
-
 @media (max-width: 980px) {
   .pptScale {
     margin-left: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    font-size: 10px;
   }
 
-  .pptRow,
-  .pptGroupRow,
-  .pptEditorFields,
-  .pptEditorRow.group .pptEditorFields,
-  .pptEventEditorRow {
+  .pptSummaryGrid {
     grid-template-columns: 1fr;
   }
 }

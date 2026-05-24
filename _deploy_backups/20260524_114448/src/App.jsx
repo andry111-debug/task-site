@@ -212,7 +212,7 @@ const pptPeriods = [
   }
 ];
 
-const defaultPptItems = [
+const pptItems = [
   {
     "code": "1",
     "title": "Получение ТУ",
@@ -1189,67 +1189,6 @@ function shortenEventText(text) {
   return text.length > 46 ? `${text.slice(0, 46)}...` : text;
 }
 
-
-function clonePptItems(items) {
-  return items.map((item) => ({
-    ...item,
-    events: (item.events || []).map((event) => ({ ...event })),
-  }));
-}
-
-function normalizePptItem(item) {
-  const events = (item.events || [])
-    .map((event) => ({
-      periodIndex: Number(event.periodIndex),
-      text: String(event.text || "").trim(),
-    }))
-    .filter(
-      (event) =>
-        Number.isInteger(event.periodIndex) &&
-        event.periodIndex >= 0 &&
-        event.periodIndex < pptPeriods.length &&
-        event.text
-    )
-    .sort((a, b) => a.periodIndex - b.periodIndex);
-
-  const periodIndexes = events.map((event) => event.periodIndex);
-  const startIndex = periodIndexes.length ? Math.min(...periodIndexes) : null;
-  const endIndex = periodIndexes.length ? Math.max(...periodIndexes) : null;
-
-  return {
-    ...item,
-    code: String(item.code || "").trim(),
-    title: String(item.title || "").trim(),
-    duration: String(item.duration || "").trim(),
-    note: String(item.note || "").trim(),
-    type: item.type === "group" ? "group" : "task",
-    events,
-    startIndex,
-    endIndex,
-    start: startIndex !== null ? pptPeriods[startIndex].start : null,
-    end: endIndex !== null ? pptPeriods[endIndex].end : null,
-  };
-}
-
-function getLocalPptItems() {
-  try {
-    const saved = window.localStorage.getItem("pptScheduleItems");
-    if (!saved) return clonePptItems(defaultPptItems);
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed.map(normalizePptItem) : clonePptItems(defaultPptItems);
-  } catch {
-    return clonePptItems(defaultPptItems);
-  }
-}
-
-function saveLocalPptItems(items) {
-  window.localStorage.setItem("pptScheduleItems", JSON.stringify(items));
-}
-
-function removeLocalPptItems() {
-  window.localStorage.removeItem("pptScheduleItems");
-}
-
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [login, setLogin] = useState("admin");
@@ -1262,10 +1201,6 @@ function App() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [accountForm, setAccountForm] = useState(createEmptyAccount());
   const [passwordChanges, setPasswordChanges] = useState({});
-  const [pptItems, setPptItems] = useState(() => getLocalPptItems());
-  const [pptDraftItems, setPptDraftItems] = useState(() => getLocalPptItems());
-  const [isPptEditing, setIsPptEditing] = useState(false);
-  const [pptMessage, setPptMessage] = useState("");
 
   const scheduleBounds = useMemo(() => getScheduleBounds(scheduleItems), []);
 
@@ -1301,43 +1236,9 @@ function App() {
       rowsWithEvents: rowsWithEvents.length,
       eventCount,
     };
-  }, [pptItems]);
+  }, []);
 
   const isAdmin = currentUser?.role === "admin";
-  const canEditPpt = currentUser?.role === "admin" || currentUser?.role === "designer";
-
-  async function loadPptSchedule() {
-    const localItems = getLocalPptItems();
-
-    if (!isSupabaseReady || !supabase) {
-      setPptItems(localItems);
-      setPptDraftItems(clonePptItems(localItems));
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("ppt_schedule")
-        .select("data")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data?.data && Array.isArray(data.data)) {
-        const normalized = data.data.map(normalizePptItem);
-        setPptItems(normalized);
-        setPptDraftItems(clonePptItems(normalized));
-        saveLocalPptItems(normalized);
-      } else {
-        setPptItems(localItems);
-        setPptDraftItems(clonePptItems(localItems));
-      }
-    } catch {
-      setPptItems(localItems);
-      setPptDraftItems(clonePptItems(localItems));
-    }
-  }
 
   async function loadAccounts() {
     if (!isSupabaseReady) return;
@@ -1362,7 +1263,6 @@ function App() {
 
   useEffect(() => {
     loadAccounts();
-    loadPptSchedule();
   }, []);
 
   async function handleLogin(event) {
@@ -1483,145 +1383,6 @@ function App() {
     }));
   }
 
-  function startPptEditing() {
-    setPptDraftItems(clonePptItems(pptItems));
-    setIsPptEditing(true);
-    setPptMessage("");
-  }
-
-  function cancelPptEditing() {
-    setPptDraftItems(clonePptItems(pptItems));
-    setIsPptEditing(false);
-    setPptMessage("");
-  }
-
-  function updatePptDraftItem(index, field, value) {
-    setPptDraftItems((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item
-      )
-    );
-  }
-
-  function updatePptDraftEvent(itemIndex, eventIndex, field, value) {
-    setPptDraftItems((current) =>
-      current.map((item, currentItemIndex) => {
-        if (currentItemIndex !== itemIndex) return item;
-
-        const events = (item.events || []).map((event, currentEventIndex) => {
-          if (currentEventIndex !== eventIndex) return event;
-
-          return {
-            ...event,
-            [field]: field === "periodIndex" ? Number(value) : value,
-          };
-        });
-
-        return {
-          ...item,
-          events,
-        };
-      })
-    );
-  }
-
-  function addPptDraftEvent(itemIndex) {
-    setPptDraftItems((current) =>
-      current.map((item, currentItemIndex) => {
-        if (currentItemIndex !== itemIndex) return item;
-
-        return {
-          ...item,
-          events: [
-            ...(item.events || []),
-            {
-              periodIndex: 0,
-              text: "Новая отметка",
-            },
-          ],
-        };
-      })
-    );
-  }
-
-  function deletePptDraftEvent(itemIndex, eventIndex) {
-    setPptDraftItems((current) =>
-      current.map((item, currentItemIndex) => {
-        if (currentItemIndex !== itemIndex) return item;
-
-        return {
-          ...item,
-          events: (item.events || []).filter((_, currentEventIndex) => currentEventIndex !== eventIndex),
-        };
-      })
-    );
-  }
-
-  async function savePptEditing() {
-    const normalized = pptDraftItems.map(normalizePptItem);
-    setPptItems(normalized);
-    setPptDraftItems(clonePptItems(normalized));
-    saveLocalPptItems(normalized);
-    setIsPptEditing(false);
-
-    if (isSupabaseReady && supabase) {
-      try {
-        const { error } = await supabase
-          .from("ppt_schedule")
-          .upsert(
-            {
-              id: 1,
-              data: normalized,
-              updated_by: currentUser?.login || null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" }
-          );
-
-        if (error) throw error;
-
-        setPptMessage("График ППТ сохранён в базе Supabase.");
-        return;
-      } catch {
-        setPptMessage("График ППТ сохранён в этом браузере. Для общего сохранения выполни SQL из архива и повтори сохранение.");
-        return;
-      }
-    }
-
-    setPptMessage("График ППТ сохранён в этом браузере.");
-  }
-
-  async function resetPptEditing() {
-    const confirmed = window.confirm("Вернуть исходный график ППТ из приложенной таблицы?");
-    if (!confirmed) return;
-
-    const restored = clonePptItems(defaultPptItems);
-    setPptItems(restored);
-    setPptDraftItems(clonePptItems(restored));
-    removeLocalPptItems();
-    setIsPptEditing(false);
-
-    if (isSupabaseReady && supabase) {
-      try {
-        await supabase
-          .from("ppt_schedule")
-          .upsert(
-            {
-              id: 1,
-              data: restored,
-              updated_by: currentUser?.login || null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "id" }
-          );
-      } catch {
-        // Если таблица не создана, восстановление останется локальным.
-      }
-    }
-
-    setPptMessage("Исходный график ППТ восстановлен.");
-  }
-
   function renderLoginPage() {
     return (
       <main className="loginOnlyPage">
@@ -1737,8 +1498,6 @@ function App() {
   }
 
   function renderPptPage() {
-    const visiblePptItems = isPptEditing ? pptDraftItems : pptItems;
-
     return (
       <section className="contentStack">
         <div className="sectionHeader">
@@ -1749,137 +1508,20 @@ function App() {
           <div className="roleBadge">По приложенной таблице</div>
         </div>
 
-        {pptMessage && <div className="noticeBox">{pptMessage}</div>}
-
-        {canEditPpt && (
-          <div className="pptToolbar">
-            {!isPptEditing ? (
-              <>
-                <button className="primaryButton" onClick={startPptEditing}>
-                  Редактировать график ППТ
-                </button>
-                <button className="secondaryButton" onClick={loadPptSchedule}>
-                  Обновить из базы
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="primaryButton" onClick={savePptEditing}>
-                  Сохранить
-                </button>
-                <button className="secondaryButton" onClick={cancelPptEditing}>
-                  Отменить
-                </button>
-                <button className="dangerButton" onClick={resetPptEditing}>
-                  Вернуть исходный график
-                </button>
-              </>
-            )}
+        <div className="summaryGrid pptSummaryGrid">
+          <div className="summaryCard">
+            <span>Строк задач</span>
+            <strong>{pptSummary.taskRows}</strong>
           </div>
-        )}
-
-        {isPptEditing && (
-          <div className="pptEditorCard">
-            <div>
-              <h3>Редактирование графика ППТ</h3>
-              <p>
-                Можно менять код, наименование, срок, примечание и контрольные отметки.
-                Для общей работы нескольких пользователей выполни SQL-файл из архива.
-              </p>
-            </div>
-
-            <div className="pptEditorList">
-              {pptDraftItems.map((item, itemIndex) => (
-                <article className={item.type === "group" ? "pptEditorRow group" : "pptEditorRow"} key={`${item.code}-${itemIndex}`}>
-                  <div className="pptEditorFields">
-                    <label>
-                      Код
-                      <input
-                        value={item.code}
-                        onChange={(event) => updatePptDraftItem(itemIndex, "code", event.target.value)}
-                      />
-                    </label>
-
-                    <label>
-                      Наименование
-                      <input
-                        value={item.title}
-                        onChange={(event) => updatePptDraftItem(itemIndex, "title", event.target.value)}
-                      />
-                    </label>
-
-                    {item.type !== "group" && (
-                      <>
-                        <label>
-                          Срок
-                          <input
-                            value={item.duration || ""}
-                            onChange={(event) => updatePptDraftItem(itemIndex, "duration", event.target.value)}
-                          />
-                        </label>
-
-                        <label>
-                          Примечание
-                          <input
-                            value={item.note || ""}
-                            onChange={(event) => updatePptDraftItem(itemIndex, "note", event.target.value)}
-                          />
-                        </label>
-                      </>
-                    )}
-                  </div>
-
-                  {item.type !== "group" && (
-                    <div className="pptEventEditor">
-                      <div className="pptEventEditorHeader">
-                        <strong>Контрольные отметки</strong>
-                        <button className="smallButton" onClick={() => addPptDraftEvent(itemIndex)}>
-                          Добавить отметку
-                        </button>
-                      </div>
-
-                      {(item.events || []).length === 0 && (
-                        <div className="mutedText">Отметок нет.</div>
-                      )}
-
-                      {(item.events || []).map((event, eventIndex) => (
-                        <div className="pptEventEditorRow" key={`${itemIndex}-${eventIndex}`}>
-                          <select
-                            value={event.periodIndex}
-                            onChange={(changeEvent) =>
-                              updatePptDraftEvent(itemIndex, eventIndex, "periodIndex", changeEvent.target.value)
-                            }
-                          >
-                            {pptPeriods.map((period, periodIndex) => (
-                              <option value={periodIndex} key={period.label}>
-                                {period.label}
-                              </option>
-                            ))}
-                          </select>
-
-                          <input
-                            value={event.text}
-                            onChange={(changeEvent) =>
-                              updatePptDraftEvent(itemIndex, eventIndex, "text", changeEvent.target.value)
-                            }
-                            placeholder="Текст отметки"
-                          />
-
-                          <button
-                            className="dangerButton"
-                            onClick={() => deletePptDraftEvent(itemIndex, eventIndex)}
-                          >
-                            Удалить
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              ))}
-            </div>
+          <div className="summaryCard">
+            <span>Строк с графиком</span>
+            <strong>{pptSummary.rowsWithEvents}</strong>
           </div>
-        )}
+          <div className="summaryCard">
+            <span>Контрольных отметок</span>
+            <strong>{pptSummary.eventCount}</strong>
+          </div>
+        </div>
 
         <div className="chartCard pptChartCard">
           <div className="chartHeader">
@@ -1899,7 +1541,7 @@ function App() {
           </div>
 
           <div className="pptList">
-            {visiblePptItems.map((item, index) => {
+            {pptItems.map((item, index) => {
               if (item.type === "group") {
                 return (
                   <article className="pptGroupRow" key={`${item.code}-${index}`}>
