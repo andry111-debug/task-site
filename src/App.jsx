@@ -304,16 +304,19 @@ const buildingAssets = {
     "view": "/building-assets/cross-dock-office/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/cross-dock-office/plan-1.jpg",
+        "explication": "/building-assets/cross-dock-office/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа, офисная часть + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-2.jpg"
+        "title": "План 2 этажа, офисная часть",
+        "plan": "/building-assets/cross-dock-office/plan-2.jpg",
+        "explication": "/building-assets/cross-dock-office/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа, венткамера + экспликация",
-        "image": "/building-assets/cross-dock-office/plan-3.jpg"
+        "title": "План 3 этажа, венткамера",
+        "plan": "/building-assets/cross-dock-office/plan-3.jpg",
+        "explication": "/building-assets/cross-dock-office/explication-3.jpg"
       }
     ]
   },
@@ -321,12 +324,14 @@ const buildingAssets = {
     "view": "/building-assets/cross-dock-typical/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cross-dock-typical/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/cross-dock-typical/plan-1.jpg",
+        "explication": "/building-assets/cross-dock-typical/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/cross-dock-typical/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/cross-dock-typical/plan-2.jpg",
+        "explication": "/building-assets/cross-dock-typical/explication-2.jpg"
       }
     ]
   },
@@ -334,12 +339,14 @@ const buildingAssets = {
     "view": "/building-assets/freezer-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/freezer-warehouse/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/freezer-warehouse/plan-1.jpg",
+        "explication": "/building-assets/freezer-warehouse/explication-1.jpg"
       },
       {
-        "title": "План 2 и 3 этажа + экспликация",
-        "image": "/building-assets/freezer-warehouse/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/freezer-warehouse/plan-2.jpg",
+        "explication": "/building-assets/freezer-warehouse/explication-2.jpg"
       }
     ]
   },
@@ -347,16 +354,19 @@ const buildingAssets = {
     "view": "/building-assets/doc-pavilion-fish-meat/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/doc-pavilion-fish-meat/plan-1.jpg",
+        "explication": "/building-assets/doc-pavilion-fish-meat/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/doc-pavilion-fish-meat/plan-2.jpg",
+        "explication": "/building-assets/doc-pavilion-fish-meat/explication-2.jpg"
       },
       {
-        "title": "План технического подвала + экспликация",
-        "image": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg"
+        "title": "План технического подвала",
+        "plan": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg",
+        "explication": "/building-assets/doc-pavilion-fish-meat/explication-3.jpg"
       }
     ]
   },
@@ -364,20 +374,24 @@ const buildingAssets = {
     "view": "/building-assets/doc-pavilion-flowers-grocery/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-1.jpg",
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-2.jpg",
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа, венткамера + экспликация",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg"
+        "title": "План 3 этажа, венткамера",
+        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg",
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-3.jpg"
       },
       {
-        "title": "План технического подвала + экспликация",
-        "image": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg"
+        "title": "План технического подвала",
+        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg",
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-4.jpg"
       }
     ]
   },
@@ -385,12 +399,14 @@ const buildingAssets = {
     "view": "/building-assets/multitemp-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План типового модуля + экспликация",
-        "image": "/building-assets/multitemp-warehouse/plan-1.jpg"
+        "title": "План типового модуля",
+        "plan": "/building-assets/multitemp-warehouse/plan-1.jpg",
+        "explication": "/building-assets/multitemp-warehouse/explication-1.jpg"
       },
       {
         "title": "Вариант компоновки на 20 модулей",
-        "image": "/building-assets/multitemp-warehouse/plan-2.jpg"
+        "plan": "/building-assets/multitemp-warehouse/plan-2.jpg",
+        "explication": "/building-assets/multitemp-warehouse/explication-2.jpg"
       }
     ]
   },
@@ -398,16 +414,19 @@ const buildingAssets = {
     "view": "/building-assets/light-industrial/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/light-industrial/plan-1.jpg",
+        "explication": "/building-assets/light-industrial/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/light-industrial/plan-2.jpg",
+        "explication": "/building-assets/light-industrial/explication-2.jpg"
       },
       {
-        "title": "План 3-4 этажа + экспликация",
-        "image": "/building-assets/light-industrial/plan-3.jpg"
+        "title": "План 3-4 этажа",
+        "plan": "/building-assets/light-industrial/plan-3.jpg",
+        "explication": "/building-assets/light-industrial/explication-3.jpg"
       }
     ]
   },
@@ -415,16 +434,19 @@ const buildingAssets = {
     "view": "/building-assets/fast-trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План быстровозводимого павильона + экспликация",
-        "image": "/building-assets/fast-trade-pavilion/plan-1.jpg"
+        "title": "План быстровозводимого павильона",
+        "plan": "/building-assets/fast-trade-pavilion/plan-1.jpg",
+        "explication": "/building-assets/fast-trade-pavilion/explication-1.jpg"
       },
       {
         "title": "Вариант компоновки 2-х павильонов",
-        "image": "/building-assets/fast-trade-pavilion/plan-2.jpg"
+        "plan": "/building-assets/fast-trade-pavilion/plan-2.jpg",
+        "explication": "/building-assets/fast-trade-pavilion/explication-2.jpg"
       },
       {
         "title": "Вариант компоновки 3-х павильонов",
-        "image": "/building-assets/fast-trade-pavilion/plan-3.jpg"
+        "plan": "/building-assets/fast-trade-pavilion/plan-3.jpg",
+        "explication": "/building-assets/fast-trade-pavilion/explication-3.jpg"
       }
     ]
   },
@@ -432,12 +454,14 @@ const buildingAssets = {
     "view": "/building-assets/office-admin-block/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/office-admin-block/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/office-admin-block/plan-1.jpg",
+        "explication": "/building-assets/office-admin-block/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/office-admin-block/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/office-admin-block/plan-2.jpg",
+        "explication": "/building-assets/office-admin-block/explication-2.jpg"
       }
     ]
   },
@@ -445,12 +469,14 @@ const buildingAssets = {
     "view": "/building-assets/construction-market-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/construction-market-pavilion/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/construction-market-pavilion/plan-1.jpg",
+        "explication": "/building-assets/construction-market-pavilion/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/construction-market-pavilion/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/construction-market-pavilion/plan-2.jpg",
+        "explication": "/building-assets/construction-market-pavilion/explication-2.jpg"
       }
     ]
   },
@@ -458,8 +484,9 @@ const buildingAssets = {
     "view": "/building-assets/food-retail-market/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/food-retail-market/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/food-retail-market/plan-1.jpg",
+        "explication": "/building-assets/food-retail-market/explication-1.jpg"
       }
     ]
   },
@@ -467,8 +494,9 @@ const buildingAssets = {
     "view": "/building-assets/trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/trade-pavilion/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/trade-pavilion/plan-1.jpg",
+        "explication": "/building-assets/trade-pavilion/explication-1.jpg"
       }
     ]
   },
@@ -476,8 +504,9 @@ const buildingAssets = {
     "view": "/building-assets/food-court-terrace/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/food-court-terrace/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/food-court-terrace/plan-1.jpg",
+        "explication": "/building-assets/food-court-terrace/explication-1.jpg"
       }
     ]
   },
@@ -485,8 +514,9 @@ const buildingAssets = {
     "view": "/building-assets/cold-warehouse-wood-metal/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cold-warehouse-wood-metal/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/cold-warehouse-wood-metal/plan-1.jpg",
+        "explication": "/building-assets/cold-warehouse-wood-metal/explication-1.jpg"
       }
     ]
   },
@@ -494,8 +524,9 @@ const buildingAssets = {
     "view": "/building-assets/cold-trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/cold-trade-pavilion/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/cold-trade-pavilion/plan-1.jpg",
+        "explication": "/building-assets/cold-trade-pavilion/explication-1.jpg"
       }
     ]
   },
@@ -503,12 +534,14 @@ const buildingAssets = {
     "view": "/building-assets/motel-80/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/motel-80/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/motel-80/plan-1.jpg",
+        "explication": "/building-assets/motel-80/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/motel-80/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/motel-80/plan-2.jpg",
+        "explication": "/building-assets/motel-80/explication-2.jpg"
       }
     ]
   },
@@ -516,12 +549,14 @@ const buildingAssets = {
     "view": "/building-assets/hostel-228/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/hostel-228/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/hostel-228/plan-1.jpg",
+        "explication": "/building-assets/hostel-228/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/hostel-228/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/hostel-228/plan-2.jpg",
+        "explication": "/building-assets/hostel-228/explication-2.jpg"
       }
     ]
   },
@@ -529,8 +564,9 @@ const buildingAssets = {
     "view": "/building-assets/canteen-60/view.jpg",
     "floors": [
       {
-        "title": "План столовой + экспликация",
-        "image": "/building-assets/canteen-60/plan-1.jpg"
+        "title": "План столовой",
+        "plan": "/building-assets/canteen-60/plan-1.jpg",
+        "explication": "/building-assets/canteen-60/explication-1.jpg"
       }
     ]
   },
@@ -538,12 +574,14 @@ const buildingAssets = {
     "view": "/building-assets/garage-aho/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликация",
-        "image": "/building-assets/garage-aho/plan-1.jpg"
+        "title": "План 1 этажа",
+        "plan": "/building-assets/garage-aho/plan-1.jpg",
+        "explication": "/building-assets/garage-aho/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликация",
-        "image": "/building-assets/garage-aho/plan-2.jpg"
+        "title": "План 2 этажа",
+        "plan": "/building-assets/garage-aho/plan-2.jpg",
+        "explication": "/building-assets/garage-aho/explication-2.jpg"
       }
     ]
   },
@@ -551,8 +589,9 @@ const buildingAssets = {
     "view": "/building-assets/toilet-shower/view.jpg",
     "floors": [
       {
-        "title": "План здания туалет-душевые + экспликация",
-        "image": "/building-assets/toilet-shower/plan-1.jpg"
+        "title": "План здания туалет-душевые",
+        "plan": "/building-assets/toilet-shower/plan-1.jpg",
+        "explication": "/building-assets/toilet-shower/explication-1.jpg"
       }
     ]
   },
@@ -561,11 +600,13 @@ const buildingAssets = {
     "floors": [
       {
         "title": "План пассажирского автобусного перрона",
-        "image": "/building-assets/bus-platform/plan-1.jpg"
+        "plan": "/building-assets/bus-platform/plan-1.jpg",
+        "explication": "/building-assets/bus-platform/explication-1.jpg"
       },
       {
         "title": "Навес и схема размещения",
-        "image": "/building-assets/bus-platform/plan-2.jpg"
+        "plan": "/building-assets/bus-platform/plan-2.jpg",
+        "explication": "/building-assets/bus-platform/explication-2.jpg"
       }
     ]
   }
@@ -3318,12 +3359,35 @@ function App() {
                     {details.floors[index] && <span>{details.floors[index]}</span>}
                   </div>
 
-                  <button
-                    className="buildingImageButton floorImageButton"
-                    onClick={() => openImageViewer(floor.image, `${building.title}. ${floor.title}`)}
-                  >
-                    <img src={floor.image} alt={`${building.title}. ${floor.title}`} />
-                  </button>
+                  <div className="floorSplitGrid">
+                    <div className="floorSplitBlock">
+                      <div className="floorSplitTitle">План этажа</div>
+                      {floor.plan ? (
+                        <button
+                          className="buildingImageButton floorImageButton"
+                          onClick={() => openImageViewer(floor.plan, `${building.title}. ${floor.title}. План`)}
+                        >
+                          <img src={floor.plan} alt={`${building.title}. ${floor.title}. План`} />
+                        </button>
+                      ) : (
+                        <div className="imageMissingBox">План не найден</div>
+                      )}
+                    </div>
+
+                    <div className="floorSplitBlock">
+                      <div className="floorSplitTitle">Экспликация</div>
+                      {floor.explication ? (
+                        <button
+                          className="buildingImageButton floorImageButton"
+                          onClick={() => openImageViewer(floor.explication, `${building.title}. ${floor.title}. Экспликация`)}
+                        >
+                          <img src={floor.explication} alt={`${building.title}. ${floor.title}. Экспликация`} />
+                        </button>
+                      ) : (
+                        <div className="imageMissingBox">Экспликация не найдена</div>
+                      )}
+                    </div>
+                  </div>
                 </article>
               ))}
             </div>

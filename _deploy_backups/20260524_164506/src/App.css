@@ -1,0 +1,2605 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #12213f;
+  background: #edf3fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.appShell {
+  border: 0 !important;
+  outline: 0 !important;
+}
+
+html::before,
+html::after,
+body::before,
+body::after,
+#root::before,
+#root::after {
+  display: none !important;
+  content: none !important;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(47, 101, 237, 0.16), transparent 32rem),
+    linear-gradient(135deg, #f7f9fd 0%, #eaf1fb 100%);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #c8d5e7;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #ffffff;
+  color: #12213f;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #2f65ed;
+  box-shadow: 0 0 0 4px rgba(47, 101, 237, 0.12);
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: #14213f;
+  font-weight: 800;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(28px, 5vw, 44px);
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+h2 {
+  font-size: clamp(26px, 4vw, 40px);
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+}
+
+h3 {
+  font-size: 21px;
+  letter-spacing: -0.03em;
+}
+
+.loginOnlyPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.loginCard {
+  width: min(430px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 32px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 70px rgba(35, 54, 90, 0.14);
+}
+
+.loginCard h1 {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.tabButton,
+.smallButton,
+.dangerButton {
+  border-radius: 14px;
+  font-weight: 900;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.tabButton {
+  padding: 13px 18px;
+}
+
+.primaryButton {
+  background: #2f65ed;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(47, 101, 237, 0.25);
+}
+
+.secondaryButton {
+  background: #e9f0ff;
+  color: #244fb6;
+}
+
+.ghostButton {
+  background: #ffffff;
+  color: #152139;
+  box-shadow: inset 0 0 0 1px #d8e2f2;
+}
+
+.smallButton,
+.dangerButton {
+  padding: 10px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.smallButton {
+  background: #e9f0ff;
+  color: #244fb6;
+}
+
+.dangerButton {
+  background: #fff1f0;
+  color: #bc2d25;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.ghostButton:hover,
+.tabButton:hover,
+.smallButton:hover,
+.dangerButton:hover {
+  transform: translateY(-1px);
+}
+
+.warningBox,
+.errorBox,
+.noticeBox {
+  border-radius: 18px;
+  padding: 14px 16px;
+  line-height: 1.45;
+}
+
+.warningBox {
+  background: #fff8e7;
+  border: 1px solid #f0c968;
+}
+
+.errorBox {
+  background: #fff1f0;
+  border: 1px solid #ffc4bf;
+  color: #a52018;
+}
+
+.noticeBox {
+  background: #eef5ff;
+  border: 1px solid #a9c6ff;
+  color: #244fb6;
+}
+
+.appShell {
+  position: relative;
+  isolation: isolate;
+  width: min(1280px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 28px 0 48px;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  color: #526789;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.userPanel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.userPanel div {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+}
+
+.userPanel span {
+  color: #526789;
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.tabButton {
+  background: rgba(255, 255, 255, 0.78);
+  color: #17223a;
+  box-shadow: inset 0 0 0 1px rgba(18, 33, 63, 0.06);
+}
+
+.tabButton.active {
+  background: #152139;
+  color: #ffffff;
+}
+
+.contentStack {
+  display: grid;
+  gap: 18px;
+}
+
+.sectionHeader,
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.sectionHeader {
+  padding: 26px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 50px rgba(35, 54, 90, 0.1);
+}
+
+.roleBadge,
+.dateRange {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #e9f0ff;
+  color: #244fb6;
+  font-weight: 900;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.summaryCard {
+  padding: 22px;
+  border-radius: 24px;
+  background: #152139;
+  color: #ffffff;
+  display: grid;
+  gap: 8px;
+}
+
+.summaryCard span {
+  color: #c6d2e7;
+  font-weight: 800;
+}
+
+.summaryCard strong {
+  font-size: 38px;
+  letter-spacing: -0.05em;
+}
+
+.chartCard,
+.adminCard {
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 60px rgba(35, 54, 90, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.chartHeader p {
+  color: #526789;
+  margin-top: 7px;
+  line-height: 1.55;
+  max-width: 760px;
+}
+
+.timelineScale {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 22px 0 12px 340px;
+  color: #526789;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timelineScale span {
+  padding-left: 10px;
+}
+
+.ganttList {
+  display: grid;
+  gap: 10px;
+}
+
+.ganttRow {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 22px;
+  background: #f7faff;
+  border: 1px solid #dce6f5;
+}
+
+.taskMeta {
+  display: grid;
+  gap: 5px;
+}
+
+.taskMeta strong {
+  font-size: 20px;
+  color: #2f65ed;
+}
+
+.taskMeta span {
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.barArea {
+  display: grid;
+  gap: 8px;
+}
+
+.barTrack {
+  position: relative;
+  height: 34px;
+  border-radius: 999px;
+  background: #eef3fb;
+  overflow: hidden;
+}
+
+.bar {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f65ed, #6c92ff);
+  box-shadow: 0 10px 20px rgba(47, 101, 237, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 48px;
+  padding: 0 10px;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.rowDates {
+  display: flex;
+  justify-content: space-between;
+  color: #526789;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: 390px 1fr;
+  gap: 18px;
+}
+
+.adminCard {
+  display: grid;
+  gap: 18px;
+}
+
+.formStack {
+  display: grid;
+  gap: 14px;
+}
+
+.accountList {
+  display: grid;
+  gap: 12px;
+}
+
+.accountRow {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 18px;
+  align-items: start;
+  padding: 16px;
+  border-radius: 20px;
+  background: #f7faff;
+  border: 1px solid #dce6f5;
+}
+
+.accountMain {
+  display: grid;
+  gap: 5px;
+}
+
+.accountMain strong {
+  font-size: 18px;
+}
+
+.accountMain span,
+.accountMain small {
+  color: #526789;
+}
+
+.accountControls {
+  display: grid;
+  grid-template-columns: 190px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+
+
+.ganttRow.overdue,
+.pptRow.overdue {
+  background: #fff5f5;
+  border-color: #fca5a5;
+}
+
+.ganttRow.overdue .taskMeta strong,
+.ganttRow.overdue .taskMeta span,
+.pptRow.overdue .pptTaskMeta strong,
+.pptRow.overdue .pptTaskMeta span {
+  color: #b91c1c;
+}
+
+.overdueBar {
+  background: linear-gradient(90deg, #dc2626, #f87171) !important;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22) !important;
+}
+
+.overdueLabel {
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.pptRow.overdue .pptEventList span {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 980px) {
+  .topBar,
+  .sectionHeader,
+  .chartHeader {
+    display: grid;
+  }
+
+  .summaryGrid,
+  .adminGrid,
+  .ganttRow,
+  .accountRow,
+  .accountControls {
+    grid-template-columns: 1fr;
+  }
+
+  .timelineScale {
+    margin-left: 0;
+  }
+
+  .userPanel {
+    justify-content: space-between;
+  }
+}
+
+
+.pptToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dce6f5;
+  box-shadow: 0 16px 44px rgba(35, 54, 90, 0.08);
+}
+
+.pptChartCard {
+  overflow: visible;
+}
+
+.pptScale {
+  display: grid;
+  grid-template-columns: repeat(17, minmax(0, 1fr));
+  gap: 3px;
+  margin: 22px 0 12px 280px;
+  color: #526789;
+  font-weight: 900;
+  font-size: 9px;
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  min-width: 0;
+}
+
+.pptScale span {
+  padding: 7px 4px;
+  border-radius: 9px;
+  background: #eef3fb;
+  text-align: center;
+  word-break: break-word;
+}
+
+.pptList {
+  display: grid;
+  gap: 8px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.pptGroupRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #152139;
+  color: #ffffff;
+}
+
+.pptGroupRow strong {
+  font-size: 18px;
+  color: #bcd0ff;
+}
+
+.pptGroupRow span {
+  font-weight: 900;
+}
+
+.pptRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: #f7faff;
+  border: 1px solid #dce6f5;
+}
+
+.pptTaskMeta {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pptTaskMeta strong {
+  font-size: 18px;
+  color: #2f65ed;
+}
+
+.pptTaskMeta span {
+  font-weight: 900;
+  line-height: 1.28;
+}
+
+.pptTaskMeta small {
+  color: #526789;
+  font-weight: 800;
+}
+
+.pptTaskMeta em {
+  color: #6b7280;
+  font-style: normal;
+  line-height: 1.35;
+  font-size: 13px;
+}
+
+.pptBarArea {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pptBarTrack {
+  position: relative;
+  height: 34px;
+  border-radius: 999px;
+  background: #eef3fb;
+  overflow: hidden;
+}
+
+.pptBar {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #16a34a, #86efac);
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 48px;
+  padding: 0 10px;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pptEventList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pptEventList span {
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: #e9f7ef;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mutedText {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pptEditorCard {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 60px rgba(35, 54, 90, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.pptEditorCard p {
+  color: #526789;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.pptEditorList {
+  display: grid;
+  gap: 12px;
+}
+
+.pptEditorRow {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: #f7faff;
+  border: 1px solid #dce6f5;
+}
+
+.pptEditorRow.group {
+  background: #eef3fb;
+}
+
+.pptEditorFields {
+  display: grid;
+  grid-template-columns: 100px minmax(220px, 1fr) 140px minmax(180px, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.pptEditorRow.group .pptEditorFields {
+  grid-template-columns: 100px minmax(220px, 1fr);
+}
+
+.pptEventEditor {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #dce6f5;
+}
+
+.pptEventEditorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.pptEventEditorRow {
+  display: grid;
+  grid-template-columns: 190px minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+
+@media (max-width: 980px) {
+  .pptScale {
+    margin-left: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    font-size: 10px;
+  }
+
+  .pptRow,
+  .pptGroupRow,
+  .pptEditorFields,
+  .pptEditorRow.group .pptEditorFields,
+  .pptEventEditorRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* N_90 Night color scheme */
+
+:root {
+  color: #e5edf9;
+  background: #08111f;
+}
+
+body {
+  color: #e5edf9;
+  background:
+    radial-gradient(circle at top left, rgba(56, 113, 255, 0.18), transparent 34rem),
+    radial-gradient(circle at top right, rgba(21, 128, 61, 0.12), transparent 28rem),
+    linear-gradient(135deg, #08111f 0%, #101a2c 48%, #07101d 100%);
+}
+
+input,
+select {
+  background: #0f1c2f;
+  color: #e5edf9;
+  border-color: #30425f;
+}
+
+input::placeholder {
+  color: #6f83a3;
+}
+
+input:focus,
+select:focus {
+  border-color: #7aa2ff;
+  box-shadow: 0 0 0 4px rgba(122, 162, 255, 0.18);
+}
+
+label {
+  color: #dce7f7;
+}
+
+.loginCard,
+.sectionHeader,
+.chartCard,
+.adminCard,
+.pptEditorCard,
+.pptToolbar,
+.userPanel {
+  background: rgba(14, 25, 43, 0.92);
+  border-color: rgba(120, 145, 180, 0.18);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.loginCard h1,
+h1,
+h2,
+h3 {
+  color: #f5f8ff;
+}
+
+.eyebrow {
+  color: #90a7c7;
+}
+
+.userPanel span,
+.chartHeader p,
+.pptEditorCard p,
+.accountMain span,
+.accountMain small,
+.pptTaskMeta small,
+.pptTaskMeta em,
+.rowDates,
+.mutedText {
+  color: #90a7c7;
+}
+
+.primaryButton {
+  background: #4f7cff;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(79, 124, 255, 0.28);
+}
+
+.secondaryButton,
+.smallButton,
+.roleBadge,
+.dateRange {
+  background: #172b4a;
+  color: #9fc0ff;
+}
+
+.ghostButton,
+.tabButton {
+  background: #0f1c2f;
+  color: #e5edf9;
+  box-shadow: inset 0 0 0 1px #30425f;
+}
+
+.tabButton.active {
+  background: #4f7cff;
+  color: #ffffff;
+}
+
+.dangerButton {
+  background: #3a1518;
+  color: #ffb4ad;
+}
+
+.warningBox {
+  background: #33280d;
+  border-color: #8b6f20;
+  color: #ffe8a8;
+}
+
+.errorBox {
+  background: #3a1518;
+  border-color: #8f2a2a;
+  color: #ffb4ad;
+}
+
+.noticeBox {
+  background: #11223f;
+  border-color: #315a9e;
+  color: #b8cffb;
+}
+
+.summaryCard {
+  background: #0b1627;
+  color: #ffffff;
+  border: 1px solid rgba(120, 145, 180, 0.14);
+}
+
+.summaryCard span {
+  color: #adc0dc;
+}
+
+.ganttRow,
+.pptRow,
+.accountRow,
+.pptEditorRow {
+  background: #0f1c2f;
+  border-color: #263a58;
+}
+
+.pptEditorRow.group {
+  background: #12243d;
+}
+
+.pptGroupRow {
+  background: #07101d;
+  border: 1px solid #263a58;
+}
+
+.pptGroupRow strong {
+  color: #9fc0ff;
+}
+
+.taskMeta strong,
+.pptTaskMeta strong {
+  color: #8fb2ff;
+}
+
+.taskMeta span,
+.pptTaskMeta span,
+.accountMain strong {
+  color: #f5f8ff;
+}
+
+.barTrack,
+.pptBarTrack,
+.pptScale span {
+  background: #17243a;
+}
+
+.bar {
+  background: linear-gradient(90deg, #4f7cff, #91b0ff);
+  box-shadow: 0 10px 20px rgba(79, 124, 255, 0.24);
+}
+
+.pptBar {
+  background: linear-gradient(90deg, #16a34a, #86efac);
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.22);
+}
+
+.pptEventList span {
+  background: #123522;
+  color: #a7f3c5;
+}
+
+.ganttRow.overdue,
+.pptRow.overdue {
+  background: #2a1216;
+  border-color: #7f1d1d;
+}
+
+.ganttRow.overdue .taskMeta strong,
+.ganttRow.overdue .taskMeta span,
+.pptRow.overdue .pptTaskMeta strong,
+.pptRow.overdue .pptTaskMeta span {
+  color: #ffb4ad;
+}
+
+.overdueBar {
+  background: linear-gradient(90deg, #dc2626, #fb7185) !important;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.26) !important;
+}
+
+.overdueLabel {
+  background: #451a1a;
+  color: #fecaca;
+}
+
+.pptRow.overdue .pptEventList span {
+  background: #451a1a;
+  color: #fecaca;
+}
+
+.timelineScale,
+.pptScale {
+  color: #90a7c7;
+}
+
+.accountControls select,
+.accountControls input,
+.pptEditorFields input,
+.pptEventEditorRow input,
+.pptEventEditorRow select {
+  background: #08111f;
+  border-color: #30425f;
+  color: #e5edf9;
+}
+
+.pptEventEditor {
+  border-top-color: #30425f;
+}
+
+@media (max-width: 980px) {
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(56, 113, 255, 0.18), transparent 28rem),
+      linear-gradient(135deg, #08111f 0%, #101a2c 100%);
+  }
+}
+
+
+/* N_91 clickable compact rows and item edit page */
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover {
+  transform: translateY(-1px);
+  border-color: #7aa2ff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.ganttRow {
+  padding: 9px 12px;
+  border-radius: 16px;
+  gap: 14px;
+}
+
+.pptRow {
+  padding: 9px 12px;
+  border-radius: 16px;
+  gap: 14px;
+}
+
+.pptGroupRow {
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.taskMeta,
+.pptTaskMeta {
+  gap: 3px;
+}
+
+.taskMeta strong,
+.pptTaskMeta strong {
+  font-size: 15px;
+}
+
+.taskMeta span,
+.pptTaskMeta span {
+  font-size: 14px;
+  line-height: 1.18;
+}
+
+.pptTaskMeta small,
+.pptTaskMeta em {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.barTrack,
+.pptBarTrack {
+  height: 24px;
+}
+
+.bar,
+.pptBar {
+  top: 3px;
+  bottom: 3px;
+  min-width: 42px;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.rowDates {
+  font-size: 11px;
+}
+
+.pptEventList {
+  gap: 4px;
+}
+
+.pptEventList span {
+  padding: 4px 7px;
+  font-size: 10px;
+}
+
+.ganttList,
+.pptList {
+  gap: 6px;
+}
+
+.editItemCard {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(14, 25, 43, 0.92);
+  border: 1px solid rgba(120, 145, 180, 0.18);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.editItemInfo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.editItemInfo div {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+}
+
+.editItemInfo span {
+  color: #90a7c7;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.editItemInfo strong {
+  color: #f5f8ff;
+  font-size: 18px;
+}
+
+.editActionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.editActionBlock {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+}
+
+.editActionBlock p {
+  color: #90a7c7;
+  line-height: 1.45;
+}
+
+.dangerBlock {
+  border-color: #7f1d1d;
+  background: #2a1216;
+}
+
+@media (max-width: 980px) {
+  .editItemInfo,
+  .editActionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* N_92 marker placement and account role fix */
+
+.overdueLabelUnderBar {
+  margin-top: -2px;
+  display: inline-flex;
+  width: max-content;
+  max-width: 160px;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.pptTaskMeta .overdueLabel {
+  display: none;
+}
+
+/* keep long edit/status markers from widening the left text column */
+.pptTaskMeta {
+  min-width: 0;
+}
+
+.pptBarArea {
+  min-width: 0;
+}
+
+
+/* N_93 overdue marker after bar and role form fix */
+
+.overdueLabelAfterBar {
+  position: absolute;
+  top: 2px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 3px 7px;
+  font-size: 10px;
+  z-index: 2;
+}
+
+.overdueLabelUnderBar {
+  display: none !important;
+}
+
+.pptBarTrack {
+  overflow: visible;
+}
+
+.pptRow.overdue {
+  overflow: visible;
+}
+
+
+/* N_94 account delete button */
+
+.deleteButton {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+  background: #4a0f14;
+  color: #ffd2cc;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.deleteButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #6b171d;
+}
+
+.deleteButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.accountControls {
+  grid-template-columns: 190px 70px auto auto auto;
+}
+
+@media (max-width: 980px) {
+  .accountControls {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* N_95 per-user access control */
+
+.accountRow {
+  grid-template-columns: 240px minmax(220px, 1fr) minmax(520px, 1.4fr);
+}
+
+.accountAccessList,
+.accessEditor {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.accessEditor {
+  padding: 14px;
+  border-radius: 18px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+}
+
+.accessEditor strong {
+  color: #f5f8ff;
+}
+
+.accessCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cfe0f7;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.accessCheckbox input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  accent-color: #4f7cff;
+}
+
+.accessCheckbox input:disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 1180px) {
+  .accountRow {
+    grid-template-columns: 1fr;
+  }
+
+  .accountControls {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* N_96 compact one-sheet schedule */
+
+.compactSchedulePage {
+  display: grid;
+  gap: 14px;
+}
+
+.compactHeader {
+  padding: 20px 24px;
+}
+
+.compactSheet {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 24px;
+  background: #0b1627;
+  border: 1px solid #263a58;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+}
+
+.compactSheetTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid #263a58;
+}
+
+.compactSheetTitle strong {
+  color: #f5f8ff;
+  font-size: 18px;
+}
+
+.compactSheetTitle span {
+  color: #90a7c7;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.compactMonthHeader {
+  display: grid;
+  grid-template-columns: 255px minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+}
+
+.compactNameHeader,
+.compactMonthCell {
+  display: grid;
+  place-items: center;
+  min-height: 26px;
+  border-radius: 8px;
+  background: #15243b;
+  color: #cfe0f7;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compactMonthGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.compactRows {
+  display: grid;
+  gap: 3px;
+}
+
+.compactRow {
+  display: grid;
+  grid-template-columns: 255px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.compactRow:hover {
+  background: rgba(79, 124, 255, 0.08);
+}
+
+.compactRowName {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+}
+
+.compactRowName strong {
+  color: #8fb2ff;
+  font-size: 11px;
+}
+
+.compactRowName span {
+  color: #f5f8ff;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactTrack {
+  position: relative;
+  min-height: 22px;
+  border-radius: 999px;
+  background:
+    linear-gradient(to right, rgba(144, 167, 199, 0.16) 1px, transparent 1px),
+    #101d31;
+  background-size: 16.666% 100%;
+  overflow: hidden;
+}
+
+.compactBar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #16a34a, #86efac);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.18);
+}
+
+.compactRow.overdue .compactRowName {
+  background: #2a1216;
+  border-color: #7f1d1d;
+}
+
+.compactRow.overdue .compactRowName strong,
+.compactRow.overdue .compactRowName span {
+  color: #ffb4ad;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 7mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .topBar,
+  .tabs,
+  .compactHeader,
+  .printButton {
+    display: none !important;
+  }
+
+  .appShell {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .compactSchedulePage {
+    display: block !important;
+  }
+
+  .compactSheet {
+    box-shadow: none !important;
+    border: 1px solid #000000 !important;
+    border-radius: 0 !important;
+    padding: 6px !important;
+    background: #ffffff !important;
+    gap: 4px !important;
+    page-break-inside: avoid;
+  }
+
+  .compactSheetTitle {
+    padding: 3px 5px 5px !important;
+    border-bottom: 1px solid #000000 !important;
+  }
+
+  .compactSheetTitle strong {
+    color: #000000 !important;
+    font-size: 13px !important;
+  }
+
+  .compactSheetTitle span {
+    color: #000000 !important;
+    font-size: 8px !important;
+  }
+
+  .compactMonthHeader,
+  .compactRow {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 4px !important;
+  }
+
+  .compactNameHeader,
+  .compactMonthCell {
+    min-height: 16px !important;
+    border-radius: 0 !important;
+    background: #e6e6e6 !important;
+    color: #000000 !important;
+    font-size: 7px !important;
+    border: 1px solid #000000 !important;
+  }
+
+  .compactRows {
+    gap: 1px !important;
+  }
+
+  .compactRow {
+    min-height: 14px !important;
+    padding: 0 !important;
+    break-inside: avoid;
+  }
+
+  .compactRowName {
+    min-height: 14px !important;
+    border-radius: 0 !important;
+    border: 1px solid #bdbdbd !important;
+    background: #ffffff !important;
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+    padding: 0 3px !important;
+  }
+
+  .compactRowName strong,
+  .compactRowName span {
+    color: #000000 !important;
+    font-size: 6.8px !important;
+  }
+
+  .compactTrack {
+    min-height: 14px !important;
+    border-radius: 0 !important;
+    background:
+      linear-gradient(to right, #d5d5d5 1px, transparent 1px),
+      #ffffff !important;
+    background-size: 16.666% 100% !important;
+    border: 1px solid #bdbdbd !important;
+  }
+
+  .compactBar {
+    top: 1px !important;
+    bottom: 1px !important;
+    border-radius: 0 !important;
+    min-width: 34px !important;
+    padding: 0 2px !important;
+    color: #ffffff !important;
+    background: #3b82f6 !important;
+    box-shadow: none !important;
+    font-size: 6.5px !important;
+  }
+
+  .compactRow.overdue .compactRowName {
+    border-color: #bdbdbd !important;
+    background: #ffffff !important;
+  }
+
+  .compactRow.overdue .compactRowName strong,
+  .compactRow.overdue .compactRowName span {
+    color: #000000 !important;
+  }
+
+  .compactRow.overdue .compactBar {
+    background: #dc2626 !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .compactMonthHeader,
+  .compactRow {
+    grid-template-columns: 1fr;
+  }
+
+  .compactNameHeader {
+    display: none;
+  }
+
+  .compactMonthGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+/* N_98 mobile responsive layout */
+
+@media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(56, 113, 255, 0.18), transparent 22rem),
+      linear-gradient(135deg, #08111f 0%, #101a2c 100%);
+  }
+
+  .appShell {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px;
+    margin: 0;
+  }
+
+  .loginOnlyPage {
+    padding: 14px;
+    min-height: 100svh;
+    place-items: center;
+  }
+
+  .loginCard {
+    width: 100%;
+    max-width: 430px;
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .loginCard h1 {
+    font-size: 30px;
+  }
+
+  .topBar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .topBar h1 {
+    font-size: 28px;
+    line-height: 1.05;
+  }
+
+  .userPanel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .userPanel div {
+    min-width: 0;
+  }
+
+  .userPanel strong,
+  .userPanel span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tabButton {
+    width: 100%;
+    padding: 12px 14px;
+    text-align: center;
+  }
+
+  .contentStack {
+    gap: 12px;
+  }
+
+  .sectionHeader,
+  .chartHeader {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .sectionHeader {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .sectionHeader h2 {
+    font-size: 24px;
+    line-height: 1.08;
+  }
+
+  .roleBadge,
+  .dateRange {
+    width: max-content;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .summaryCard {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .summaryCard strong {
+    font-size: 30px;
+  }
+
+  .chartCard,
+  .adminCard,
+  .pptEditorCard,
+  .editItemCard {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .chartHeader h3,
+  .adminCard h3,
+  .pptEditorCard h3,
+  .editActionBlock h3 {
+    font-size: 18px;
+  }
+
+  .chartHeader p,
+  .pptEditorCard p,
+  .editActionBlock p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .timelineScale,
+  .pptScale {
+    display: none;
+  }
+
+  .ganttRow,
+  .pptRow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .ganttList,
+  .pptList {
+    gap: 8px;
+  }
+
+  .taskMeta,
+  .pptTaskMeta {
+    gap: 4px;
+  }
+
+  .taskMeta strong,
+  .pptTaskMeta strong {
+    font-size: 15px;
+  }
+
+  .taskMeta span,
+  .pptTaskMeta span {
+    font-size: 14px;
+    line-height: 1.22;
+    white-space: normal;
+  }
+
+  .barTrack,
+  .pptBarTrack {
+    height: 28px;
+    overflow: visible;
+  }
+
+  .bar,
+  .pptBar {
+    top: 4px;
+    bottom: 4px;
+    min-width: 58px;
+    font-size: 10px;
+    padding: 0 6px;
+  }
+
+  .pptBar span,
+  .bar span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .overdueLabelAfterBar {
+    position: static;
+    margin-top: 6px;
+    width: max-content;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .pptEventList {
+    gap: 5px;
+  }
+
+  .pptEventList span {
+    max-width: 100%;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .pptToolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .pptToolbar button {
+    width: 100%;
+  }
+
+  .pptEditorFields,
+  .pptEditorRow.group .pptEditorFields,
+  .pptEventEditorRow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pptEventEditorHeader {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pptEventEditorHeader .smallButton {
+    width: 100%;
+  }
+
+  .adminGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .formStack {
+    gap: 12px;
+  }
+
+  input,
+  select {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .accountRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .accountControls {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .accountControls button,
+  .accountControls select,
+  .accountControls input {
+    width: 100%;
+  }
+
+  .accountAccessList {
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid #263a58;
+  }
+
+  .accessCheckbox {
+    align-items: flex-start;
+    font-size: 13px;
+  }
+
+  .accessCheckbox input {
+    margin-top: 1px;
+  }
+
+  .editItemInfo,
+  .editActionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .editItemInfo div,
+  .editActionBlock {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .editItemInfo strong {
+    font-size: 16px;
+  }
+
+  .editActionBlock button {
+    width: 100%;
+  }
+
+  .compactHeader {
+    padding: 16px;
+  }
+
+  .compactSheet {
+    padding: 10px;
+    border-radius: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .compactSheetTitle {
+    display: grid;
+    gap: 4px;
+    min-width: 760px;
+  }
+
+  .compactSheetTitle strong {
+    font-size: 15px;
+  }
+
+  .compactSheetTitle span {
+    font-size: 10px;
+  }
+
+  .compactMonthHeader,
+  .compactRow {
+    grid-template-columns: 220px minmax(520px, 1fr);
+    min-width: 760px;
+    gap: 6px;
+  }
+
+  .compactNameHeader {
+    display: grid;
+  }
+
+  .compactMonthGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .compactNameHeader,
+  .compactMonthCell {
+    min-height: 24px;
+    font-size: 9px;
+    padding: 2px;
+  }
+
+  .compactRow {
+    min-height: 22px;
+  }
+
+  .compactRowName {
+    min-height: 22px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    padding: 2px 6px;
+  }
+
+  .compactRowName strong {
+    font-size: 10px;
+  }
+
+  .compactRowName span {
+    font-size: 9.5px;
+  }
+
+  .compactTrack {
+    min-height: 22px;
+  }
+
+  .compactBar {
+    top: 3px;
+    bottom: 3px;
+    min-width: 46px;
+    font-size: 8.5px;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton,
+  .dangerButton,
+  .deleteButton,
+  .smallButton {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .appShell {
+    padding: 10px;
+  }
+
+  .topBar h1 {
+    font-size: 25px;
+  }
+
+  .sectionHeader h2 {
+    font-size: 22px;
+  }
+
+  .loginCard {
+    padding: 18px;
+  }
+
+  .chartCard,
+  .adminCard,
+  .pptEditorCard,
+  .editItemCard {
+    padding: 12px;
+  }
+
+  .userPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .ghostButton {
+    width: 100%;
+  }
+
+  .compactSheetTitle,
+  .compactMonthHeader,
+  .compactRow {
+    min-width: 720px;
+  }
+}
+
+/* Mobile print keeps the one-sheet compact schedule printable */
+@media print {
+  .compactSheet {
+    overflow: visible !important;
+  }
+}
+
+
+/* N_99 PPT graph names and building pages */
+
+.compactRowName span {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  line-height: 1.12;
+}
+
+.compactRowName {
+  align-items: start;
+}
+
+.compactGroupRow {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 22px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: #152139;
+  border: 1px solid #33476a;
+  color: #ffffff;
+}
+
+.compactGroupRow strong {
+  color: #9fc0ff;
+  font-size: 11px;
+}
+
+.compactGroupRow span {
+  color: #f5f8ff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.buildingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.buildingCard {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  padding: 18px;
+  border-radius: 22px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+  color: #e5edf9;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+}
+
+.buildingCard:hover {
+  transform: translateY(-1px);
+  border-color: #7aa2ff;
+}
+
+.buildingCard span {
+  color: #8fb2ff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.buildingCard strong {
+  color: #f5f8ff;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.buildingCard small {
+  color: #90a7c7;
+  font-weight: 800;
+}
+
+.buildingInfoGrid {
+  display: grid;
+  grid-template-columns: 160px 220px minmax(220px, 1fr);
+  gap: 12px;
+}
+
+.buildingInfoCard {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+}
+
+.buildingInfoCard span {
+  color: #90a7c7;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.buildingInfoCard strong {
+  color: #f5f8ff;
+  font-size: 18px;
+}
+
+.buildingCompactSheet {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .buildingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .buildingInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .compactGroupRow {
+    min-width: 760px;
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+}
+
+@media print {
+  .compactGroupRow {
+    min-height: 12px !important;
+    padding: 0 3px !important;
+    border-radius: 0 !important;
+    background: #d9e7ff !important;
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+  }
+
+  .compactGroupRow strong,
+  .compactGroupRow span {
+    color: #000000 !important;
+    font-size: 6.7px !important;
+    line-height: 1 !important;
+  }
+
+  .compactRowName span {
+    white-space: normal !important;
+    line-height: 1 !important;
+  }
+
+  .buildingInfoGrid {
+    display: none !important;
+  }
+}
+
+
+/* N_101 building pages without schedules */
+
+.buildingPageGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(320px, 1.2fr);
+  gap: 16px;
+}
+
+.buildingVisualCard,
+.buildingDescriptionCard,
+.buildingDataCard {
+  padding: 20px;
+  border-radius: 24px;
+  background: #0f1c2f;
+  border: 1px solid #263a58;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+}
+
+.buildingImagePlaceholder {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-height: 280px;
+  gap: 10px;
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(79, 124, 255, 0.22), rgba(22, 163, 74, 0.08)),
+    #08111f;
+  border: 1px dashed #56729d;
+  color: #e5edf9;
+  text-align: center;
+}
+
+.buildingImagePlaceholder strong {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.buildingImagePlaceholder span {
+  color: #90a7c7;
+  font-weight: 800;
+}
+
+.buildingDescriptionCard {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.buildingDescriptionCard p:not(.eyebrow) {
+  color: #cfe0f7;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+.buildingDataGrid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 16px;
+}
+
+.cardHeaderLine {
+  margin-bottom: 14px;
+}
+
+.floorPlanList {
+  display: grid;
+  gap: 10px;
+}
+
+.floorPlanItem {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: #08111f;
+  border: 1px solid #263a58;
+}
+
+.floorPlanThumb {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  border-radius: 14px;
+  background: #172b4a;
+  color: #9fc0ff;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.floorPlanItem p {
+  color: #dce7f7;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.explicationList {
+  display: grid;
+  gap: 8px;
+}
+
+.explicationItem {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #08111f;
+  border: 1px solid #263a58;
+}
+
+.explicationItem span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #4f7cff;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.explicationItem p {
+  color: #dce7f7;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .buildingPageGrid,
+  .buildingDataGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .buildingImagePlaceholder {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 560px) {
+  .buildingVisualCard,
+  .buildingDescriptionCard,
+  .buildingDataCard {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .floorPlanItem {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* N_102 real building sheet images from PDF */
+
+.buildingImageFrame {
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #56729d;
+}
+
+.buildingImageFrame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.buildingImageCaption {
+  margin-top: 10px;
+  color: #90a7c7;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.buildingVisualCard {
+  align-self: start;
+}
+
+@media (max-width: 980px) {
+  .buildingImageFrame {
+    border-radius: 16px;
+  }
+}
+
+
+/* N_103 login title */
+
+.loginCard h1 {
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.08;
+  text-align: center;
+}
+
+
+/* N_104 split building images and clickable enlarged viewer */
+
+.buildingImageButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  cursor: zoom-in;
+  box-shadow: 0 0 0 1px #56729d;
+}
+
+.buildingImageButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px #7aa2ff, 0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.buildingImageButton img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.floorImageList {
+  display: grid;
+  gap: 16px;
+}
+
+.floorImageItem {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #08111f;
+  border: 1px solid #263a58;
+}
+
+.floorImageHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.floorImageHeader strong {
+  color: #f5f8ff;
+  font-size: 18px;
+}
+
+.floorImageHeader span {
+  color: #90a7c7;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.floorImageButton {
+  border-radius: 14px;
+}
+
+.buildingPlansCard {
+  grid-column: span 1;
+}
+
+.imageViewerOverlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.imageViewerDialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(96vw, 1500px);
+  max-height: 94vh;
+  border-radius: 22px;
+  background: #0f1c2f;
+  border: 1px solid #56729d;
+  overflow: hidden;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+}
+
+.imageViewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #08111f;
+  border-bottom: 1px solid #263a58;
+}
+
+.imageViewerHeader strong {
+  color: #f5f8ff;
+  line-height: 1.2;
+}
+
+.imageViewerHeader button {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #172b4a;
+  color: #dce7f7;
+  font-weight: 900;
+}
+
+.imageViewerDialog img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .imageViewerOverlay {
+    padding: 8px;
+  }
+
+  .imageViewerDialog {
+    width: 100vw;
+    max-height: 96vh;
+    border-radius: 14px;
+  }
+
+  .imageViewerHeader {
+    align-items: start;
+  }
+
+  .imageViewerHeader strong {
+    font-size: 13px;
+  }
+
+  .floorImageHeader strong {
+    font-size: 16px;
+  }
+}
+
+
+/* N_105 corrected building image cuts */
+
+.floorImageItem {
+  overflow: hidden;
+}
+
+.floorImageButton img {
+  max-height: 520px;
+  object-fit: contain;
+}
+
+.imageViewerDialog img {
+  object-fit: contain;
+}
+
+.buildingImageButton img {
+  background: #ffffff;
+}

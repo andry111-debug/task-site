@@ -2603,3 +2603,55 @@ h3 {
 .buildingImageButton img {
   background: #ffffff;
 }
+
+
+/* N_106 floor plan and explication split */
+
+.floorSplitGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.8fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.floorSplitBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.floorSplitTitle {
+  width: max-content;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #172b4a;
+  color: #9fc0ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.imageMissingBox {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border-radius: 14px;
+  background: #08111f;
+  border: 1px dashed #56729d;
+  color: #90a7c7;
+  font-weight: 900;
+}
+
+.floorImageButton img {
+  max-height: 620px;
+  object-fit: contain;
+}
+
+.floorSplitBlock:nth-child(2) .floorImageButton img {
+  max-height: 620px;
+}
+
+@media (max-width: 900px) {
+  .floorSplitGrid {
+    grid-template-columns: 1fr;
+  }
+}
