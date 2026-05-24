@@ -1230,37 +1230,3 @@ h3 {
 .pptRow.overdue {
   overflow: visible;
 }
-
-
-/* N_94 account delete button */
-
-.deleteButton {
-  padding: 10px 12px;
-  border-radius: 14px;
-  font-weight: 900;
-  font-size: 13px;
-  white-space: nowrap;
-  background: #4a0f14;
-  color: #ffd2cc;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-
-.deleteButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: #6b171d;
-}
-
-.deleteButton:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.accountControls {
-  grid-template-columns: 190px 70px auto auto auto;
-}
-
-@media (max-width: 980px) {
-  .accountControls {
-    grid-template-columns: 1fr;
-  }
-}

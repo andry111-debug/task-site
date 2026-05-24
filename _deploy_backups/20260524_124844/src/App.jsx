@@ -1526,35 +1526,6 @@ function App() {
     }));
   }
 
-  async function deleteAccount(account) {
-    setNotice("");
-
-    if (currentUser?.id === account.id) {
-      setNotice("Нельзя удалить учетную запись, под которой выполнен текущий вход.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Удалить учетную запись "${account.name}"? Это действие нельзя отменить.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const { error } = await supabase
-        .from("employees")
-        .delete()
-        .eq("id", account.id);
-
-      if (error) throw error;
-
-      setNotice("Учетная запись удалена.");
-      await loadAccounts();
-    } catch (error) {
-      setNotice(`Ошибка удаления учетной записи: ${error.message}`);
-    }
-  }
-
   function startPptEditing() {
     setPptDraftItems(clonePptItems(pptItems));
     setIsPptEditing(true);
@@ -2443,19 +2414,6 @@ function App() {
                       onClick={() => updateAccount(account, { active: !account.active })}
                     >
                       {account.active ? "Отключить" : "Включить"}
-                    </button>
-
-                    <button
-                      className="deleteButton"
-                      onClick={() => deleteAccount(account)}
-                      disabled={currentUser?.id === account.id}
-                      title={
-                        currentUser?.id === account.id
-                          ? "Нельзя удалить текущего пользователя"
-                          : "Удалить учетную запись"
-                      }
-                    >
-                      Удалить
                     </button>
                   </div>
                 </article>
