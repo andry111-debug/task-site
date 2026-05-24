@@ -23,7 +23,6 @@ const scheduleItems = [
     start: "2026-01-15",
     end: "2026-02-03",
     progress: 90,
-    owner: "ГИП",
   },
   {
     code: "ПЗУ",
@@ -31,7 +30,6 @@ const scheduleItems = [
     start: "2026-01-20",
     end: "2026-02-12",
     progress: 70,
-    owner: "ГП",
   },
   {
     code: "АР",
@@ -39,7 +37,6 @@ const scheduleItems = [
     start: "2026-01-24",
     end: "2026-02-20",
     progress: 62,
-    owner: "АР",
   },
   {
     code: "КР",
@@ -47,7 +44,6 @@ const scheduleItems = [
     start: "2026-02-01",
     end: "2026-03-08",
     progress: 46,
-    owner: "КР",
   },
   {
     code: "ИОС",
@@ -55,7 +51,6 @@ const scheduleItems = [
     start: "2026-02-05",
     end: "2026-03-28",
     progress: 38,
-    owner: "ОВ/ВК/ЭОМ/СС",
   },
   {
     code: "ТХ",
@@ -63,7 +58,6 @@ const scheduleItems = [
     start: "2026-02-10",
     end: "2026-03-18",
     progress: 42,
-    owner: "ТХ",
   },
   {
     code: "ПОС",
@@ -71,7 +65,6 @@ const scheduleItems = [
     start: "2026-03-01",
     end: "2026-03-30",
     progress: 25,
-    owner: "ПОС",
   },
   {
     code: "ПОД",
@@ -79,7 +72,6 @@ const scheduleItems = [
     start: "2026-03-05",
     end: "2026-03-22",
     progress: 18,
-    owner: "ПОС",
   },
   {
     code: "ООС",
@@ -87,7 +79,6 @@ const scheduleItems = [
     start: "2026-03-10",
     end: "2026-04-08",
     progress: 20,
-    owner: "ООС",
   },
   {
     code: "ПБ",
@@ -95,7 +86,6 @@ const scheduleItems = [
     start: "2026-03-14",
     end: "2026-04-12",
     progress: 16,
-    owner: "ПБ",
   },
   {
     code: "ОДИ",
@@ -103,7 +93,6 @@ const scheduleItems = [
     start: "2026-03-18",
     end: "2026-04-05",
     progress: 12,
-    owner: "АР",
   },
   {
     code: "БЭ",
@@ -111,7 +100,6 @@ const scheduleItems = [
     start: "2026-03-20",
     end: "2026-04-18",
     progress: 10,
-    owner: "ГИП",
   },
   {
     code: "ЭЭ",
@@ -119,7 +107,6 @@ const scheduleItems = [
     start: "2026-03-24",
     end: "2026-04-22",
     progress: 8,
-    owner: "ОВ/ЭОМ",
   },
   {
     code: "СМ",
@@ -127,7 +114,6 @@ const scheduleItems = [
     start: "2026-04-01",
     end: "2026-04-28",
     progress: 5,
-    owner: "Сметы",
   },
   {
     code: "ИД",
@@ -135,8 +121,1008 @@ const scheduleItems = [
     start: "2026-04-10",
     end: "2026-04-30",
     progress: 0,
-    owner: "ГИП",
   },
+];
+
+const pptPeriods = [
+  {
+    "label": "01.04.26-10.04.26",
+    "start": "2026-04-01",
+    "end": "2026-04-10"
+  },
+  {
+    "label": "11.04.26-20.04.26",
+    "start": "2026-04-11",
+    "end": "2026-04-20"
+  },
+  {
+    "label": "21.04.26-30.04.26",
+    "start": "2026-04-21",
+    "end": "2026-04-30"
+  },
+  {
+    "label": "01.05.26-10.05.26",
+    "start": "2026-05-01",
+    "end": "2026-05-10"
+  },
+  {
+    "label": "11.05.26-20.05.26",
+    "start": "2026-05-11",
+    "end": "2026-05-20"
+  },
+  {
+    "label": "21.05.26-31.05.26",
+    "start": "2026-05-21",
+    "end": "2026-05-31"
+  },
+  {
+    "label": "01.06.26-10.06.26",
+    "start": "2026-06-01",
+    "end": "2026-06-10"
+  },
+  {
+    "label": "11.06.26-20.06.26",
+    "start": "2026-06-11",
+    "end": "2026-06-20"
+  },
+  {
+    "label": "21.06.26-30.06.26",
+    "start": "2026-06-21",
+    "end": "2026-06-30"
+  },
+  {
+    "label": "01.07.26-10.07.26",
+    "start": "2026-07-01",
+    "end": "2026-07-10"
+  },
+  {
+    "label": "11.07.26-20.07.26",
+    "start": "2026-07-11",
+    "end": "2026-07-20"
+  },
+  {
+    "label": "21.07.26-31.07.26",
+    "start": "2026-07-21",
+    "end": "2026-07-31"
+  },
+  {
+    "label": "01.08.26-10.08.26",
+    "start": "2026-08-01",
+    "end": "2026-08-10"
+  },
+  {
+    "label": "11.08.26-20.08.26",
+    "start": "2026-08-11",
+    "end": "2026-08-20"
+  },
+  {
+    "label": "21.08.26-30.08.26",
+    "start": "2026-08-21",
+    "end": "2026-08-30"
+  },
+  {
+    "label": "01.09.26-10.09.26",
+    "start": "2026-09-01",
+    "end": "2026-09-10"
+  },
+  {
+    "label": "11.09.26-20.09.26",
+    "start": "2026-09-11",
+    "end": "2026-09-20"
+  }
+];
+
+const pptItems = [
+  {
+    "code": "1",
+    "title": "Получение ТУ",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": [
+      {
+        "periodIndex": 10,
+        "text": "Внесение изменений в проект планировки территории"
+      },
+      {
+        "periodIndex": 11,
+        "text": "Согласование ППТ с МЧС, ГАИ, Администрацией"
+      },
+      {
+        "periodIndex": 13,
+        "text": "Подача ППТ с ПМТ  на утверждение"
+      },
+      {
+        "periodIndex": 15,
+        "text": "Подготовка материалов для инвесткомитета"
+      },
+      {
+        "periodIndex": 16,
+        "text": "ГОТОВНОСТЬ ПРОЕКТА"
+      }
+    ],
+    "startIndex": 10,
+    "endIndex": 16,
+    "start": "2026-07-11",
+    "end": "2026-09-20"
+  },
+  {
+    "code": "1.1",
+    "title": "Примыкание дорог",
+    "duration": "45 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 4,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 4,
+    "start": "2026-04-01",
+    "end": "2026-05-20"
+  },
+  {
+    "code": "1.2",
+    "title": "Электроснабжение",
+    "duration": "45 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 4,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 4,
+    "start": "2026-04-01",
+    "end": "2026-05-20"
+  },
+  {
+    "code": "1.3",
+    "title": "Водоснабжение",
+    "duration": "20 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 2,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 2,
+    "start": "2026-04-01",
+    "end": "2026-04-30"
+  },
+  {
+    "code": "1.4",
+    "title": "Канализация",
+    "duration": "20 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 2,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 2,
+    "start": "2026-04-01",
+    "end": "2026-04-30"
+  },
+  {
+    "code": "1.5",
+    "title": "Тепловые сети",
+    "duration": "20 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 2,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 2,
+    "start": "2026-04-01",
+    "end": "2026-04-30"
+  },
+  {
+    "code": "1.6",
+    "title": "Сети связи",
+    "duration": "20 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 2,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 2,
+    "start": "2026-04-01",
+    "end": "2026-04-30"
+  },
+  {
+    "code": "1.7",
+    "title": "Газоснабжение",
+    "duration": "20 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "Получение ТУ"
+      },
+      {
+        "periodIndex": 2,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 2,
+    "start": "2026-04-01",
+    "end": "2026-04-30"
+  },
+  {
+    "code": "2",
+    "title": "Досъемка трасс коммуникаций за пределами участка",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "2.1",
+    "title": "Примыкание дорог",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 5,
+        "text": "Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "2.2",
+    "title": "Электроснабжение",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 5,
+        "text": "Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "2.3",
+    "title": "Водоснабжение",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 3,
+        "text": "Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 5,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 5,
+    "start": "2026-04-21",
+    "end": "2026-05-31"
+  },
+  {
+    "code": "2.4",
+    "title": "Канализация",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены,Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 3,
+    "start": "2026-04-21",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "2.5",
+    "title": "Тепловые сети",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены,Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 3,
+    "start": "2026-04-21",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "2.6",
+    "title": "Сети связи",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены,Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 3,
+    "start": "2026-04-21",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "2.7",
+    "title": "Газоснабжение",
+    "duration": "15 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены,Досъемка трасс коммуникаций за пределами участка"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 3,
+    "start": "2026-04-21",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "3",
+    "title": "Выявление пересечений с коммуникациями на участках досъемки",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "3.1",
+    "title": "Примыкание дорог",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 7,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 9,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 7,
+    "endIndex": 9,
+    "start": "2026-06-11",
+    "end": "2026-07-10"
+  },
+  {
+    "code": "3.2",
+    "title": "Электроснабжение",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 7,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 9,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 7,
+    "endIndex": 9,
+    "start": "2026-06-11",
+    "end": "2026-07-10"
+  },
+  {
+    "code": "3.3",
+    "title": "Водоснабжение",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 6,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 8,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 6,
+    "endIndex": 8,
+    "start": "2026-06-01",
+    "end": "2026-06-30"
+  },
+  {
+    "code": "3.4",
+    "title": "Канализация",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "3.5",
+    "title": "Тепловые сети",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "3.6",
+    "title": "Сети связи",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "3.7",
+    "title": "Газоснабжение",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "Выявление пересечений с коммуникациями на участках досъемки"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 6,
+    "start": "2026-05-11",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "4",
+    "title": "Выполнение инженерно-геологических изысканий",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "4.1",
+    "title": "Предоставление данных из отчета",
+    "duration": "45 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "выполнение изысканий"
+      },
+      {
+        "periodIndex": 4,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 4,
+    "start": "2026-04-01",
+    "end": "2026-05-20"
+  },
+  {
+    "code": "5",
+    "title": "Выполнение инженерно-экологических изысканий.",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "5.1",
+    "title": "Предоставление данных из отчета",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "выполнение изысканий"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 3,
+    "start": "2026-04-01",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "6",
+    "title": "Выполнение инженерно-гидрометеорологических изысканий.",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "6.1",
+    "title": "Предоставление данных из отчета",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "выполнение изысканий"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 3,
+    "start": "2026-04-01",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "5",
+    "title": "Разработка СЗЗ",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "5.1",
+    "title": "Проект санитарно защитной зоны",
+    "duration": "45 дней",
+    "note": "после выполнения ИЭИ",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 3,
+        "text": "отчет по ИЭИ получен"
+      },
+      {
+        "periodIndex": 8,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 3,
+    "endIndex": 8,
+    "start": "2026-05-01",
+    "end": "2026-06-30"
+  },
+  {
+    "code": "6",
+    "title": "Запрос в ГУ МЧС",
+    "duration": "",
+    "note": "О наличие в радиусе доступности пожарного расчета для ликвидации возможных ЧС, . исходных данных , необходимые для учета при разработке ППТ",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "6.1",
+    "title": "Получение ответа на запрос",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "запрос отправлен и зарегистрирован"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 3,
+    "start": "2026-04-01",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "7",
+    "title": "Запрос информации по водному объекту находящемуся на территории разработки ППТ",
+    "duration": "",
+    "note": "",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "7.1",
+    "title": "Получение ответа на письмо",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "запрос отправлен и зарегистрирован"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 3,
+    "start": "2026-04-01",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "8",
+    "title": "Внутриплощадочная раскладка сетей",
+    "duration": "",
+    "note": "после получения ТУ",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "8.1",
+    "title": "Электроснабжение",
+    "duration": "45 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 9,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 9,
+    "start": "2026-05-11",
+    "end": "2026-07-10"
+  },
+  {
+    "code": "8.2",
+    "title": "Водоснабжение",
+    "duration": "45 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 7,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 7,
+    "start": "2026-04-21",
+    "end": "2026-06-20"
+  },
+  {
+    "code": "8.3",
+    "title": "Канализация",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 6,
+    "start": "2026-04-21",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "8.4",
+    "title": "Тепловые сети",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 6,
+    "start": "2026-04-21",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "8.5",
+    "title": "Сети связи",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 6,
+    "start": "2026-04-21",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "8.6",
+    "title": "Газоснабжение",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 2,
+        "text": "ТУ получены"
+      },
+      {
+        "periodIndex": 6,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 2,
+    "endIndex": 6,
+    "start": "2026-04-21",
+    "end": "2026-06-10"
+  },
+  {
+    "code": "9",
+    "title": "Запрос в Минтранс ДНР",
+    "duration": "",
+    "note": "о статусе и категории дорог и требований по организации примыкания, въезда, выезда",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "9.1",
+    "title": "Получение ответа на письмо",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 0,
+        "text": "запрос отправлен и зарегистрирован"
+      },
+      {
+        "periodIndex": 3,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 0,
+    "endIndex": 3,
+    "start": "2026-04-01",
+    "end": "2026-05-10"
+  },
+  {
+    "code": "10",
+    "title": "Направление для разработки ПМТ",
+    "duration": "",
+    "note": "после получения изысканий",
+    "type": "group",
+    "events": []
+  },
+  {
+    "code": "10.1",
+    "title": "Схемы использования территории в период подготовки проекта планировки территории. М 1:1000",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "изыскания получены"
+      },
+      {
+        "periodIndex": 7,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 7,
+    "start": "2026-05-11",
+    "end": "2026-06-20"
+  },
+  {
+    "code": "10.2",
+    "title": "Схемы границ зон с особыми условиями использования территории. М 1:1000",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "изыскания получены"
+      },
+      {
+        "periodIndex": 7,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 7,
+    "start": "2026-05-11",
+    "end": "2026-06-20"
+  },
+  {
+    "code": "10.3",
+    "title": "Планировочного и (или) объемно-пространственного решения застройки территории. М 1:1000",
+    "duration": "30 дней",
+    "note": "",
+    "type": "task",
+    "events": [
+      {
+        "periodIndex": 4,
+        "text": "изыскания получены"
+      },
+      {
+        "periodIndex": 7,
+        "text": "готовность"
+      }
+    ],
+    "startIndex": 4,
+    "endIndex": 7,
+    "start": "2026-05-11",
+    "end": "2026-06-20"
+  }
 ];
 
 function createEmptyAccount() {
@@ -181,6 +1167,28 @@ function getBarStyle(item, bounds) {
   };
 }
 
+function getPptBarStyle(item, bounds) {
+  if (!item.start || !item.end) {
+    return { left: "0%", width: "0%" };
+  }
+
+  const total = bounds.max - bounds.min;
+  const start = dateToTime(item.start) - bounds.min;
+  const end = dateToTime(item.end) - bounds.min;
+  const left = total ? (start / total) * 100 : 0;
+  const width = total ? Math.max(((end - start) / total) * 100, 2.5) : 100;
+
+  return {
+    left: `${left}%`,
+    width: `${width}%`,
+  };
+}
+
+function shortenEventText(text) {
+  if (!text) return "";
+  return text.length > 46 ? `${text.slice(0, 46)}...` : text;
+}
+
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [login, setLogin] = useState("admin");
@@ -207,6 +1215,26 @@ function App() {
       total,
       average,
       completed,
+    };
+  }, []);
+
+
+  const pptBounds = useMemo(() => {
+    return {
+      min: dateToTime(pptPeriods[0].start),
+      max: dateToTime(pptPeriods[pptPeriods.length - 1].end),
+    };
+  }, []);
+
+  const pptSummary = useMemo(() => {
+    const taskRows = pptItems.filter((item) => item.type !== "group");
+    const rowsWithEvents = taskRows.filter((item) => item.events.length > 0);
+    const eventCount = pptItems.reduce((sum, item) => sum + item.events.length, 0);
+
+    return {
+      taskRows: taskRows.length,
+      rowsWithEvents: rowsWithEvents.length,
+      eventCount,
     };
   }, []);
 
@@ -428,7 +1456,7 @@ function App() {
           <div className="chartHeader">
             <div>
               <h3>Гистограмма сроков</h3>
-              <p>Пока заполнено тестовыми сроками. После загрузки реального перечня заменим разделы, даты и ответственных.</p>
+              <p>Пока заполнено тестовыми сроками. После загрузки реального перечня заменим разделы и даты.</p>
             </div>
             <div className="dateRange">
               {formatDate(scheduleItems[0].start)} — {formatDate(scheduleItems[scheduleItems.length - 1].end)}
@@ -448,7 +1476,6 @@ function App() {
                 <div className="taskMeta">
                   <strong>{item.code}</strong>
                   <span>{item.title}</span>
-                  <small>Ответственный: {item.owner}</small>
                 </div>
 
                 <div className="barArea">
@@ -464,6 +1491,99 @@ function App() {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderPptPage() {
+    return (
+      <section className="contentStack">
+        <div className="sectionHeader">
+          <div>
+            <p className="eyebrow">График ППТ</p>
+            <h2>График подготовки документации ППТ</h2>
+          </div>
+          <div className="roleBadge">По приложенной таблице</div>
+        </div>
+
+        <div className="summaryGrid pptSummaryGrid">
+          <div className="summaryCard">
+            <span>Строк задач</span>
+            <strong>{pptSummary.taskRows}</strong>
+          </div>
+          <div className="summaryCard">
+            <span>Строк с графиком</span>
+            <strong>{pptSummary.rowsWithEvents}</strong>
+          </div>
+          <div className="summaryCard">
+            <span>Контрольных отметок</span>
+            <strong>{pptSummary.eventCount}</strong>
+          </div>
+        </div>
+
+        <div className="chartCard pptChartCard">
+          <div className="chartHeader">
+            <div>
+              <h3>Гистограмма ППТ</h3>
+              <p>Данные перенесены из приложенной таблицы. Шкала построена по декадам с апреля по сентябрь 2026 года.</p>
+            </div>
+            <div className="dateRange">
+              {formatDate(pptPeriods[0].start)} — {formatDate(pptPeriods[pptPeriods.length - 1].end)}
+            </div>
+          </div>
+
+          <div className="pptScale">
+            {pptPeriods.map((period) => (
+              <span key={period.label}>{period.label}</span>
+            ))}
+          </div>
+
+          <div className="pptList">
+            {pptItems.map((item, index) => {
+              if (item.type === "group") {
+                return (
+                  <article className="pptGroupRow" key={`${item.code}-${index}`}>
+                    <strong>{item.code}</strong>
+                    <span>{item.title}</span>
+                  </article>
+                );
+              }
+
+              return (
+                <article className="pptRow" key={`${item.code}-${index}`}>
+                  <div className="pptTaskMeta">
+                    <strong>{item.code}</strong>
+                    <span>{item.title}</span>
+                    {item.duration && <small>Срок: {item.duration}</small>}
+                    {item.note && <em>{item.note}</em>}
+                  </div>
+
+                  <div className="pptBarArea">
+                    <div className="pptBarTrack">
+                      {item.events.length > 0 && (
+                        <div className="pptBar" style={getPptBarStyle(item, pptBounds)}>
+                          <span>{formatDate(item.start)} — {formatDate(item.end)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {item.events.length > 0 ? (
+                      <div className="pptEventList">
+                        {item.events.map((event, eventIndex) => (
+                          <span key={`${item.code}-${event.periodIndex}-${eventIndex}`}>
+                            {pptPeriods[event.periodIndex]?.label}: {shortenEventText(event.text)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="pptEventList mutedText">Нет отметок в графике</div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -640,6 +1760,13 @@ function App() {
           График проектирования
         </button>
 
+        <button
+          className={activeTab === "ppt" ? "tabButton active" : "tabButton"}
+          onClick={() => setActiveTab("ppt")}
+        >
+          График ППТ
+        </button>
+
         {isAdmin && (
           <button
             className={activeTab === "accounts" ? "tabButton active" : "tabButton"}
@@ -651,6 +1778,7 @@ function App() {
       </nav>
 
       {activeTab === "schedule" && renderSchedulePage()}
+      {activeTab === "ppt" && renderPptPage()}
       {activeTab === "accounts" && renderAccountManagement()}
     </main>
   );
