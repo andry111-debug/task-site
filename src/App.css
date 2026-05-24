@@ -2655,3 +2655,14 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* N_107 refined floor crops */
+
+.floorSplitBlock:nth-child(2) .buildingImageButton img {
+  max-height: 720px;
+}
+
+.floorImageButton img {
+  max-height: 720px;
+}
