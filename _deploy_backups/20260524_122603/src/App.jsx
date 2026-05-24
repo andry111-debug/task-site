@@ -2215,6 +2215,7 @@ function App() {
                     <strong>{item.code}</strong>
                     <span>{item.title}</span>
                     {item.duration && <small>Срок: {item.duration}</small>}
+                    {overdue && <b className="overdueLabel">Срок прошёл</b>}
                     {item.note && <em>{item.note}</em>}
                   </div>
 
@@ -2226,8 +2227,6 @@ function App() {
                         </div>
                       )}
                     </div>
-
-                    {overdue && <b className="overdueLabel overdueLabelUnderBar">Срок прошёл</b>}
 
                     {item.events.length > 0 ? (
                       <div className="pptEventList">

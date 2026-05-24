@@ -1178,28 +1178,3 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
-
-
-/* N_92 marker placement and account role fix */
-
-.overdueLabelUnderBar {
-  margin-top: -2px;
-  display: inline-flex;
-  width: max-content;
-  max-width: 160px;
-  justify-self: start;
-  white-space: nowrap;
-}
-
-.pptTaskMeta .overdueLabel {
-  display: none;
-}
-
-/* keep long edit/status markers from widening the left text column */
-.pptTaskMeta {
-  min-width: 0;
-}
-
-.pptBarArea {
-  min-width: 0;
-}
