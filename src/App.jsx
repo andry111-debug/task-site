@@ -309,12 +309,12 @@ const buildingAssets = {
         "explication": "/building-assets/cross-dock-office/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа, офисная часть",
+        "title": "План 2 этажа",
         "plan": "/building-assets/cross-dock-office/plan-2.jpg",
         "explication": "/building-assets/cross-dock-office/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа, венткамера",
+        "title": "План 3 этажа",
         "plan": "/building-assets/cross-dock-office/plan-3.jpg",
         "explication": "/building-assets/cross-dock-office/explication-3.jpg"
       }
@@ -364,7 +364,7 @@ const buildingAssets = {
         "explication": "/building-assets/doc-pavilion-fish-meat/explication-2.jpg"
       },
       {
-        "title": "План технического подвала",
+        "title": "План 3 этажа",
         "plan": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg",
         "explication": "/building-assets/doc-pavilion-fish-meat/explication-3.jpg"
       }
@@ -384,14 +384,9 @@ const buildingAssets = {
         "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа, венткамера",
+        "title": "План 3 этажа",
         "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg",
-        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-3.jpg"
-      },
-      {
-        "title": "План технического подвала",
-        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg",
-        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-4.jpg"
+        "explication": ""
       }
     ]
   },
@@ -399,14 +394,9 @@ const buildingAssets = {
     "view": "/building-assets/multitemp-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План типового модуля",
+        "title": "План 1 этажа",
         "plan": "/building-assets/multitemp-warehouse/plan-1.jpg",
         "explication": "/building-assets/multitemp-warehouse/explication-1.jpg"
-      },
-      {
-        "title": "Вариант компоновки на 20 модулей",
-        "plan": "/building-assets/multitemp-warehouse/plan-2.jpg",
-        "explication": "/building-assets/multitemp-warehouse/explication-2.jpg"
       }
     ]
   },
@@ -424,7 +414,7 @@ const buildingAssets = {
         "explication": "/building-assets/light-industrial/explication-2.jpg"
       },
       {
-        "title": "План 3-4 этажа",
+        "title": "План 3 этажа",
         "plan": "/building-assets/light-industrial/plan-3.jpg",
         "explication": "/building-assets/light-industrial/explication-3.jpg"
       }
@@ -434,19 +424,14 @@ const buildingAssets = {
     "view": "/building-assets/fast-trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План быстровозводимого павильона",
+        "title": "План 1 этажа",
         "plan": "/building-assets/fast-trade-pavilion/plan-1.jpg",
         "explication": "/building-assets/fast-trade-pavilion/explication-1.jpg"
       },
       {
-        "title": "Вариант компоновки 2-х павильонов",
+        "title": "План 2 этажа",
         "plan": "/building-assets/fast-trade-pavilion/plan-2.jpg",
         "explication": "/building-assets/fast-trade-pavilion/explication-2.jpg"
-      },
-      {
-        "title": "Вариант компоновки 3-х павильонов",
-        "plan": "/building-assets/fast-trade-pavilion/plan-3.jpg",
-        "explication": "/building-assets/fast-trade-pavilion/explication-3.jpg"
       }
     ]
   },
@@ -564,7 +549,7 @@ const buildingAssets = {
     "view": "/building-assets/canteen-60/view.jpg",
     "floors": [
       {
-        "title": "План столовой",
+        "title": "План 1 этажа",
         "plan": "/building-assets/canteen-60/plan-1.jpg",
         "explication": "/building-assets/canteen-60/explication-1.jpg"
       }
@@ -589,7 +574,7 @@ const buildingAssets = {
     "view": "/building-assets/toilet-shower/view.jpg",
     "floors": [
       {
-        "title": "План здания туалет-душевые",
+        "title": "План 1 этажа",
         "plan": "/building-assets/toilet-shower/plan-1.jpg",
         "explication": "/building-assets/toilet-shower/explication-1.jpg"
       }
@@ -599,14 +584,9 @@ const buildingAssets = {
     "view": "/building-assets/bus-platform/view.jpg",
     "floors": [
       {
-        "title": "План пассажирского автобусного перрона",
+        "title": "План 1 этажа",
         "plan": "/building-assets/bus-platform/plan-1.jpg",
-        "explication": "/building-assets/bus-platform/explication-1.jpg"
-      },
-      {
-        "title": "Навес и схема размещения",
-        "plan": "/building-assets/bus-platform/plan-2.jpg",
-        "explication": "/building-assets/bus-platform/explication-2.jpg"
+        "explication": ""
       }
     ]
   }
