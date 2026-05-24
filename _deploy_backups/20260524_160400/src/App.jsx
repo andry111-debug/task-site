@@ -2991,14 +2991,9 @@ function App() {
 
         <div className="buildingPageGrid">
           <div className="buildingVisualCard">
-            <div className="buildingImageFrame">
-              <img
-                src={`/building-images/${building.id}.jpg`}
-                alt={`Лист объекта: ${building.title}`}
-              />
-            </div>
-            <div className="buildingImageCaption">
-              Лист из файла «Объекты ОПР Донецкий»: картинка здания, поэтажные планы и экспликации.
+            <div className="buildingImagePlaceholder">
+              <strong>Картинка здания</strong>
+              <span>Место для изображения фасада/визуализации</span>
             </div>
           </div>
 
