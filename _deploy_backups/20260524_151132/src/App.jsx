@@ -20,16 +20,15 @@ const ROLE_OPTIONS = [
 const ACCESS_ELEMENTS = [
   { key: "schedule", label: "График проектирования" },
   { key: "ppt", label: "График ППТ" },
-  { key: "compact", label: "Сокращенный график" },
   { key: "accounts", label: "Управление учетными записями" },
 ];
 
 const ROLE_DEFAULT_ACCESS = {
-  admin: ["schedule", "ppt", "compact", "accounts"],
-  designer: ["schedule", "ppt", "compact"],
-  customer_service: ["schedule", "ppt", "compact"],
-  external: ["schedule", "compact"],
-  employee: ["schedule", "ppt", "compact"],
+  admin: ["schedule", "ppt", "accounts"],
+  designer: ["schedule", "ppt"],
+  customer_service: ["schedule", "ppt"],
+  external: ["schedule"],
+  employee: ["schedule", "ppt"],
 };
 
 function normalizeAccessElements(value, role = "designer") {
@@ -263,15 +262,6 @@ const pptPeriods = [
     "start": "2026-09-11",
     "end": "2026-09-20"
   }
-];
-
-const compactMonths = [
-  { label: "Апрель", start: "2026-04-01", end: "2026-04-30" },
-  { label: "Май", start: "2026-05-01", end: "2026-05-31" },
-  { label: "Июнь", start: "2026-06-01", end: "2026-06-30" },
-  { label: "Июль", start: "2026-07-01", end: "2026-07-31" },
-  { label: "Август", start: "2026-08-01", end: "2026-08-31" },
-  { label: "Сентябрь", start: "2026-09-01", end: "2026-09-30" },
 ];
 
 const defaultPptItems = [
@@ -1268,23 +1258,6 @@ function getPptOverdueLabelStyle(item, bounds) {
   };
 }
 
-function getCompactBarStyle(item, bounds) {
-  if (!item.start || !item.end) {
-    return { left: "0%", width: "0%" };
-  }
-
-  const total = bounds.max - bounds.min;
-  const start = dateToTime(item.start) - bounds.min;
-  const end = dateToTime(item.end) - bounds.min;
-  const left = total ? (start / total) * 100 : 0;
-  const width = total ? Math.max(((end - start) / total) * 100, 1.4) : 100;
-
-  return {
-    left: `${left}%`,
-    width: `${width}%`,
-  };
-}
-
 function shortenEventText(text) {
   if (!text) return "";
   return text.length > 46 ? `${text.slice(0, 46)}...` : text;
@@ -1525,11 +1498,9 @@ function App() {
         ? "schedule"
         : hasAccess(normalizedUser, "ppt")
           ? "ppt"
-          : hasAccess(normalizedUser, "compact")
-            ? "compact"
-            : hasAccess(normalizedUser, "accounts")
-              ? "accounts"
-              : "schedule";
+          : hasAccess(normalizedUser, "accounts")
+            ? "accounts"
+            : "schedule";
       setActiveTab(firstAvailableTab);
       await loadAccounts();
     } catch (error) {
@@ -2463,80 +2434,6 @@ function App() {
     );
   }
 
-  function renderCompactPptPage() {
-    if (!hasAccess(currentUser, "compact")) {
-      return renderAccessDenied("Сокращенный график");
-    }
-
-    const compactBounds = {
-      min: dateToTime(compactMonths[0].start),
-      max: dateToTime(compactMonths[compactMonths.length - 1].end),
-    };
-
-    const compactRows = pptItems.filter((item) => item.type !== "group" && item.events.length > 0);
-
-    return (
-      <section className="compactSchedulePage">
-        <div className="sectionHeader compactHeader">
-          <div>
-            <p className="eyebrow">Сокращенная версия</p>
-            <h2>График ППТ на одном листе</h2>
-          </div>
-          <button className="secondaryButton printButton" onClick={() => window.print()}>
-            Печать листа
-          </button>
-        </div>
-
-        <div className="compactSheet">
-          <div className="compactSheetTitle">
-            <strong>График подготовки документации ППТ</strong>
-            <span>Сокращенная гистограмма</span>
-          </div>
-
-          <div className="compactMonthHeader">
-            <div className="compactNameHeader">Раздел / работа</div>
-            <div className="compactMonthGrid">
-              {compactMonths.map((month) => (
-                <div className="compactMonthCell" key={month.label}>
-                  {month.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="compactRows">
-            {compactRows.map((item, index) => {
-              const overdue = isDeadlinePassed(item.end);
-
-              return (
-                <article
-                  className={overdue ? "compactRow overdue" : "compactRow"}
-                  key={`${item.code}-${index}`}
-                  onClick={() => openPptItemEdit(pptItems.findIndex((sourceItem) => sourceItem === item))}
-                  title="Открыть редактирование пункта"
-                >
-                  <div className="compactRowName">
-                    <strong>{item.code}</strong>
-                    <span>{item.title}</span>
-                  </div>
-
-                  <div className="compactTrack">
-                    <div
-                      className={overdue ? "compactBar overdueBar" : "compactBar"}
-                      style={getCompactBarStyle(item, compactBounds)}
-                    >
-                      <span>{formatDate(item.start)} — {formatDate(item.end)}</span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   function renderAccountManagement() {
     if (!hasAccess(currentUser, "accounts")) {
       return renderAccessDenied("Управление учетными записями");
@@ -2763,15 +2660,6 @@ function App() {
           </button>
         )}
 
-        {hasAccess(currentUser, "compact") && (
-          <button
-            className={activeTab === "compact" ? "tabButton active" : "tabButton"}
-            onClick={() => setActiveTab("compact")}
-          >
-            Сокращенный график
-          </button>
-        )}
-
         {hasAccess(currentUser, "accounts") && (
           <button
             className={activeTab === "accounts" ? "tabButton active" : "tabButton"}
@@ -2784,7 +2672,6 @@ function App() {
 
       {activeTab === "schedule" && renderSchedulePage()}
       {activeTab === "ppt" && renderPptPage()}
-      {activeTab === "compact" && renderCompactPptPage()}
       {activeTab === "editItem" && renderEditItemPage()}
       {activeTab === "accounts" && renderAccountManagement()}
     </main>
