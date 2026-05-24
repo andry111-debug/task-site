@@ -1145,16 +1145,6 @@ function formatDate(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function getTodayTime() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
-function isDeadlinePassed(endDate) {
-  if (!endDate) return false;
-  return dateToTime(endDate) < getTodayTime();
-}
-
 function getScheduleBounds(items) {
   const starts = items.map((item) => dateToTime(item.start));
   const ends = items.map((item) => dateToTime(item.end));
@@ -1720,11 +1710,8 @@ function App() {
           </div>
 
           <div className="ganttList">
-            {scheduleItems.map((item) => {
-              const overdue = isDeadlinePassed(item.end);
-
-              return (
-              <article className={overdue ? "ganttRow overdue" : "ganttRow"} key={item.code}>
+            {scheduleItems.map((item) => (
+              <article className="ganttRow" key={item.code}>
                 <div className="taskMeta">
                   <strong>{item.code}</strong>
                   <span>{item.title}</span>
@@ -1732,7 +1719,7 @@ function App() {
 
                 <div className="barArea">
                   <div className="barTrack">
-                    <div className={overdue ? "bar overdueBar" : "bar"} style={getBarStyle(item, scheduleBounds)}>
+                    <div className="bar" style={getBarStyle(item, scheduleBounds)}>
                       <span>{item.progress}%</span>
                     </div>
                   </div>
@@ -1742,8 +1729,7 @@ function App() {
                   </div>
                 </div>
               </article>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>
@@ -1914,8 +1900,6 @@ function App() {
 
           <div className="pptList">
             {visiblePptItems.map((item, index) => {
-              const overdue = item.type !== "group" && isDeadlinePassed(item.end);
-
               if (item.type === "group") {
                 return (
                   <article className="pptGroupRow" key={`${item.code}-${index}`}>
@@ -1926,19 +1910,18 @@ function App() {
               }
 
               return (
-                <article className={overdue ? "pptRow overdue" : "pptRow"} key={`${item.code}-${index}`}>
+                <article className="pptRow" key={`${item.code}-${index}`}>
                   <div className="pptTaskMeta">
                     <strong>{item.code}</strong>
                     <span>{item.title}</span>
                     {item.duration && <small>Срок: {item.duration}</small>}
-                    {overdue && <b className="overdueLabel">Срок прошёл</b>}
                     {item.note && <em>{item.note}</em>}
                   </div>
 
                   <div className="pptBarArea">
                     <div className="pptBarTrack">
                       {item.events.length > 0 && (
-                        <div className={overdue ? "pptBar overdueBar" : "pptBar"} style={getPptBarStyle(item, pptBounds)}>
+                        <div className="pptBar" style={getPptBarStyle(item, pptBounds)}>
                           <span>{formatDate(item.start)} — {formatDate(item.end)}</span>
                         </div>
                       )}
