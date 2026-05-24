@@ -19,18 +19,17 @@ const ROLE_OPTIONS = [
 
 const ACCESS_ELEMENTS = [
   { key: "schedule", label: "График проектирования" },
-  { key: "compact", label: "График ППТ" },
-  { key: "ppt", label: "Расширенный график ППТ" },
-  { key: "buildings", label: "Страницы зданий" },
+  { key: "ppt", label: "График ППТ" },
+  { key: "compact", label: "Сокращенный график" },
   { key: "accounts", label: "Управление учетными записями" },
 ];
 
 const ROLE_DEFAULT_ACCESS = {
-  admin: ["schedule", "compact", "ppt", "buildings", "accounts"],
-  designer: ["schedule", "compact", "ppt", "buildings"],
-  customer_service: ["schedule", "compact", "ppt", "buildings"],
-  external: ["schedule", "compact", "buildings"],
-  employee: ["schedule", "compact", "ppt", "buildings"],
+  admin: ["schedule", "ppt", "compact", "accounts"],
+  designer: ["schedule", "ppt", "compact"],
+  customer_service: ["schedule", "ppt", "compact"],
+  external: ["schedule", "compact"],
+  employee: ["schedule", "ppt", "compact"],
 };
 
 function normalizeAccessElements(value, role = "designer") {
@@ -273,30 +272,6 @@ const compactMonths = [
   { label: "Июль", start: "2026-07-01", end: "2026-07-31" },
   { label: "Август", start: "2026-08-01", end: "2026-08-31" },
   { label: "Сентябрь", start: "2026-09-01", end: "2026-09-30" },
-];
-
-const buildingPages = [
-  { id: "cross-dock-office", number: "01", title: "Кросс-док с офисной частью", sourcePage: 1, area: "2 254,16 м²" },
-  { id: "cross-dock-typical", number: "02", title: "Кросс-док типовой", sourcePage: 2, area: "2 176,06 м²" },
-  { id: "freezer-warehouse", number: "03", title: "Морозильный склад", sourcePage: 3, area: "около 10 964 м²" },
-  { id: "doc-pavilion-fish-meat", number: "04", title: "Док-павильон (рыба-мясо)", sourcePage: 4, area: "около 8 516 м²" },
-  { id: "doc-pavilion-flowers-grocery", number: "05", title: "Док-павильон (цветы-бакалея)", sourcePage: 5, area: "около 8 411 м²" },
-  { id: "multitemp-warehouse", number: "06", title: "Мультитемпературный склад", sourcePage: 6, area: "240,66 м² на модуль" },
-  { id: "light-industrial", number: "07", title: "Производственно-складской терминал типа Light Industrial", sourcePage: 7, area: "около 15 137 м²" },
-  { id: "fast-trade-pavilion", number: "08", title: "Быстровозводимый торговый павильон", sourcePage: 8, area: "49,41 м² на павильон" },
-  { id: "office-admin-block", number: "09", title: "Офисный блок с администрацией", sourcePage: 9, area: "около 2 395 м²" },
-  { id: "construction-market-pavilion", number: "10", title: "Торговый павильон строительного рынка", sourcePage: 10, area: "1 640,26 м²" },
-  { id: "food-retail-market", number: "11", title: "Продовольственный розничный рынок", sourcePage: 11, area: "1 461,06 м²" },
-  { id: "trade-pavilion", number: "12", title: "Торговый павильон", sourcePage: 12, area: "1 423,35 м²" },
-  { id: "food-court-terrace", number: "13", title: "Фуд-корт с открытой террасой", sourcePage: 13, area: "3 061,56 м²" },
-  { id: "cold-warehouse-wood-metal", number: "14", title: "Холодный склад строительного рынка (дерево-металл)", sourcePage: 14, area: "2 049,90 м²" },
-  { id: "cold-trade-pavilion", number: "15", title: "Холодный торговый павильон строительного рынка", sourcePage: 15, area: "845,78 м²" },
-  { id: "motel-80", number: "16", title: "Мотель на 80 номеров контейнерно-модульный", sourcePage: 16, area: "1 852,76 м²" },
-  { id: "hostel-228", number: "17", title: "Хостел для сотрудников на 228 мест контейнерно-модульный", sourcePage: 17, area: "1 070,19 м²" },
-  { id: "canteen-60", number: "18", title: "Столовая для персонала на 60 мест контейнерно-модульная", sourcePage: 18, area: "454,22 м²" },
-  { id: "garage-aho", number: "19", title: "Гараж/АХО", sourcePage: 19, area: "около 1 170 м²" },
-  { id: "toilet-shower", number: "20", title: "Здание туалет-душевые", sourcePage: 20, area: "86,88 м²" },
-  { id: "bus-platform", number: "21", title: "Пассажирский автобусный перрон с навесом", sourcePage: 21, area: "площадь не указана" },
 ];
 
 const defaultPptItems = [
@@ -1393,7 +1368,6 @@ function App() {
   const [pptDraftItems, setPptDraftItems] = useState(() => getLocalPptItems());
   const [isPptEditing, setIsPptEditing] = useState(false);
   const [pptMessage, setPptMessage] = useState("");
-  const [selectedBuildingId, setSelectedBuildingId] = useState(buildingPages[0]?.id || "");
   const [editTarget, setEditTarget] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [extendValue, setExtendValue] = useState("");
@@ -1549,15 +1523,13 @@ function App() {
       setCurrentUser(normalizedUser);
       const firstAvailableTab = hasAccess(normalizedUser, "schedule")
         ? "schedule"
-        : hasAccess(normalizedUser, "compact")
-          ? "compact"
-          : hasAccess(normalizedUser, "ppt")
-            ? "ppt"
-            : hasAccess(normalizedUser, "buildings")
-              ? "buildings"
-              : hasAccess(normalizedUser, "accounts")
-                ? "accounts"
-                : "schedule";
+        : hasAccess(normalizedUser, "ppt")
+          ? "ppt"
+          : hasAccess(normalizedUser, "compact")
+            ? "compact"
+            : hasAccess(normalizedUser, "accounts")
+              ? "accounts"
+              : "schedule";
       setActiveTab(firstAvailableTab);
       await loadAccounts();
     } catch (error) {
@@ -2261,7 +2233,7 @@ function App() {
 
   function renderPptPage() {
     if (!hasAccess(currentUser, "ppt")) {
-      return renderAccessDenied("Расширенный график ППТ");
+      return renderAccessDenied("График ППТ");
     }
 
     const visiblePptItems = isPptEditing ? pptDraftItems : pptItems;
@@ -2270,8 +2242,8 @@ function App() {
       <section className="contentStack">
         <div className="sectionHeader">
           <div>
-            <p className="eyebrow">Расширенный график ППТ</p>
-            <h2>Расширенный график подготовки документации ППТ</h2>
+            <p className="eyebrow">График ППТ</p>
+            <h2>График подготовки документации ППТ</h2>
           </div>
           <div className="roleBadge">По приложенной таблице</div>
         </div>
@@ -2493,7 +2465,7 @@ function App() {
 
   function renderCompactPptPage() {
     if (!hasAccess(currentUser, "compact")) {
-      return renderAccessDenied("График ППТ");
+      return renderAccessDenied("Сокращенный график");
     }
 
     const compactBounds = {
@@ -2501,16 +2473,14 @@ function App() {
       max: dateToTime(compactMonths[compactMonths.length - 1].end),
     };
 
-    const compactRows = pptItems.filter(
-      (item) => item.type === "group" || item.events.length > 0
-    );
+    const compactRows = pptItems.filter((item) => item.type !== "group" && item.events.length > 0);
 
     return (
       <section className="compactSchedulePage">
         <div className="sectionHeader compactHeader">
           <div>
-            <p className="eyebrow">График ППТ</p>
-            <h2>График ППТ</h2>
+            <p className="eyebrow">Сокращенная версия</p>
+            <h2>График ППТ на одном листе</h2>
           </div>
           <button className="secondaryButton printButton" onClick={() => window.print()}>
             Печать листа
@@ -2519,8 +2489,8 @@ function App() {
 
         <div className="compactSheet">
           <div className="compactSheetTitle">
-            <strong>График ППТ</strong>
-            <span>Компактная гистограмма на одном листе</span>
+            <strong>График подготовки документации ППТ</strong>
+            <span>Сокращенная гистограмма</span>
           </div>
 
           <div className="compactMonthHeader">
@@ -2536,161 +2506,12 @@ function App() {
 
           <div className="compactRows">
             {compactRows.map((item, index) => {
-              if (item.type === "group") {
-                return (
-                  <article className="compactGroupRow" key={`${item.code}-${index}`}>
-                    <strong>{item.code}</strong>
-                    <span>{item.title}</span>
-                  </article>
-                );
-              }
-
               const overdue = isDeadlinePassed(item.end);
 
               return (
                 <article
                   className={overdue ? "compactRow overdue" : "compactRow"}
                   key={`${item.code}-${index}`}
-                  onClick={() => openPptItemEdit(pptItems.findIndex((sourceItem) => sourceItem === item))}
-                  title="Открыть редактирование пункта"
-                >
-                  <div className="compactRowName">
-                    <strong>{item.code}</strong>
-                    <span>{item.title}</span>
-                  </div>
-
-                  <div className="compactTrack">
-                    <div
-                      className={overdue ? "compactBar overdueBar" : "compactBar"}
-                      style={getCompactBarStyle(item, compactBounds)}
-                    >
-                      <span>{formatDate(item.start)} — {formatDate(item.end)}</span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  function openBuildingPage(buildingId) {
-    setSelectedBuildingId(buildingId);
-    setActiveTab("buildingDetail");
-  }
-
-  function renderBuildingsPage() {
-    if (!hasAccess(currentUser, "buildings")) {
-      return renderAccessDenied("Страницы зданий");
-    }
-
-    return (
-      <section className="contentStack">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">Здания</p>
-            <h2>Страницы зданий комплекса</h2>
-          </div>
-          <div className="roleBadge">{buildingPages.length} страниц</div>
-        </div>
-
-        <div className="buildingGrid">
-          {buildingPages.map((building) => (
-            <button
-              className="buildingCard"
-              key={building.id}
-              onClick={() => openBuildingPage(building.id)}
-            >
-              <span>Здание {building.number}</span>
-              <strong>{building.title}</strong>
-              <small>Лист PDF: {building.sourcePage}</small>
-            </button>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  function renderBuildingDetailPage() {
-    if (!hasAccess(currentUser, "buildings")) {
-      return renderAccessDenied("Страница здания");
-    }
-
-    const building =
-      buildingPages.find((item) => item.id === selectedBuildingId) || buildingPages[0];
-
-    const compactBounds = {
-      min: dateToTime(compactMonths[0].start),
-      max: dateToTime(compactMonths[compactMonths.length - 1].end),
-    };
-
-    const buildingRows = pptItems.filter(
-      (item) => item.type === "group" || item.events.length > 0
-    );
-
-    return (
-      <section className="contentStack buildingDetailPage">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">Страница здания</p>
-            <h2>{building.title}</h2>
-          </div>
-          <button className="secondaryButton" onClick={() => setActiveTab("buildings")}>
-            К списку зданий
-          </button>
-        </div>
-
-        <div className="buildingInfoGrid">
-          <div className="buildingInfoCard">
-            <span>Номер</span>
-            <strong>{building.number}</strong>
-          </div>
-          <div className="buildingInfoCard">
-            <span>Лист исходного PDF</span>
-            <strong>{building.sourcePage}</strong>
-          </div>
-          <div className="buildingInfoCard">
-            <span>Площадь</span>
-            <strong>{building.area}</strong>
-          </div>
-        </div>
-
-        <div className="compactSheet buildingCompactSheet">
-          <div className="compactSheetTitle">
-            <strong>График ППТ — {building.title}</strong>
-            <span>Индивидуальная страница здания</span>
-          </div>
-
-          <div className="compactMonthHeader">
-            <div className="compactNameHeader">Раздел / работа</div>
-            <div className="compactMonthGrid">
-              {compactMonths.map((month) => (
-                <div className="compactMonthCell" key={month.label}>
-                  {month.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="compactRows">
-            {buildingRows.map((item, index) => {
-              if (item.type === "group") {
-                return (
-                  <article className="compactGroupRow" key={`${building.id}-${item.code}-${index}`}>
-                    <strong>{item.code}</strong>
-                    <span>{item.title}</span>
-                  </article>
-                );
-              }
-
-              const overdue = isDeadlinePassed(item.end);
-
-              return (
-                <article
-                  className={overdue ? "compactRow overdue" : "compactRow"}
-                  key={`${building.id}-${item.code}-${index}`}
                   onClick={() => openPptItemEdit(pptItems.findIndex((sourceItem) => sourceItem === item))}
                   title="Открыть редактирование пункта"
                 >
@@ -2933,34 +2754,21 @@ function App() {
           </button>
         )}
 
-        {hasAccess(currentUser, "compact") && (
-          <button
-            className={activeTab === "compact" ? "tabButton active" : "tabButton"}
-            onClick={() => setActiveTab("compact")}
-          >
-            График ППТ
-          </button>
-        )}
-
         {hasAccess(currentUser, "ppt") && (
           <button
             className={activeTab === "ppt" ? "tabButton active" : "tabButton"}
             onClick={() => setActiveTab("ppt")}
           >
-            Расширенный график ППТ
+            График ППТ
           </button>
         )}
 
-        {hasAccess(currentUser, "buildings") && (
+        {hasAccess(currentUser, "compact") && (
           <button
-            className={
-              activeTab === "buildings" || activeTab === "buildingDetail"
-                ? "tabButton active"
-                : "tabButton"
-            }
-            onClick={() => setActiveTab("buildings")}
+            className={activeTab === "compact" ? "tabButton active" : "tabButton"}
+            onClick={() => setActiveTab("compact")}
           >
-            Здания
+            Сокращенный график
           </button>
         )}
 
@@ -2975,10 +2783,8 @@ function App() {
       </nav>
 
       {activeTab === "schedule" && renderSchedulePage()}
-      {activeTab === "compact" && renderCompactPptPage()}
       {activeTab === "ppt" && renderPptPage()}
-      {activeTab === "buildings" && renderBuildingsPage()}
-      {activeTab === "buildingDetail" && renderBuildingDetailPage()}
+      {activeTab === "compact" && renderCompactPptPage()}
       {activeTab === "editItem" && renderEditItemPage()}
       {activeTab === "accounts" && renderAccountManagement()}
     </main>
