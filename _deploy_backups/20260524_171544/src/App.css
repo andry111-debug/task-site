@@ -2666,15 +2666,3 @@ h3 {
 .floorImageButton img {
   max-height: 720px;
 }
-
-
-/* N_108 refined building 02 floor 2 crop */
-
-.floorImageButton img {
-  max-height: 740px;
-  object-fit: contain;
-}
-
-.floorSplitBlock:nth-child(2) .buildingImageButton img {
-  max-height: 740px;
-}
