@@ -334,11 +334,11 @@ const buildingAssets = {
     "view": "/building-assets/freezer-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликации",
+        "title": "План 1 этажа + экспликация",
         "image": "/building-assets/freezer-warehouse/plan-1.jpg"
       },
       {
-        "title": "План 2 этажа",
+        "title": "План 2 и 3 этажа + экспликация",
         "image": "/building-assets/freezer-warehouse/plan-2.jpg"
       }
     ]
@@ -347,15 +347,15 @@ const buildingAssets = {
     "view": "/building-assets/doc-pavilion-fish-meat/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа + экспликации",
+        "title": "План 1 этажа + экспликация",
         "image": "/building-assets/doc-pavilion-fish-meat/plan-1.jpg"
       },
       {
-        "title": "План 2-4 этажа + экспликации",
+        "title": "План 2 этажа + экспликация",
         "image": "/building-assets/doc-pavilion-fish-meat/plan-2.jpg"
       },
       {
-        "title": "План техподполья + экспликации",
+        "title": "План технического подвала + экспликация",
         "image": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg"
       }
     ]
@@ -364,19 +364,19 @@ const buildingAssets = {
     "view": "/building-assets/doc-pavilion-flowers-grocery/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План 1 этажа + экспликация",
         "image": "/building-assets/doc-pavilion-flowers-grocery/plan-1.jpg"
       },
       {
-        "title": "План 2 этажа + экспликации",
+        "title": "План 2 этажа + экспликация",
         "image": "/building-assets/doc-pavilion-flowers-grocery/plan-2.jpg"
       },
       {
-        "title": "План 3 этажа, венткамера + экспликации",
+        "title": "План 3 этажа, венткамера + экспликация",
         "image": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg"
       },
       {
-        "title": "План технического подвала",
+        "title": "План технического подвала + экспликация",
         "image": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg"
       }
     ]
@@ -385,16 +385,12 @@ const buildingAssets = {
     "view": "/building-assets/multitemp-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План складского модуля + экспликация",
+        "title": "План типового модуля + экспликация",
         "image": "/building-assets/multitemp-warehouse/plan-1.jpg"
       },
       {
         "title": "Вариант компоновки на 20 модулей",
         "image": "/building-assets/multitemp-warehouse/plan-2.jpg"
-      },
-      {
-        "title": "Технический блок и экспликация",
-        "image": "/building-assets/multitemp-warehouse/plan-3.jpg"
       }
     ]
   },
@@ -419,15 +415,15 @@ const buildingAssets = {
     "view": "/building-assets/fast-trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План быстровозводимого павильона",
+        "title": "План быстровозводимого павильона + экспликация",
         "image": "/building-assets/fast-trade-pavilion/plan-1.jpg"
       },
       {
-        "title": "Вариант компоновки 2х павильонов",
+        "title": "Вариант компоновки 2-х павильонов",
         "image": "/building-assets/fast-trade-pavilion/plan-2.jpg"
       },
       {
-        "title": "Вариант компоновки 3х павильонов + экспликация",
+        "title": "Вариант компоновки 3-х павильонов",
         "image": "/building-assets/fast-trade-pavilion/plan-3.jpg"
       }
     ]

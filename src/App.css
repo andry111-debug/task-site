@@ -2583,3 +2583,23 @@ h3 {
     font-size: 16px;
   }
 }
+
+
+/* N_105 corrected building image cuts */
+
+.floorImageItem {
+  overflow: hidden;
+}
+
+.floorImageButton img {
+  max-height: 520px;
+  object-fit: contain;
+}
+
+.imageViewerDialog img {
+  object-fit: contain;
+}
+
+.buildingImageButton img {
+  background: #ffffff;
+}
