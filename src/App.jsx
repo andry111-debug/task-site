@@ -33,8 +33,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_131";
-const APP_DEPLOY_NAME = "N_131_project_site_yandex_disk_gip_root_readonly";
+const APP_VERSION = "N_136";
+const APP_DEPLOY_NAME = "N_136_project_site_explicit_yandex_paths";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -178,39 +178,57 @@ function getMissingCatalogText(catalog) {
   return "Папка не найдена на Яндекс.Диске. Проверьте точное имя каталога и синхронизацию Яндекс.Диска.";
 }
 
+function pickExplicitYandexPath(section, fieldName, fallbackPath) {
+  const explicit = normalizePathSeparators(section?.[fieldName] || "");
+  if (explicit) return explicit;
+  return fallbackPath || "";
+}
+
 function getYandexCatalogsForSection(section) {
+  // N_136: prefer explicit paths exported by the local GIP program.
+  // The website should not infer the GIP structure from the technical-customer folder names.
   const commonFolder = toYandexDiskPath(section?.common_storage_folder || "");
   const gipFolder = toYandexGipDiskPath(section?.gip_storage_folder || "");
   const sectionStorageKey = makeSectionStorageKey(section);
+
+  const fallbackProjectPath = commonFolder;
+  const fallbackTzPath = commonFolder ? joinDiskPath(commonFolder, "ТЗ") : "";
+  const fallbackSourcesPath = gipFolder ? joinDiskPath(gipFolder, "исходники", sectionStorageKey) : "";
+  const fallbackRemarksPath = gipFolder ? joinDiskPath(gipFolder, "замечания", sectionStorageKey) : "";
+
+  const projectPath = pickExplicitYandexPath(section, "project_files_yandex_path", fallbackProjectPath);
+  const tzPath = pickExplicitYandexPath(section, "technical_task_yandex_path", fallbackTzPath);
+  const sourcesPath = pickExplicitYandexPath(section, "sources_yandex_path", fallbackSourcesPath);
+  const remarksPath = pickExplicitYandexPath(section, "remarks_yandex_path", fallbackRemarksPath);
 
   return [
     {
       value: "project_file",
       label: "Файлы проекта",
-      path: commonFolder,
-      source: "common_storage_folder",
-      description: "Основная папка раздела из локальной программы. Структура папки не меняется.",
+      path: projectPath,
+      source: section?.project_files_yandex_path ? "project_files_yandex_path" : "common_storage_folder",
+      description: "Основная папка раздела. В N_136 сайт использует готовый путь, выгруженный локальной программой.",
     },
     {
       value: "tz",
       label: "ТЗ",
-      path: commonFolder ? joinDiskPath(commonFolder, "ТЗ") : "",
-      source: "common_storage_folder/ТЗ",
-      description: "Подпапка ТЗ в общей папке раздела.",
+      path: tzPath,
+      source: section?.technical_task_yandex_path ? "technical_task_yandex_path" : "common_storage_folder/ТЗ",
+      description: "Подпапка ТЗ. В N_136 сайт использует готовый путь, выгруженный локальной программой.",
     },
     {
       value: "source",
       label: "Исходники",
-      path: gipFolder ? joinDiskPath(gipFolder, "исходники", sectionStorageKey) : "",
-      source: "gip_storage_folder/исходники/<ключ раздела>",
-      description: "Существующая папка исходников из структуры локальной программы. Путь читается через корень Яндекс.Диска /Папка ГИПа, чтобы технический заказчик не видел исходники.",
+      path: sourcesPath,
+      source: section?.sources_yandex_path ? "sources_yandex_path" : "gip_storage_folder/исходники/<ключ раздела>",
+      description: "Папка исходников из структуры ГИПа. Путь задается локальной программой, чтобы не зависеть от различий в названиях папок.",
     },
     {
       value: "remark",
       label: "Замечания",
-      path: gipFolder ? joinDiskPath(gipFolder, "замечания", sectionStorageKey) : "",
-      source: "gip_storage_folder/замечания/<ключ раздела>",
-      description: "Существующая папка замечаний из структуры локальной программы. Путь читается через корень Яндекс.Диска /Папка ГИПа, чтобы технический заказчик не видел замечания.",
+      path: remarksPath,
+      source: section?.remarks_yandex_path ? "remarks_yandex_path" : "gip_storage_folder/замечания/<ключ раздела>",
+      description: "Папка замечаний из структуры ГИПа. Путь задается локальной программой, чтобы не зависеть от различий в названиях папок.",
     },
   ];
 }
