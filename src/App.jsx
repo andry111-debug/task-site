@@ -33,8 +33,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_140";
-const APP_DEPLOY_NAME = "N_140_project_site_catalog_tester_button";
+const APP_VERSION = "N_142";
+const APP_DEPLOY_NAME = "N_142_project_site_document_cards_reader";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -249,15 +249,35 @@ function normalizeStage(value) {
   return raw || "П";
 }
 
+function normalizeDocumentType(value) {
+  const raw = String(value || "").trim();
+  if (raw === "technical_task") return "tz";
+  if (raw === "answer") return "remark";
+  if (raw === "project" || raw === "project_files") return "project_file";
+  return raw;
+}
+
 function getArchitectFileCategory(file) {
+  const explicitType = normalizeDocumentType(file?.document_type || "");
+  if (ARCHITECT_FILE_CATEGORIES.some((item) => item.value === explicitType)) return explicitType;
+  const groupType = normalizeDocumentType(file?.document_group || "");
+  if (ARCHITECT_FILE_CATEGORIES.some((item) => item.value === groupType)) return groupType;
   const comment = String(file?.comment || "");
   const match = comment.match(/^\[file_category:([^\]]+)\]/);
-  const value = match?.[1] || "project_file";
+  const value = normalizeDocumentType(match?.[1] || "project_file");
   return ARCHITECT_FILE_CATEGORIES.some((item) => item.value === value) ? value : "project_file";
 }
 
 function getArchitectFileComment(file) {
   return String(file?.comment || "").replace(/^\[file_category:[^\]]+\]\s*/, "");
+}
+
+function getArchitectFileYandexPath(file) {
+  return file?.yandex_disk_path || file?.yandex_path || "";
+}
+
+function getArchitectFileDate(file) {
+  return file?.registered_at || file?.modified_at || file?.created_at || "";
 }
 
 const ACCESS_ELEMENTS = [
@@ -2420,15 +2440,15 @@ function App() {
   const selectedSiteSectionFiles = useMemo(() => {
     if (!selectedSiteSection) return [];
     return siteFiles
-      .filter((file) => file.section_id === selectedSiteSection.id)
-      .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+      .filter((file) => (file.section_id === selectedSiteSection.id || file.site_section_id === selectedSiteSection.id) && file.active !== false)
+      .sort((a, b) => String(b.registered_at || b.created_at || "").localeCompare(String(a.registered_at || a.created_at || "")));
   }, [siteFiles, selectedSiteSection]);
 
   const modalSiteSectionFiles = useMemo(() => {
     if (!modalSiteSection) return [];
     return siteFiles
-      .filter((file) => file.section_id === modalSiteSection.id)
-      .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+      .filter((file) => (file.section_id === modalSiteSection.id || file.site_section_id === modalSiteSection.id) && file.active !== false)
+      .sort((a, b) => String(b.registered_at || b.created_at || "").localeCompare(String(a.registered_at || a.created_at || "")));
   }, [siteFiles, modalSiteSection]);
 
   const isAdmin = currentUser?.role === "admin";
@@ -3614,8 +3634,8 @@ function App() {
               </div>
 
               <div className="registeredDocsHint">
-                Этот блок показывает только карточки документов, зарегистрированные в таблице сайта.
-                Файлы, найденные прямым чтением папок Яндекс.Диска, отображаются в отдельной проверке каталогов.
+                Этот блок показывает карточки документов, выгруженные из локальной программы ГИПа в таблицу сайта.
+                Файлы физически остаются на Яндекс.Диске; сайт получает ссылку на скачивание через серверную функцию.
               </div>
 
               <div className="fileCategoryList">
@@ -3633,14 +3653,20 @@ function App() {
                             <div>
                               <strong>{file.file_name || "Файл"}</strong>
                               <span>{getArchitectFileComment(file) || "Комментарий не указан"}</span>
-                              {file.yandex_path && <small>Яндекс.Диск: {file.yandex_path}</small>}
+                              {getArchitectFileYandexPath(file) && <small>Яндекс.Диск: {getArchitectFileYandexPath(file)}</small>}
+                              {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
+                              {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
                             {file.file_url ? (
                               <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
                                 Скачать / открыть
                               </button>
+                            ) : getArchitectFileYandexPath(file) ? (
+                              <button className="smallButton" onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file))}>
+                                Скачать
+                              </button>
                             ) : (
-                              <span className="fileNoLink">Нет прямой ссылки</span>
+                              <span className="fileNoLink">Нет ссылки</span>
                             )}
                           </article>
                         ))}
