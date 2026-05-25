@@ -34,7 +34,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_145";
+const APP_VERSION = "N_146";
 const APP_DEPLOY_NAME = "N_145_project_site_archive_download_fix";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -285,7 +285,6 @@ function sanitizeZipPart(value) {
   return String(value || "file")
     .trim()
     .replace(/[\\/:*?"<>|]+/g, "_")
-    .replace(/ /g, "")
     .replace(/^\.+$/, "file") || "file";
 }
 
@@ -2647,8 +2646,12 @@ function App() {
     }
 
     if (!response.ok) {
-      const message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
-      throw new Error(String(message));
+      let message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
+      message = String(message);
+      if (message.includes("Unsupported action: content")) {
+        message = "На сервере Supabase еще старая версия Edge Function yandex-disk-readonly. Обновите код функции из архива N_146 и нажмите Deploy, иначе скачивание архивом работать не будет.";
+      }
+      throw new Error(message);
     }
 
     if (data?.error) {
