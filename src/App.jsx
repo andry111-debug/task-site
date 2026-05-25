@@ -19,6 +19,38 @@ const ROLE_OPTIONS = [
   { value: "external", label: "Сторонние люди" },
 ];
 
+
+const ARCHITECT_STAGE_OPTIONS = [
+  { value: "П", label: "Стадия П" },
+  { value: "Р", label: "Стадия Р" },
+];
+
+const ARCHITECT_FILE_CATEGORIES = [
+  { value: "project_file", label: "Файлы проекта", shortLabel: "Файлы" },
+  { value: "tz", label: "Техническое задание", shortLabel: "ТЗ" },
+  { value: "source", label: "Исходники", shortLabel: "Исходники" },
+  { value: "remark", label: "Замечания", shortLabel: "Замечания" },
+];
+
+function normalizeStage(value) {
+  const raw = String(value || "").trim();
+  const upper = raw.toUpperCase();
+  if (upper === "П" || upper === "P" || upper.includes("СТАДИЯ П")) return "П";
+  if (upper === "Р" || upper === "R" || upper.includes("СТАДИЯ Р")) return "Р";
+  return raw || "П";
+}
+
+function getArchitectFileCategory(file) {
+  const comment = String(file?.comment || "");
+  const match = comment.match(/^\[file_category:([^\]]+)\]/);
+  const value = match?.[1] || "project_file";
+  return ARCHITECT_FILE_CATEGORIES.some((item) => item.value === value) ? value : "project_file";
+}
+
+function getArchitectFileComment(file) {
+  return String(file?.comment || "").replace(/^\[file_category:[^\]]+\]\s*/, "");
+}
+
 const ACCESS_ELEMENTS = [
   { key: "schedule", label: "График проектирования" },
   { key: "compact", label: "График ППТ" },
@@ -2057,7 +2089,10 @@ function App() {
   const [siteDirectoryError, setSiteDirectoryError] = useState("");
   const [selectedSiteBuildingKey, setSelectedSiteBuildingKey] = useState("");
   const [siteBuildingSearch, setSiteBuildingSearch] = useState("");
+  const [architectStage, setArchitectStage] = useState("П");
   const [selectedSiteSectionId, setSelectedSiteSectionId] = useState("");
+  const [siteSectionModalId, setSiteSectionModalId] = useState("");
+  const [fileCategory, setFileCategory] = useState("project_file");
   const [fileComment, setFileComment] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [fileYandexPath, setFileYandexPath] = useState("");
@@ -2132,7 +2167,7 @@ function App() {
     });
   }, [siteBuildings, siteBuildingSearch]);
 
-  const selectedSiteBuildingSections = useMemo(() => {
+  const selectedSiteBuildingAllSections = useMemo(() => {
     if (!selectedSiteBuildingKey) return [];
     return siteSections
       .filter((section) => {
@@ -2140,15 +2175,32 @@ function App() {
         return key === selectedSiteBuildingKey;
       })
       .sort((a, b) => {
-        const stageCompare = String(a.stage || "").localeCompare(String(b.stage || ""), "ru");
+        const stageOrder = { "П": 1, "Р": 2 };
+        const stageCompare = (stageOrder[normalizeStage(a.stage)] || 99) - (stageOrder[normalizeStage(b.stage)] || 99);
         if (stageCompare !== 0) return stageCompare;
         return String(a.section_code || "").localeCompare(String(b.section_code || ""), "ru");
       });
   }, [siteSections, selectedSiteBuildingKey]);
 
+  const architectStageCounts = useMemo(() => {
+    return selectedSiteBuildingAllSections.reduce((acc, section) => {
+      const stage = normalizeStage(section.stage);
+      acc[stage] = (acc[stage] || 0) + 1;
+      return acc;
+    }, {});
+  }, [selectedSiteBuildingAllSections]);
+
+  const selectedSiteBuildingSections = useMemo(() => {
+    return selectedSiteBuildingAllSections.filter((section) => normalizeStage(section.stage) === architectStage);
+  }, [selectedSiteBuildingAllSections, architectStage]);
+
   const selectedSiteSection = useMemo(() => {
-    return siteSections.find((section) => section.id === selectedSiteSectionId) || selectedSiteBuildingSections[0] || null;
-  }, [siteSections, selectedSiteSectionId, selectedSiteBuildingSections]);
+    return siteSections.find((section) => section.id === selectedSiteSectionId) || null;
+  }, [siteSections, selectedSiteSectionId]);
+
+  const modalSiteSection = useMemo(() => {
+    return siteSections.find((section) => section.id === siteSectionModalId) || null;
+  }, [siteSections, siteSectionModalId]);
 
   const selectedSiteSectionFiles = useMemo(() => {
     if (!selectedSiteSection) return [];
@@ -2156,6 +2208,13 @@ function App() {
       .filter((file) => file.section_id === selectedSiteSection.id)
       .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
   }, [siteFiles, selectedSiteSection]);
+
+  const modalSiteSectionFiles = useMemo(() => {
+    if (!modalSiteSection) return [];
+    return siteFiles
+      .filter((file) => file.section_id === modalSiteSection.id)
+      .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  }, [siteFiles, modalSiteSection]);
 
   const isAdmin = currentUser?.role === "admin";
   const canEditPpt = currentUser?.role === "admin" || currentUser?.role === "designer" || currentUser?.role === "architect";
@@ -2291,7 +2350,9 @@ function App() {
     setNotice("");
     setSiteDirectoryError("");
 
-    if (!selectedSiteSection) {
+    const targetSection = modalSiteSection || selectedSiteSection;
+
+    if (!targetSection) {
       setSiteDirectoryError("Выберите раздел.");
       return;
     }
@@ -2315,10 +2376,10 @@ function App() {
         }
         const safeName = selectedUploadFile.name.replace(/[^\p{L}\p{N}_.-]+/gu, "_");
         storagePath = [
-          selectedSiteSection.project_key || "opr_donetsk",
-          selectedSiteSection.building_gp_no || "building",
-          selectedSiteSection.stage || "stage",
-          selectedSiteSection.section_code || "section",
+          targetSection.project_key || "opr_donetsk",
+          targetSection.building_gp_no || "building",
+          targetSection.stage || "stage",
+          targetSection.section_code || "section",
           `${Date.now()}_${safeName}`,
         ].join("/");
 
@@ -2333,18 +2394,18 @@ function App() {
       }
 
       const payload = {
-        section_id: selectedSiteSection.id,
-        project_key: selectedSiteSection.project_key || "opr_donetsk",
-        building_gp_no: selectedSiteSection.building_gp_no || "",
-        building_name: selectedSiteSection.building_name || "",
-        stage: selectedSiteSection.stage || "",
-        section_code: selectedSiteSection.section_code || "",
-        section_title: selectedSiteSection.section_title || "",
+        section_id: targetSection.id,
+        project_key: targetSection.project_key || "opr_donetsk",
+        building_gp_no: targetSection.building_gp_no || "",
+        building_name: targetSection.building_name || "",
+        stage: targetSection.stage || "",
+        section_code: targetSection.section_code || "",
+        section_title: targetSection.section_title || "",
         file_name: fileName,
         file_url: uploadedUrl,
         yandex_path: fileYandexPath.trim(),
         storage_path: storagePath,
-        comment: fileComment.trim(),
+        comment: `[file_category:${fileCategory}] ${fileComment.trim()}`.trim(),
         uploaded_by: currentUser?.name || "",
       };
 
@@ -2355,6 +2416,7 @@ function App() {
       setFileUrl("");
       setFileYandexPath("");
       setSelectedUploadFile(null);
+      setFileCategory("project_file");
       await loadSiteDirectory();
       setNotice("Файл зарегистрирован в разделе.");
     } catch (error) {
@@ -3101,9 +3163,29 @@ function App() {
             </aside>
 
             <section className="architectPanel mainArchitectPanel">
-              <div className="cardHeaderLine">
-                <p className="eyebrow">Существующие разделы</p>
-                <h3>{selectedSiteBuildingSections.length} разделов</h3>
+              <div className="cardHeaderLine sectionListHeader">
+                <div>
+                  <p className="eyebrow">Существующие разделы</p>
+                  <h3>{selectedSiteBuildingSections.length} разделов</h3>
+                </div>
+                <div className="stageRadioGroup" role="radiogroup" aria-label="Выбор стадии">
+                  {ARCHITECT_STAGE_OPTIONS.map((stageOption) => (
+                    <label
+                      key={stageOption.value}
+                      className={architectStage === stageOption.value ? "stageRadio active" : "stageRadio"}
+                    >
+                      <input
+                        type="radio"
+                        name="architectStage"
+                        value={stageOption.value}
+                        checked={architectStage === stageOption.value}
+                        onChange={() => setArchitectStage(stageOption.value)}
+                      />
+                      <span>{stageOption.label}</span>
+                      <small>{architectStageCounts[stageOption.value] || 0}</small>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="architectSectionTableWrap">
@@ -3122,9 +3204,12 @@ function App() {
                       <tr
                         key={section.id}
                         className={selectedSiteSection?.id === section.id ? "selectedRow" : ""}
-                        onClick={() => setSelectedSiteSectionId(section.id)}
+                        onClick={() => {
+                          setSelectedSiteSectionId(section.id);
+                          setSiteSectionModalId(section.id);
+                        }}
                       >
-                        <td>{section.stage}</td>
+                        <td>{normalizeStage(section.stage)}</td>
                         <td><strong>{section.section_code}</strong></td>
                         <td>{section.section_title}</td>
                         <td>{section.cipher}</td>
@@ -3133,77 +3218,124 @@ function App() {
                     ))}
                     {!selectedSiteBuildingSections.length && (
                       <tr>
-                        <td colSpan="5" className="emptyCell">Разделы не найдены. Выполните синхронизацию из локальной программы.</td>
+                        <td colSpan="5" className="emptyCell">Для выбранного здания и стадии разделы не найдены. Выполните синхронизацию из локальной программы.</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+
+              <div className="smallHintBox">
+                Нажмите на строку раздела, чтобы открыть карточку раздела с загрузкой и выгрузкой файлов, ТЗ, исходников и замечаний.
+              </div>
             </section>
           </div>
-
-          {selectedSiteSection && (
-            <div className="architectFilesGrid">
-              <section className="architectPanel">
-                <div className="cardHeaderLine">
-                  <p className="eyebrow">Файлы раздела</p>
-                  <h3>{selectedSiteSection.section_code} — {selectedSiteSection.section_title}</h3>
-                </div>
-
-                <div className="fileList">
-                  {selectedSiteSectionFiles.map((file) => (
-                    <article className="fileCard" key={file.id}>
-                      <div>
-                        <strong>{file.file_name || "Файл"}</strong>
-                        <span>{file.comment || "Комментарий не указан"}</span>
-                        {file.yandex_path && <small>Яндекс.Диск: {file.yandex_path}</small>}
-                      </div>
-                      {file.file_url ? (
-                        <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
-                          Скачать / открыть
-                        </button>
-                      ) : (
-                        <span className="fileNoLink">Нет прямой ссылки</span>
-                      )}
-                    </article>
-                  ))}
-                  {!selectedSiteSectionFiles.length && <div className="emptyFileBox">Файлы по выбранному разделу пока не зарегистрированы.</div>}
-                </div>
-              </section>
-
-              <section className="architectPanel">
-                <div className="cardHeaderLine">
-                  <p className="eyebrow">Загрузка / регистрация файла</p>
-                  <h3>Добавить файл в раздел</h3>
-                </div>
-
-                <form className="fileUploadForm" onSubmit={addFileToSiteSection}>
-                  <label>
-                    Файл для прямой загрузки
-                    <input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} />
-                  </label>
-                  <label>
-                    Прямая ссылка на файл
-                    <input value={fileUrl} onChange={(event) => setFileUrl(event.target.value)} placeholder="https://..." />
-                  </label>
-                  <label>
-                    Путь в Яндекс.Диске
-                    <input value={fileYandexPath} onChange={(event) => setFileYandexPath(event.target.value)} placeholder="/ОПР_Донецкий/Сайт_входящие/..." />
-                  </label>
-                  <label>
-                    Комментарий
-                    <input value={fileComment} onChange={(event) => setFileComment(event.target.value)} placeholder="Что это за файл" />
-                  </label>
-                  <button className="primaryButton" type="submit">Загрузить / зарегистрировать</button>
-                  <div className="smallHintBox">
-                    База хранит только карточку файла: имя, ссылку, путь и комментарий. Сам файл хранится вне таблицы базы. Для прямой загрузки нужен bucket VITE_SITE_FILES_BUCKET; для Яндекс.Диска можно указать ссылку или путь.
-                  </div>
-                </form>
-              </section>
-            </div>
-          )}
         </section>
+        {renderArchitectSectionModal()}
       </main>
+    );
+  }
+
+  function renderArchitectSectionModal() {
+    if (!siteSectionModalId || !modalSiteSection) return null;
+
+    const categoryFiles = (category) => modalSiteSectionFiles.filter((file) => getArchitectFileCategory(file) === category);
+
+    return (
+      <div className="architectModalBackdrop" onClick={() => setSiteSectionModalId("")}>
+        <section className="architectSectionModal" onClick={(event) => event.stopPropagation()}>
+          <div className="modalHeader">
+            <div>
+              <p className="eyebrow">Карточка раздела</p>
+              <h2>{modalSiteSection.section_code} — {modalSiteSection.section_title}</h2>
+              <p className="modalSubline">
+                {modalSiteSection.building_gp_no || "—"} — {modalSiteSection.building_name || "Здание не указано"} / стадия {normalizeStage(modalSiteSection.stage)} / шифр {modalSiteSection.cipher || "—"}
+              </p>
+            </div>
+            <button className="ghostButton" onClick={() => setSiteSectionModalId("")}>Закрыть</button>
+          </div>
+
+          <div className="modalContentGrid">
+            <section className="modalBlock">
+              <div className="cardHeaderLine">
+                <p className="eyebrow">Выгрузка / скачивание</p>
+                <h3>Документы раздела</h3>
+              </div>
+
+              <div className="fileCategoryList">
+                {ARCHITECT_FILE_CATEGORIES.map((category) => {
+                  const files = categoryFiles(category.value);
+                  return (
+                    <div className="fileCategoryBlock" key={category.value}>
+                      <div className="fileCategoryTitle">
+                        <strong>{category.label}</strong>
+                        <span>{files.length}</span>
+                      </div>
+                      <div className="fileList">
+                        {files.map((file) => (
+                          <article className="fileCard" key={file.id}>
+                            <div>
+                              <strong>{file.file_name || "Файл"}</strong>
+                              <span>{getArchitectFileComment(file) || "Комментарий не указан"}</span>
+                              {file.yandex_path && <small>Яндекс.Диск: {file.yandex_path}</small>}
+                            </div>
+                            {file.file_url ? (
+                              <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
+                                Скачать / открыть
+                              </button>
+                            ) : (
+                              <span className="fileNoLink">Нет прямой ссылки</span>
+                            )}
+                          </article>
+                        ))}
+                        {!files.length && <div className="emptyFileBox">Нет зарегистрированных документов этого типа.</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="modalBlock">
+              <div className="cardHeaderLine">
+                <p className="eyebrow">Загрузка / регистрация</p>
+                <h3>Добавить документ</h3>
+              </div>
+
+              <form className="fileUploadForm" onSubmit={addFileToSiteSection}>
+                <label>
+                  Тип документа
+                  <select value={fileCategory} onChange={(event) => setFileCategory(event.target.value)}>
+                    {ARCHITECT_FILE_CATEGORIES.map((category) => (
+                      <option key={category.value} value={category.value}>{category.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Файл для прямой загрузки
+                  <input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} />
+                </label>
+                <label>
+                  Прямая ссылка на файл
+                  <input value={fileUrl} onChange={(event) => setFileUrl(event.target.value)} placeholder="https://..." />
+                </label>
+                <label>
+                  Путь в Яндекс.Диске
+                  <input value={fileYandexPath} onChange={(event) => setFileYandexPath(event.target.value)} placeholder="/ОПР_Донецкий/Сайт_входящие/..." />
+                </label>
+                <label>
+                  Комментарий
+                  <input value={fileComment} onChange={(event) => setFileComment(event.target.value)} placeholder="Что это за документ" />
+                </label>
+                <button className="primaryButton" type="submit">Загрузить / зарегистрировать</button>
+                <div className="smallHintBox">
+                  База хранит только карточку документа: тип, имя, ссылку, путь и комментарий. Сам файл хранится вне таблицы базы. Для прямой загрузки нужен bucket VITE_SITE_FILES_BUCKET; для Яндекс.Диска можно указать ссылку или путь.
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </div>
     );
   }
 
