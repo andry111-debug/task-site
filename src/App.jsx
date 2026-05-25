@@ -33,13 +33,14 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_129";
-const APP_DEPLOY_NAME = "N_129_project_site_yandex_disk_root_and_error_details";
+const APP_VERSION = "N_131";
+const APP_DEPLOY_NAME = "N_131_project_site_yandex_disk_gip_root_readonly";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
 // For this project that sync root corresponds to /Для Технического заказчика on Yandex.Disk.
 const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "/Для Технического заказчика";
+const YANDEX_GIP_ROOT = import.meta.env.VITE_YANDEX_GIP_ROOT || "/Папка ГИПа";
 const YANDEX_LOCAL_ROOTS = String(
   import.meta.env.VITE_YANDEX_LOCAL_ROOTS ||
     import.meta.env.VITE_YANDEX_LOCAL_ROOT ||
@@ -86,7 +87,7 @@ function makeSectionStorageKey(section) {
   return `GP_${safeStorageKeyPart(section?.building_gp_no || "")}_${safeStorageKeyPart(section?.building_name || "")}__${safeStorageKeyPart(normalizeStage(section?.stage || "П"))}_${safeStorageKeyPart(section?.section_code || "")}`;
 }
 
-function toYandexDiskPath(rawPath) {
+function toYandexDiskPathWithRoot(rawPath, diskRoot = YANDEX_DISK_ROOT) {
   const normalizedRaw = normalizePathSeparators(rawPath);
   if (!normalizedRaw) return "";
 
@@ -96,7 +97,7 @@ function toYandexDiskPath(rawPath) {
   const lower = normalized.toLowerCase();
 
   // If the path already contains a known Yandex.Disk root folder, keep everything from that folder.
-  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы"];
+  const markers = ["Для Технического заказчика", "Папка ГИПа", "Внутренняя Технологии", "Программные файлы"];
   for (const marker of markers) {
     const index = lower.indexOf(marker.toLowerCase());
     if (index >= 0) {
@@ -104,15 +105,15 @@ function toYandexDiskPath(rawPath) {
     }
   }
 
-  // Map local synchronized Yandex.Disk roots to the disk root.
-  // Defaults cover the current working paths used in the project.
+  // Map local synchronized Yandex.Disk roots to the selected disk root.
+  // For common folders this is /Для Технического заказчика; for GIP folders this is /Папка ГИПа.
   for (const localRoot of YANDEX_LOCAL_ROOTS) {
     const root = normalizePathSeparators(localRoot).replace(/\/+$/g, "");
     if (!root) continue;
     const rootLower = root.toLowerCase();
     if (lower === rootLower || lower.startsWith(`${rootLower}/`)) {
       const rest = normalized.slice(root.length).replace(/^\/+/, "");
-      return joinDiskPath(YANDEX_DISK_ROOT, rest);
+      return joinDiskPath(diskRoot, rest);
     }
   }
 
@@ -126,14 +127,22 @@ function toYandexDiskPath(rawPath) {
       const markerLower = marker.toLowerCase();
       if (fallbackLower === markerLower || fallbackLower.startsWith(`${markerLower}/`)) {
         const rest = withoutDrive.slice(marker.length).replace(/^\/+/, "");
-        return joinDiskPath(YANDEX_DISK_ROOT, rest);
+        return joinDiskPath(diskRoot, rest);
       }
     }
-    return joinDiskPath(YANDEX_DISK_ROOT, withoutDrive);
+    return joinDiskPath(diskRoot, withoutDrive);
   }
 
   if (normalized.startsWith("/")) return normalized;
-  return joinDiskPath(YANDEX_DISK_ROOT, normalized);
+  return joinDiskPath(diskRoot, normalized);
+}
+
+function toYandexDiskPath(rawPath) {
+  return toYandexDiskPathWithRoot(rawPath, YANDEX_DISK_ROOT);
+}
+
+function toYandexGipDiskPath(rawPath) {
+  return toYandexDiskPathWithRoot(rawPath, YANDEX_GIP_ROOT);
 }
 
 function makeSiteQueuePath(section, folderName) {
@@ -148,9 +157,30 @@ function makeSiteQueuePath(section, folderName) {
   );
 }
 
+function isYandexNotFoundMessage(message) {
+  const text = String(message || "").toLowerCase();
+  return (
+    text.includes("не удалось найти запрошенный ресурс") ||
+    text.includes("resource not found") ||
+    text.includes("not found") ||
+    text.includes("disknotfound") ||
+    text.includes("404")
+  );
+}
+
+function getMissingCatalogText(catalog) {
+  if (catalog?.value === "source") {
+    return "Папка исходников не найдена на Яндекс.Диске в корне /Папка ГИПа. Это нормально, если структура ГИПа еще не создана или исходники по этому разделу не добавлялись.";
+  }
+  if (catalog?.value === "remark") {
+    return "Папка замечаний не найдена на Яндекс.Диске в корне /Папка ГИПа. Это нормально, если структура ГИПа еще не создана или замечания по этому разделу не добавлялись.";
+  }
+  return "Папка не найдена на Яндекс.Диске. Проверьте точное имя каталога и синхронизацию Яндекс.Диска.";
+}
+
 function getYandexCatalogsForSection(section) {
   const commonFolder = toYandexDiskPath(section?.common_storage_folder || "");
-  const gipFolder = toYandexDiskPath(section?.gip_storage_folder || "");
+  const gipFolder = toYandexGipDiskPath(section?.gip_storage_folder || "");
   const sectionStorageKey = makeSectionStorageKey(section);
 
   return [
@@ -173,14 +203,14 @@ function getYandexCatalogsForSection(section) {
       label: "Исходники",
       path: gipFolder ? joinDiskPath(gipFolder, "исходники", sectionStorageKey) : "",
       source: "gip_storage_folder/исходники/<ключ раздела>",
-      description: "Существующая папка исходников из структуры локальной программы. На этом этапе только чтение.",
+      description: "Существующая папка исходников из структуры локальной программы. Путь читается через корень Яндекс.Диска /Папка ГИПа, чтобы технический заказчик не видел исходники.",
     },
     {
       value: "remark",
       label: "Замечания",
       path: gipFolder ? joinDiskPath(gipFolder, "замечания", sectionStorageKey) : "",
       source: "gip_storage_folder/замечания/<ключ раздела>",
-      description: "Существующая папка замечаний из структуры локальной программы. На этом этапе только чтение.",
+      description: "Существующая папка замечаний из структуры локальной программы. Путь читается через корень Яндекс.Диска /Папка ГИПа, чтобы технический заказчик не видел замечания.",
     },
   ];
 }
@@ -2598,11 +2628,15 @@ function App() {
         },
       }));
     } catch (error) {
+      const message = error?.message || "Не удалось прочитать каталог Яндекс.Диска.";
+      const notFound = isYandexNotFoundMessage(message);
       setYandexCatalogState((prev) => ({
         ...prev,
         [key]: {
           loading: false,
-          error: error?.message || "Не удалось прочитать каталог Яндекс.Диска.",
+          error: notFound ? "" : message,
+          missing: notFound,
+          missingMessage: notFound ? getMissingCatalogText(catalog) : "",
           items: [],
           normalizedPath: path,
         },
@@ -3616,8 +3650,16 @@ function App() {
                       <p className="catalogDescription">{catalog.description}</p>
 
                       {readState.error && <div className="errorBox compactError">{readState.error}</div>}
+                      {readState.missing && (
+                        <div className="missingCatalogBox">
+                          {readState.missingMessage}
+                          {readState.normalizedPath && (
+                            <span>Проверенный путь: <strong>{readState.normalizedPath}</strong></span>
+                          )}
+                        </div>
+                      )}
 
-                      {readState.normalizedPath && !readState.error && (
+                      {readState.normalizedPath && !readState.error && !readState.missing && (
                         <div className="catalogResultInfo">
                           Прочитан путь: <strong>{readState.normalizedPath}</strong>. Найдено: <strong>{files.length}</strong>
                         </div>

@@ -3396,6 +3396,24 @@ h3 {
   font-size: 13px;
 }
 
+.missingCatalogBox {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fff8e7;
+  border: 1px solid #f0c968;
+  color: #5a4000;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.missingCatalogBox span {
+  color: #425674;
+  overflow-wrap: anywhere;
+}
+
 .diskFileList {
   display: grid;
   gap: 8px;
