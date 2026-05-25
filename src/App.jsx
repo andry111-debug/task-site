@@ -33,8 +33,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_136";
-const APP_DEPLOY_NAME = "N_136_project_site_explicit_yandex_paths";
+const APP_VERSION = "N_139";
+const APP_DEPLOY_NAME = "N_139_project_site_path_map_reader";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -185,7 +185,7 @@ function pickExplicitYandexPath(section, fieldName, fallbackPath) {
 }
 
 function getYandexCatalogsForSection(section) {
-  // N_136: prefer explicit paths exported by the local GIP program.
+  // N_139: prefer explicit path-map fields exported by the local GIP program.
   // The website should not infer the GIP structure from the technical-customer folder names.
   const commonFolder = toYandexDiskPath(section?.common_storage_folder || "");
   const gipFolder = toYandexGipDiskPath(section?.gip_storage_folder || "");
@@ -207,27 +207,27 @@ function getYandexCatalogsForSection(section) {
       label: "Файлы проекта",
       path: projectPath,
       source: section?.project_files_yandex_path ? "project_files_yandex_path" : "common_storage_folder",
-      description: "Основная папка раздела. В N_136 сайт использует готовый путь, выгруженный локальной программой.",
+      description: "Основная папка раздела. В N_139 сайт использует готовый путь из таблицы соответствий локальной программы.",
     },
     {
       value: "tz",
       label: "ТЗ",
       path: tzPath,
       source: section?.technical_task_yandex_path ? "technical_task_yandex_path" : "common_storage_folder/ТЗ",
-      description: "Подпапка ТЗ. В N_136 сайт использует готовый путь, выгруженный локальной программой.",
+      description: "Подпапка ТЗ. В N_139 сайт использует готовый путь из таблицы соответствий локальной программы.",
     },
     {
       value: "source",
       label: "Исходники",
       path: sourcesPath,
-      source: section?.sources_yandex_path ? "sources_yandex_path" : "gip_storage_folder/исходники/<ключ раздела>",
+      source: section?.sources_yandex_path ? "sources_yandex_path / таблица соответствий" : "fallback: gip_storage_folder/исходники/<ключ раздела>",
       description: "Папка исходников из структуры ГИПа. Путь задается локальной программой, чтобы не зависеть от различий в названиях папок.",
     },
     {
       value: "remark",
       label: "Замечания",
       path: remarksPath,
-      source: section?.remarks_yandex_path ? "remarks_yandex_path" : "gip_storage_folder/замечания/<ключ раздела>",
+      source: section?.remarks_yandex_path ? "remarks_yandex_path / таблица соответствий" : "fallback: gip_storage_folder/замечания/<ключ раздела>",
       description: "Папка замечаний из структуры ГИПа. Путь задается локальной программой, чтобы не зависеть от различий в названиях папок.",
     },
   ];
