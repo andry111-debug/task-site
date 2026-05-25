@@ -33,8 +33,19 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
+const APP_VERSION = "N_128";
+const APP_DEPLOY_NAME = "N_128_project_site_yandex_disk_path_mapping_and_version";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
+const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "";
+const YANDEX_LOCAL_ROOTS = String(
+  import.meta.env.VITE_YANDEX_LOCAL_ROOTS ||
+    import.meta.env.VITE_YANDEX_LOCAL_ROOT ||
+    "C:/Projects/ОПР;C:/Projects/OPR"
+)
+  .split(/[;|\n]+/)
+  .map((item) => normalizePathSeparators(item).replace(/\/+$/g, ""))
+  .filter(Boolean);
 
 function normalizePathSeparators(value) {
   return String(value || "").trim().replace(/\\+/g, "/").replace(/\/+/g, "/");
@@ -74,12 +85,16 @@ function makeSectionStorageKey(section) {
 }
 
 function toYandexDiskPath(rawPath) {
-  const normalized = normalizePathSeparators(rawPath);
-  if (!normalized) return "";
-  if (normalized.startsWith("/")) return normalized;
+  const normalizedRaw = normalizePathSeparators(rawPath);
+  if (!normalizedRaw) return "";
 
-  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы"];
+  // Some paths arrive from Windows as /C:/... after joining strings in the browser.
+  // Yandex.Disk REST API expects disk paths, not local Windows paths.
+  const normalized = normalizedRaw.replace(/^\/([A-Za-z]:\/)/, "$1");
   const lower = normalized.toLowerCase();
+
+  // If the path already contains a known Yandex.Disk root folder, keep everything from that folder.
+  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы"];
   for (const marker of markers) {
     const index = lower.indexOf(marker.toLowerCase());
     if (index >= 0) {
@@ -87,7 +102,36 @@ function toYandexDiskPath(rawPath) {
     }
   }
 
-  return normalized;
+  // Map local synchronized Yandex.Disk roots to the disk root.
+  // Defaults cover the current working paths used in the project.
+  for (const localRoot of YANDEX_LOCAL_ROOTS) {
+    const root = normalizePathSeparators(localRoot).replace(/\/+$/g, "");
+    if (!root) continue;
+    const rootLower = root.toLowerCase();
+    if (lower === rootLower || lower.startsWith(`${rootLower}/`)) {
+      const rest = normalized.slice(root.length).replace(/^\/+/, "");
+      return joinDiskPath(YANDEX_DISK_ROOT, rest);
+    }
+  }
+
+  // Last-resort Windows fallback: strip the drive and common project root.
+  // This prevents requests like /C:/Projects/... from reaching Yandex.Disk.
+  if (/^[A-Za-z]:\//.test(normalized)) {
+    const withoutDrive = normalized.replace(/^[A-Za-z]:\//, "");
+    const projectMarkers = ["Projects/ОПР", "Projects/OPR", "Проекты/ОПР"];
+    const fallbackLower = withoutDrive.toLowerCase();
+    for (const marker of projectMarkers) {
+      const markerLower = marker.toLowerCase();
+      if (fallbackLower === markerLower || fallbackLower.startsWith(`${markerLower}/`)) {
+        const rest = withoutDrive.slice(marker.length).replace(/^\/+/, "");
+        return joinDiskPath(YANDEX_DISK_ROOT, rest);
+      }
+    }
+    return joinDiskPath(YANDEX_DISK_ROOT, withoutDrive);
+  }
+
+  if (normalized.startsWith("/")) return normalized;
+  return joinDiskPath(YANDEX_DISK_ROOT, normalized);
 }
 
 function makeSiteQueuePath(section, folderName) {
@@ -3275,6 +3319,7 @@ function App() {
       <main className="loginOnlyPage">
         <section className="loginCard interfaceChoiceCard">
           <p className="eyebrow">Выбор интерфейса</p>
+          <div className="appVersionBadge">Версия сайта: {APP_VERSION}</div>
           <h1>Какой интерфейс использовать?</h1>
           <p className="choiceText">
             Для учетной записи архитектора доступен общий интерфейс сайта и специализированный интерфейс для работы со зданиями, разделами и файлами.
@@ -3579,6 +3624,7 @@ function App() {
       <main className="loginOnlyPage">
         <form className="loginCard" onSubmit={handleLogin}>
           <h1>ОПР Донецкий. Управление проектом</h1>
+          <div className="appVersionBadge">Версия сайта: {APP_VERSION}</div>
 
           {!isSupabaseReady && (
             <div className="warningBox">
