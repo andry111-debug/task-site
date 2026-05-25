@@ -1,8 +1,8 @@
-// N_126. Read-only proxy for Yandex.Disk REST API.
-// This function intentionally does not upload, create folders, move, rename or delete files.
-// It supports only:
+// N_145. Read-only proxy for Yandex.Disk REST API.
+// Supports only reading operations:
 //   action=list     -> list files/folders in a Yandex.Disk directory
 //   action=download -> return a temporary download URL for one file
+//   action=content  -> proxy file bytes through the Edge Function for client-side ZIP creation
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,7 +29,7 @@ function toYandexDiskPath(rawPath: string) {
   if (!normalized) return "";
   if (normalized.startsWith("/")) return normalized;
 
-  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы"];
+  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы", "Папка ГИПа"];
   const lower = normalized.toLowerCase();
 
   for (const marker of markers) {
@@ -65,6 +65,16 @@ async function yandexGet(path: string, token: string) {
   }
 
   return data;
+}
+
+async function getYandexDownloadInfo(diskPath: string, token: string) {
+  const params = new URLSearchParams({ path: diskPath });
+  const data = await yandexGet(`resources/download?${params.toString()}`, token);
+  const href = String(data.href || "");
+  if (!href) {
+    throw new Error("Yandex.Disk did not return a download URL.");
+  }
+  return { href, method: String(data.method || "GET") };
 }
 
 Deno.serve(async (req) => {
@@ -117,14 +127,30 @@ Deno.serve(async (req) => {
     }
 
     if (action === "download") {
-      const params = new URLSearchParams({ path: diskPath });
-      const data = await yandexGet(`resources/download?${params.toString()}`, token);
+      const data = await getYandexDownloadInfo(diskPath, token);
       return jsonResponse({
         ok: true,
         action,
         path: diskPath,
-        href: data.href || "",
-        method: data.method || "GET",
+        href: data.href,
+        method: data.method,
+      });
+    }
+
+    if (action === "content") {
+      const data = await getYandexDownloadInfo(diskPath, token);
+      const fileResponse = await fetch(data.href, { method: data.method || "GET" });
+      if (!fileResponse.ok) {
+        throw new Error(`Yandex.Disk file download HTTP ${fileResponse.status}`);
+      }
+
+      const headers = new Headers(corsHeaders);
+      headers.set("Content-Type", fileResponse.headers.get("Content-Type") || "application/octet-stream");
+      const contentLength = fileResponse.headers.get("Content-Length");
+      if (contentLength) headers.set("Content-Length", contentLength);
+      return new Response(fileResponse.body, {
+        status: 200,
+        headers,
       });
     }
 

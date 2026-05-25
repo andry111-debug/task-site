@@ -34,8 +34,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_143";
-const APP_DEPLOY_NAME = "N_143_project_site_document_cards_archive_download";
+const APP_VERSION = "N_145";
+const APP_DEPLOY_NAME = "N_145_project_site_archive_download_fix";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -2611,7 +2611,7 @@ function App() {
     return `${section?.id || "section"}:${catalog?.value || "catalog"}`;
   }
 
-  async function invokeYandexReadonly(payload) {
+  function getYandexFunctionConfig() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -2619,7 +2619,15 @@ function App() {
       throw new Error("Не заполнены VITE_SUPABASE_URL и VITE_SUPABASE_KEY / VITE_SUPABASE_ANON_KEY.");
     }
 
-    const functionUrl = `${String(supabaseUrl).replace(/\/+$/g, "")}/functions/v1/${YANDEX_READONLY_FUNCTION}`;
+    return {
+      functionUrl: `${String(supabaseUrl).replace(/\/+$/g, "")}/functions/v1/${YANDEX_READONLY_FUNCTION}`,
+      supabaseKey,
+    };
+  }
+
+  async function invokeYandexReadonly(payload) {
+    const { functionUrl, supabaseKey } = getYandexFunctionConfig();
+
     const response = await fetch(functionUrl, {
       method: "POST",
       headers: {
@@ -2648,6 +2656,33 @@ function App() {
     }
 
     return data || {};
+  }
+
+  async function fetchYandexFileBlob(path) {
+    const { functionUrl, supabaseKey } = getYandexFunctionConfig();
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({ action: "content", path }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = { raw: text };
+      }
+      const message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
+      throw new Error(String(message));
+    }
+
+    return response.blob();
   }
 
   async function readYandexCatalog(section, catalog) {
@@ -2756,15 +2791,7 @@ function App() {
 
       for (const file of downloadableFiles) {
         const diskPath = getArchitectFileYandexPath(file);
-        const linkData = await invokeYandexReadonly({ action: "download", path: diskPath });
-        if (!linkData?.href) throw new Error(`Не получена ссылка Яндекс.Диска для файла: ${file.file_name || diskPath}`);
-
-        const response = await fetch(linkData.href);
-        if (!response.ok) {
-          throw new Error(`Не удалось скачать файл для архива: ${file.file_name || diskPath}`);
-        }
-
-        const blob = await response.blob();
+        const blob = await fetchYandexFileBlob(diskPath);
         const fileName = makeUniqueZipName(usedNames, file.file_name || String(diskPath).split("/").pop() || "file");
         zip.file(fileName, blob);
       }
@@ -3714,11 +3741,6 @@ function App() {
                 <h3>Зарегистрированные документы</h3>
               </div>
 
-              <div className="registeredDocsHint">
-                Этот блок показывает карточки документов, выгруженные из локальной программы ГИПа в таблицу сайта.
-                Файлы физически остаются на Яндекс.Диске; сайт получает ссылку на скачивание через серверную функцию.
-              </div>
-
               <div className="fileCategoryList">
                 {ARCHITECT_FILE_CATEGORIES.map((category) => {
                   const files = categoryFiles(category.value);
@@ -3745,7 +3767,6 @@ function App() {
                           <article className="fileCard" key={file.id}>
                             <div>
                               <strong>{file.file_name || "Файл"}</strong>
-                              <span>{getArchitectFileComment(file) || "Комментарий не указан"}</span>
                               {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
                               {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
