@@ -2678,3 +2678,205 @@ h3 {
 .floorSplitBlock:nth-child(2) .buildingImageButton img {
   max-height: 740px;
 }
+
+/* N_119 architect specialized interface */
+
+.interfaceChoiceCard {
+  max-width: 760px;
+}
+
+.choiceText {
+  margin: 0 0 18px;
+  color: #53657f;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.choiceButton {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid #c8d5e7;
+  background: #ffffff;
+  color: #12213f;
+  text-align: left;
+  box-shadow: 0 14px 35px rgba(18, 33, 63, 0.08);
+}
+
+.choiceButton strong {
+  font-size: 20px;
+}
+
+.choiceButton span {
+  color: #53657f;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.primaryChoice {
+  background: linear-gradient(135deg, #2f65ed 0%, #214ec2 100%);
+  color: #ffffff;
+  border-color: #2f65ed;
+}
+
+.primaryChoice span {
+  color: #dce7ff;
+}
+
+.choiceLogoutButton {
+  margin-top: 16px;
+}
+
+.architectShell .topBar {
+  align-items: center;
+}
+
+.architectGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.35fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.architectPanel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 45px rgba(18, 33, 63, 0.08);
+  border: 1px solid rgba(200, 213, 231, 0.8);
+}
+
+.mainArchitectPanel {
+  min-width: 0;
+}
+
+.buildingInfoMini {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f3f7fd;
+  border: 1px solid #d9e4f2;
+}
+
+.buildingInfoMini span,
+.fileCard span,
+.fileCard small,
+.fileNoLink {
+  color: #53657f;
+  font-weight: 700;
+}
+
+.smallHintBox {
+  padding: 12px;
+  border-radius: 16px;
+  background: #eef4ff;
+  color: #385072;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.architectSectionTableWrap {
+  overflow: auto;
+  border: 1px solid #d9e4f2;
+  border-radius: 18px;
+}
+
+.architectSectionTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 840px;
+  background: #ffffff;
+}
+
+.architectSectionTable th,
+.architectSectionTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6edf7;
+  text-align: left;
+  vertical-align: top;
+}
+
+.architectSectionTable th {
+  background: #f3f7fd;
+  color: #385072;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.architectSectionTable tr {
+  cursor: pointer;
+}
+
+.architectSectionTable tr:hover td {
+  background: #f7faff;
+}
+
+.architectSectionTable .selectedRow td {
+  background: #eaf1ff;
+}
+
+.emptyCell {
+  color: #53657f;
+  font-weight: 800;
+  text-align: center !important;
+}
+
+.architectFilesGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.45fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.fileList,
+.fileUploadForm {
+  display: grid;
+  gap: 12px;
+}
+
+.fileCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid #d9e4f2;
+  background: #ffffff;
+}
+
+.fileCard > div {
+  display: grid;
+  gap: 5px;
+}
+
+.emptyFileBox {
+  display: grid;
+  place-items: center;
+  min-height: 90px;
+  border-radius: 18px;
+  background: #f3f7fd;
+  color: #53657f;
+  font-weight: 800;
+}
+
+@media (max-width: 1050px) {
+  .architectGrid,
+  .architectFilesGrid,
+  .choiceGrid {
+    grid-template-columns: 1fr;
+  }
+}

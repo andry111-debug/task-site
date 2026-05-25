@@ -4,6 +4,7 @@ import "./App.css";
 
 const ROLE_LABELS = {
   admin: "Админ",
+  architect: "Архитектор",
   designer: "Проектанты",
   customer_service: "Служба заказчика",
   external: "Сторонние люди",
@@ -12,6 +13,7 @@ const ROLE_LABELS = {
 
 const ROLE_OPTIONS = [
   { value: "admin", label: "Админ" },
+  { value: "architect", label: "Архитектор" },
   { value: "designer", label: "Проектанты" },
   { value: "customer_service", label: "Служба заказчика" },
   { value: "external", label: "Сторонние люди" },
@@ -27,6 +29,7 @@ const ACCESS_ELEMENTS = [
 
 const ROLE_DEFAULT_ACCESS = {
   admin: ["schedule", "compact", "ppt", "buildings", "accounts"],
+  architect: ["schedule", "compact", "ppt", "buildings"],
   designer: ["schedule", "compact", "ppt", "buildings"],
   customer_service: ["schedule", "compact", "ppt", "buildings"],
   external: ["schedule", "compact", "buildings"],
@@ -63,10 +66,11 @@ function hasAccess(user, elementKey) {
 
 function normalizeAccountRole(role) {
   if (role === "employee") return "designer";
+  if (role === "architect" || role === "arhitect" || role === "архитектор") return "architect";
   if (role === "projectant" || role === "proektant") return "designer";
   if (role === "customer" || role === "client" || role === "zakazchik") return "customer_service";
   if (role === "other" || role === "guest" || role === "external_people") return "external";
-  if (["admin", "designer", "customer_service", "external"].includes(role)) return role;
+  if (["admin", "architect", "designer", "customer_service", "external"].includes(role)) return role;
   return "designer";
 }
 
@@ -309,12 +313,12 @@ const buildingAssets = {
         "explication": "/building-assets/cross-dock-office/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа",
+        "title": "План 2 этажа, офисная часть",
         "plan": "/building-assets/cross-dock-office/plan-2.jpg",
         "explication": "/building-assets/cross-dock-office/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа",
+        "title": "План 3 этажа, венткамера",
         "plan": "/building-assets/cross-dock-office/plan-3.jpg",
         "explication": "/building-assets/cross-dock-office/explication-3.jpg"
       }
@@ -364,7 +368,7 @@ const buildingAssets = {
         "explication": "/building-assets/doc-pavilion-fish-meat/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа",
+        "title": "План технического подвала",
         "plan": "/building-assets/doc-pavilion-fish-meat/plan-3.jpg",
         "explication": "/building-assets/doc-pavilion-fish-meat/explication-3.jpg"
       }
@@ -384,9 +388,14 @@ const buildingAssets = {
         "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа",
+        "title": "План 3 этажа, венткамера",
         "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-3.jpg",
-        "explication": ""
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-3.jpg"
+      },
+      {
+        "title": "План технического подвала",
+        "plan": "/building-assets/doc-pavilion-flowers-grocery/plan-4.jpg",
+        "explication": "/building-assets/doc-pavilion-flowers-grocery/explication-4.jpg"
       }
     ]
   },
@@ -394,9 +403,14 @@ const buildingAssets = {
     "view": "/building-assets/multitemp-warehouse/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План типового модуля",
         "plan": "/building-assets/multitemp-warehouse/plan-1.jpg",
         "explication": "/building-assets/multitemp-warehouse/explication-1.jpg"
+      },
+      {
+        "title": "Вариант компоновки на 20 модулей",
+        "plan": "/building-assets/multitemp-warehouse/plan-2.jpg",
+        "explication": "/building-assets/multitemp-warehouse/explication-2.jpg"
       }
     ]
   },
@@ -414,7 +428,7 @@ const buildingAssets = {
         "explication": "/building-assets/light-industrial/explication-2.jpg"
       },
       {
-        "title": "План 3 этажа",
+        "title": "План 3-4 этажа",
         "plan": "/building-assets/light-industrial/plan-3.jpg",
         "explication": "/building-assets/light-industrial/explication-3.jpg"
       }
@@ -424,14 +438,19 @@ const buildingAssets = {
     "view": "/building-assets/fast-trade-pavilion/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План быстровозводимого павильона",
         "plan": "/building-assets/fast-trade-pavilion/plan-1.jpg",
         "explication": "/building-assets/fast-trade-pavilion/explication-1.jpg"
       },
       {
-        "title": "План 2 этажа",
+        "title": "Вариант компоновки 2-х павильонов",
         "plan": "/building-assets/fast-trade-pavilion/plan-2.jpg",
         "explication": "/building-assets/fast-trade-pavilion/explication-2.jpg"
+      },
+      {
+        "title": "Вариант компоновки 3-х павильонов",
+        "plan": "/building-assets/fast-trade-pavilion/plan-3.jpg",
+        "explication": "/building-assets/fast-trade-pavilion/explication-3.jpg"
       }
     ]
   },
@@ -549,7 +568,7 @@ const buildingAssets = {
     "view": "/building-assets/canteen-60/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План столовой",
         "plan": "/building-assets/canteen-60/plan-1.jpg",
         "explication": "/building-assets/canteen-60/explication-1.jpg"
       }
@@ -574,7 +593,7 @@ const buildingAssets = {
     "view": "/building-assets/toilet-shower/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План здания туалет-душевые",
         "plan": "/building-assets/toilet-shower/plan-1.jpg",
         "explication": "/building-assets/toilet-shower/explication-1.jpg"
       }
@@ -584,9 +603,14 @@ const buildingAssets = {
     "view": "/building-assets/bus-platform/view.jpg",
     "floors": [
       {
-        "title": "План 1 этажа",
+        "title": "План пассажирского автобусного перрона",
         "plan": "/building-assets/bus-platform/plan-1.jpg",
-        "explication": ""
+        "explication": "/building-assets/bus-platform/explication-1.jpg"
+      },
+      {
+        "title": "Навес и схема размещения",
+        "plan": "/building-assets/bus-platform/plan-2.jpg",
+        "explication": "/building-assets/bus-platform/explication-2.jpg"
       }
     ]
   }
@@ -2026,6 +2050,20 @@ function App() {
   const [editTarget, setEditTarget] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [extendValue, setExtendValue] = useState("");
+  const [interfaceChoice, setInterfaceChoice] = useState(null);
+  const [siteSections, setSiteSections] = useState([]);
+  const [siteFiles, setSiteFiles] = useState([]);
+  const [siteDirectoryLoading, setSiteDirectoryLoading] = useState(false);
+  const [siteDirectoryError, setSiteDirectoryError] = useState("");
+  const [selectedSiteBuildingKey, setSelectedSiteBuildingKey] = useState("");
+  const [selectedSiteSectionId, setSelectedSiteSectionId] = useState("");
+  const [fileComment, setFileComment] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileYandexPath, setFileYandexPath] = useState("");
+  const [selectedUploadFile, setSelectedUploadFile] = useState(null);
+  const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
+  const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
+  const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
 
   const scheduleBounds = useMemo(() => getScheduleBounds(scheduleRows), [scheduleRows]);
 
@@ -2063,8 +2101,49 @@ function App() {
     };
   }, [pptItems]);
 
+  const siteBuildings = useMemo(() => {
+    const map = new Map();
+    siteSections.forEach((section) => {
+      const key = section.building_key || `${section.building_gp_no || ""} — ${section.building_name || ""}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          gpNo: section.building_gp_no || "",
+          name: section.building_name || "",
+          title: key,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => String(a.title).localeCompare(String(b.title), "ru"));
+  }, [siteSections]);
+
+  const selectedSiteBuildingSections = useMemo(() => {
+    if (!selectedSiteBuildingKey) return [];
+    return siteSections
+      .filter((section) => {
+        const key = section.building_key || `${section.building_gp_no || ""} — ${section.building_name || ""}`;
+        return key === selectedSiteBuildingKey;
+      })
+      .sort((a, b) => {
+        const stageCompare = String(a.stage || "").localeCompare(String(b.stage || ""), "ru");
+        if (stageCompare !== 0) return stageCompare;
+        return String(a.section_code || "").localeCompare(String(b.section_code || ""), "ru");
+      });
+  }, [siteSections, selectedSiteBuildingKey]);
+
+  const selectedSiteSection = useMemo(() => {
+    return siteSections.find((section) => section.id === selectedSiteSectionId) || selectedSiteBuildingSections[0] || null;
+  }, [siteSections, selectedSiteSectionId, selectedSiteBuildingSections]);
+
+  const selectedSiteSectionFiles = useMemo(() => {
+    if (!selectedSiteSection) return [];
+    return siteFiles
+      .filter((file) => file.section_id === selectedSiteSection.id)
+      .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  }, [siteFiles, selectedSiteSection]);
+
   const isAdmin = currentUser?.role === "admin";
-  const canEditPpt = currentUser?.role === "admin" || currentUser?.role === "designer";
+  const canEditPpt = currentUser?.role === "admin" || currentUser?.role === "designer" || currentUser?.role === "architect";
 
   async function loadPptSchedule() {
     const localItems = getLocalPptItems();
@@ -2132,6 +2211,160 @@ function App() {
     loadPptSchedule();
   }, []);
 
+
+  useEffect(() => {
+    if (currentUser?.role === "architect" && interfaceChoice === "specialized") {
+      loadSiteDirectory();
+    }
+  }, [currentUser, interfaceChoice]);
+
+  useEffect(() => {
+    if (!selectedSiteBuildingKey && siteBuildings.length > 0) {
+      setSelectedSiteBuildingKey(siteBuildings[0].key);
+    }
+  }, [siteBuildings, selectedSiteBuildingKey]);
+
+  useEffect(() => {
+    if (selectedSiteBuildingSections.length > 0) {
+      const exists = selectedSiteBuildingSections.some((section) => section.id === selectedSiteSectionId);
+      if (!exists) {
+        setSelectedSiteSectionId(selectedSiteBuildingSections[0].id);
+      }
+    } else {
+      setSelectedSiteSectionId("");
+    }
+  }, [selectedSiteBuildingSections, selectedSiteSectionId]);
+
+  async function loadSiteDirectory() {
+    if (!isSupabaseReady || !supabase) {
+      setSiteDirectoryError("Supabase не подключён. Проверьте .env.local.");
+      return;
+    }
+
+    setSiteDirectoryLoading(true);
+    setSiteDirectoryError("");
+
+    try {
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from(siteSectionsTable)
+        .select("*")
+        .eq("active", true)
+        .order("building_gp_no", { ascending: true })
+        .order("stage", { ascending: true })
+        .order("section_code", { ascending: true });
+
+      if (sectionsError) throw sectionsError;
+
+      const { data: filesData, error: filesError } = await supabase
+        .from(siteFilesTable)
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (filesError) throw filesError;
+
+      setSiteSections(sectionsData || []);
+      setSiteFiles(filesData || []);
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка загрузки справочника сайта: ${error.message}`);
+    } finally {
+      setSiteDirectoryLoading(false);
+    }
+  }
+
+  async function addFileToSiteSection(event) {
+    event.preventDefault();
+    setNotice("");
+    setSiteDirectoryError("");
+
+    if (!selectedSiteSection) {
+      setSiteDirectoryError("Выберите раздел.");
+      return;
+    }
+
+    if (!fileUrl.trim() && !fileYandexPath.trim() && !selectedUploadFile) {
+      setSiteDirectoryError("Укажите ссылку/путь к файлу или выберите файл для загрузки.");
+      return;
+    }
+
+    let uploadedUrl = fileUrl.trim();
+    let fileName = selectedUploadFile?.name || uploadedUrl.split("/").pop() || fileYandexPath.split(/[\\/]/).pop() || "file";
+    let storagePath = "";
+
+    try {
+      if (selectedUploadFile) {
+        if (!siteFilesBucket) {
+          setSiteDirectoryError(
+            "Для прямой загрузки файла укажите VITE_SITE_FILES_BUCKET. Без bucket можно зарегистрировать ссылку или путь к Яндекс.Диску."
+          );
+          return;
+        }
+        const safeName = selectedUploadFile.name.replace(/[^\p{L}\p{N}_.-]+/gu, "_");
+        storagePath = [
+          selectedSiteSection.project_key || "opr_donetsk",
+          selectedSiteSection.building_gp_no || "building",
+          selectedSiteSection.stage || "stage",
+          selectedSiteSection.section_code || "section",
+          `${Date.now()}_${safeName}`,
+        ].join("/");
+
+        const { error: uploadError } = await supabase.storage
+          .from(siteFilesBucket)
+          .upload(storagePath, selectedUploadFile, { upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicData } = supabase.storage.from(siteFilesBucket).getPublicUrl(storagePath);
+        uploadedUrl = publicData?.publicUrl || uploadedUrl;
+      }
+
+      const payload = {
+        section_id: selectedSiteSection.id,
+        project_key: selectedSiteSection.project_key || "opr_donetsk",
+        building_gp_no: selectedSiteSection.building_gp_no || "",
+        building_name: selectedSiteSection.building_name || "",
+        stage: selectedSiteSection.stage || "",
+        section_code: selectedSiteSection.section_code || "",
+        section_title: selectedSiteSection.section_title || "",
+        file_name: fileName,
+        file_url: uploadedUrl,
+        yandex_path: fileYandexPath.trim(),
+        storage_path: storagePath,
+        comment: fileComment.trim(),
+        uploaded_by: currentUser?.name || "",
+      };
+
+      const { error } = await supabase.from(siteFilesTable).insert(payload);
+      if (error) throw error;
+
+      setFileComment("");
+      setFileUrl("");
+      setFileYandexPath("");
+      setSelectedUploadFile(null);
+      await loadSiteDirectory();
+      setNotice("Файл зарегистрирован в разделе.");
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка регистрации файла: ${error.message}`);
+    }
+  }
+
+  function chooseArchitectInterface(choice) {
+    setInterfaceChoice(choice);
+    setNotice("");
+    setSiteDirectoryError("");
+    if (choice === "general") {
+      const firstAvailableTab = hasAccess(currentUser, "schedule")
+        ? "schedule"
+        : hasAccess(currentUser, "compact")
+          ? "compact"
+          : hasAccess(currentUser, "ppt")
+            ? "ppt"
+            : hasAccess(currentUser, "buildings")
+              ? "buildings"
+              : "schedule";
+      setActiveTab(firstAvailableTab);
+    }
+  }
+
   async function handleLogin(event) {
     event.preventDefault();
     setLoginError("");
@@ -2176,6 +2409,11 @@ function App() {
       };
 
       setCurrentUser(normalizedUser);
+      if (normalizedUser.role === "architect") {
+        setInterfaceChoice(null);
+      } else {
+        setInterfaceChoice("general");
+      }
       const firstAvailableTab = hasAccess(normalizedUser, "schedule")
         ? "schedule"
         : hasAccess(normalizedUser, "compact")
@@ -2203,6 +2441,9 @@ function App() {
     setPassword("1111");
     setLoginError("");
     setNotice("");
+    setInterfaceChoice(null);
+    setSiteSections([]);
+    setSiteFiles([]);
   }
 
   async function addAccount(event) {
@@ -2742,6 +2983,196 @@ function App() {
           </div>
         </div>
       </section>
+    );
+  }
+
+  function renderArchitectInterfaceChoice() {
+    return (
+      <main className="loginOnlyPage">
+        <section className="loginCard interfaceChoiceCard">
+          <p className="eyebrow">Выбор интерфейса</p>
+          <h1>Какой интерфейс использовать?</h1>
+          <p className="choiceText">
+            Для учетной записи архитектора доступен общий интерфейс сайта и специализированный интерфейс для работы со зданиями, разделами и файлами.
+          </p>
+          <div className="choiceGrid">
+            <button className="choiceButton" onClick={() => chooseArchitectInterface("general")}>
+              <strong>Общий интерфейс</strong>
+              <span>Графики, здания и остальные разделы сайта.</span>
+            </button>
+            <button className="choiceButton primaryChoice" onClick={() => chooseArchitectInterface("specialized")}>
+              <strong>Специализированный интерфейс</strong>
+              <span>Выбор здания, список разделов, скачивание и регистрация файлов.</span>
+            </button>
+          </div>
+          <button className="ghostButton choiceLogoutButton" onClick={logout}>Выйти</button>
+        </section>
+      </main>
+    );
+  }
+
+  function renderArchitectWorkspace() {
+    const currentBuilding = siteBuildings.find((item) => item.key === selectedSiteBuildingKey);
+
+    return (
+      <main className="appShell architectShell">
+        <header className="topBar">
+          <div>
+            <p className="eyebrow">Специализированный интерфейс</p>
+            <h1>Работа архитектора с разделами</h1>
+          </div>
+          <div className="userPanel">
+            <div>
+              <strong>{currentUser.name}</strong>
+              <span>{ROLE_LABELS[currentUser.role] || currentUser.role}</span>
+            </div>
+            <button className="secondaryButton" onClick={() => setInterfaceChoice(null)}>Сменить интерфейс</button>
+            <button className="ghostButton" onClick={logout}>Выйти</button>
+          </div>
+        </header>
+
+        <section className="contentStack">
+          <div className="sectionHeader">
+            <div>
+              <p className="eyebrow">Справочник из локальной программы ГИПа</p>
+              <h2>Здания и разделы</h2>
+            </div>
+            <button className="secondaryButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
+              {siteDirectoryLoading ? "Обновление..." : "Обновить"}
+            </button>
+          </div>
+
+          {notice && <div className="noticeBox">{notice}</div>}
+          {siteDirectoryError && <div className="errorBox">{siteDirectoryError}</div>}
+
+          <div className="architectGrid">
+            <aside className="architectPanel">
+              <label>
+                Выбор здания
+                <select
+                  value={selectedSiteBuildingKey}
+                  onChange={(event) => setSelectedSiteBuildingKey(event.target.value)}
+                >
+                  {siteBuildings.map((building) => (
+                    <option value={building.key} key={building.key}>{building.title}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="buildingInfoMini">
+                <span>Выбрано здание</span>
+                <strong>{currentBuilding?.title || "Нет данных"}</strong>
+              </div>
+
+              <div className="smallHintBox">
+                Список зданий и разделов загружается из локальной программы через вкладку «Сервисные функции → Работа с сайтом».
+              </div>
+            </aside>
+
+            <section className="architectPanel mainArchitectPanel">
+              <div className="cardHeaderLine">
+                <p className="eyebrow">Существующие разделы</p>
+                <h3>{selectedSiteBuildingSections.length} разделов</h3>
+              </div>
+
+              <div className="architectSectionTableWrap">
+                <table className="architectSectionTable">
+                  <thead>
+                    <tr>
+                      <th>Стадия</th>
+                      <th>Раздел</th>
+                      <th>Наименование</th>
+                      <th>Шифр</th>
+                      <th>Файл</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSiteBuildingSections.map((section) => (
+                      <tr
+                        key={section.id}
+                        className={selectedSiteSection?.id === section.id ? "selectedRow" : ""}
+                        onClick={() => setSelectedSiteSectionId(section.id)}
+                      >
+                        <td>{section.stage}</td>
+                        <td><strong>{section.section_code}</strong></td>
+                        <td>{section.section_title}</td>
+                        <td>{section.cipher}</td>
+                        <td>{section.common_latest_version_name || "—"}</td>
+                      </tr>
+                    ))}
+                    {!selectedSiteBuildingSections.length && (
+                      <tr>
+                        <td colSpan="5" className="emptyCell">Разделы не найдены. Выполните синхронизацию из локальной программы.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          {selectedSiteSection && (
+            <div className="architectFilesGrid">
+              <section className="architectPanel">
+                <div className="cardHeaderLine">
+                  <p className="eyebrow">Файлы раздела</p>
+                  <h3>{selectedSiteSection.section_code} — {selectedSiteSection.section_title}</h3>
+                </div>
+
+                <div className="fileList">
+                  {selectedSiteSectionFiles.map((file) => (
+                    <article className="fileCard" key={file.id}>
+                      <div>
+                        <strong>{file.file_name || "Файл"}</strong>
+                        <span>{file.comment || "Комментарий не указан"}</span>
+                        {file.yandex_path && <small>Яндекс.Диск: {file.yandex_path}</small>}
+                      </div>
+                      {file.file_url ? (
+                        <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
+                          Скачать / открыть
+                        </button>
+                      ) : (
+                        <span className="fileNoLink">Нет прямой ссылки</span>
+                      )}
+                    </article>
+                  ))}
+                  {!selectedSiteSectionFiles.length && <div className="emptyFileBox">Файлы по выбранному разделу пока не зарегистрированы.</div>}
+                </div>
+              </section>
+
+              <section className="architectPanel">
+                <div className="cardHeaderLine">
+                  <p className="eyebrow">Загрузка / регистрация файла</p>
+                  <h3>Добавить файл в раздел</h3>
+                </div>
+
+                <form className="fileUploadForm" onSubmit={addFileToSiteSection}>
+                  <label>
+                    Файл для прямой загрузки
+                    <input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} />
+                  </label>
+                  <label>
+                    Прямая ссылка на файл
+                    <input value={fileUrl} onChange={(event) => setFileUrl(event.target.value)} placeholder="https://..." />
+                  </label>
+                  <label>
+                    Путь в Яндекс.Диске
+                    <input value={fileYandexPath} onChange={(event) => setFileYandexPath(event.target.value)} placeholder="/ОПР_Донецкий/Сайт_входящие/..." />
+                  </label>
+                  <label>
+                    Комментарий
+                    <input value={fileComment} onChange={(event) => setFileComment(event.target.value)} placeholder="Что это за файл" />
+                  </label>
+                  <button className="primaryButton" type="submit">Загрузить / зарегистрировать</button>
+                  <div className="smallHintBox">
+                    База хранит только карточку файла: имя, ссылку, путь и комментарий. Сам файл хранится вне таблицы базы. Для прямой загрузки нужен bucket VITE_SITE_FILES_BUCKET; для Яндекс.Диска можно указать ссылку или путь.
+                  </div>
+                </form>
+              </section>
+            </div>
+          )}
+        </section>
+      </main>
     );
   }
 
@@ -3579,6 +4010,14 @@ function App() {
 
   if (!currentUser) {
     return renderLoginPage();
+  }
+
+  if (currentUser.role === "architect" && !interfaceChoice) {
+    return renderArchitectInterfaceChoice();
+  }
+
+  if (currentUser.role === "architect" && interfaceChoice === "specialized") {
+    return renderArchitectWorkspace();
   }
 
   return (
