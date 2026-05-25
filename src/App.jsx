@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, isSupabaseReady } from "./supabaseClient";
+import JSZip from "jszip";
 import "./App.css";
 
 const ROLE_LABELS = {
@@ -33,8 +34,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_142";
-const APP_DEPLOY_NAME = "N_142_project_site_document_cards_reader";
+const APP_VERSION = "N_143";
+const APP_DEPLOY_NAME = "N_143_project_site_document_cards_archive_download";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -278,6 +279,31 @@ function getArchitectFileYandexPath(file) {
 
 function getArchitectFileDate(file) {
   return file?.registered_at || file?.modified_at || file?.created_at || "";
+}
+
+function sanitizeZipPart(value) {
+  return String(value || "file")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/ /g, "")
+    .replace(/^\.+$/, "file") || "file";
+}
+
+function makeUniqueZipName(usedNames, requestedName) {
+  const safeName = sanitizeZipPart(requestedName || "file");
+  if (!usedNames.has(safeName)) {
+    usedNames.add(safeName);
+    return safeName;
+  }
+
+  const dotIndex = safeName.lastIndexOf(".");
+  const stem = dotIndex > 0 ? safeName.slice(0, dotIndex) : safeName;
+  const suffix = dotIndex > 0 ? safeName.slice(dotIndex) : "";
+  let counter = 2;
+  while (usedNames.has(`${stem}_${counter}${suffix}`)) counter += 1;
+  const uniqueName = `${stem}_${counter}${suffix}`;
+  usedNames.add(uniqueName);
+  return uniqueName;
 }
 
 const ACCESS_ELEMENTS = [
@@ -2328,6 +2354,7 @@ function App() {
   const [selectedUploadFile, setSelectedUploadFile] = useState(null);
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
+  const [archiveDownloadState, setArchiveDownloadState] = useState({});
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
@@ -2701,6 +2728,60 @@ function App() {
       window.open(data.href, "_blank", "noopener,noreferrer");
     } catch (error) {
       setSiteDirectoryError(`Ошибка получения ссылки Яндекс.Диска: ${error.message}`);
+    }
+  }
+
+  async function downloadCategoryAsArchive(category, files) {
+    const downloadableFiles = (files || []).filter((file) => getArchitectFileYandexPath(file));
+    if (!downloadableFiles.length) {
+      setSiteDirectoryError("В выбранном разделе нет файлов с путем Яндекс.Диска для архива.");
+      return;
+    }
+
+    const categoryInfo = ARCHITECT_FILE_CATEGORIES.find((item) => item.value === category);
+    const archiveKey = `${modalSiteSection?.id || selectedSiteSection?.id || "section"}:${category}`;
+    const section = modalSiteSection || selectedSiteSection || {};
+    const archiveName = sanitizeZipPart([
+      section.building_gp_no || "GP",
+      section.section_code || "section",
+      categoryInfo?.shortLabel || category,
+    ].filter(Boolean).join("_"));
+
+    setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: true }));
+    setSiteDirectoryError("");
+
+    try {
+      const zip = new JSZip();
+      const usedNames = new Set();
+
+      for (const file of downloadableFiles) {
+        const diskPath = getArchitectFileYandexPath(file);
+        const linkData = await invokeYandexReadonly({ action: "download", path: diskPath });
+        if (!linkData?.href) throw new Error(`Не получена ссылка Яндекс.Диска для файла: ${file.file_name || diskPath}`);
+
+        const response = await fetch(linkData.href);
+        if (!response.ok) {
+          throw new Error(`Не удалось скачать файл для архива: ${file.file_name || diskPath}`);
+        }
+
+        const blob = await response.blob();
+        const fileName = makeUniqueZipName(usedNames, file.file_name || String(diskPath).split("/").pop() || "file");
+        zip.file(fileName, blob);
+      }
+
+      const archiveBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(archiveBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${archiveName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка скачивания архива: ${error.message}`);
+    } finally {
+      setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
     }
   }
 
@@ -3645,7 +3726,19 @@ function App() {
                     <div className="fileCategoryBlock" key={category.value}>
                       <div className="fileCategoryTitle">
                         <strong>{category.label}</strong>
-                        <span>{files.length}</span>
+                        <div className="fileCategoryActions">
+                          {(category.value === "source" || category.value === "remark") && (
+                            <button
+                              type="button"
+                              className="archiveButton"
+                              onClick={() => downloadCategoryAsArchive(category.value, files)}
+                              disabled={!files.some((file) => getArchitectFileYandexPath(file)) || archiveDownloadState[`${modalSiteSection?.id || "section"}:${category.value}`]}
+                            >
+                              {archiveDownloadState[`${modalSiteSection?.id || "section"}:${category.value}`] ? "Готовлю архив..." : "Скачать архивом"}
+                            </button>
+                          )}
+                          <span>{files.length}</span>
+                        </div>
                       </div>
                       <div className="fileList">
                         {files.map((file) => (
@@ -3653,7 +3746,6 @@ function App() {
                             <div>
                               <strong>{file.file_name || "Файл"}</strong>
                               <span>{getArchitectFileComment(file) || "Комментарий не указан"}</span>
-                              {getArchitectFileYandexPath(file) && <small>Яндекс.Диск: {getArchitectFileYandexPath(file)}</small>}
                               {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
                               {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
