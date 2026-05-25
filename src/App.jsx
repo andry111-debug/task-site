@@ -60,6 +60,19 @@ function safeDiskPart(value) {
     .replace(/^_+|_+$/g, "") || "item";
 }
 
+function safeStorageKeyPart(value) {
+  // Must match the local program safe_filename(): keep letters/numbers, dash, underscore and dot; replace everything else with underscore.
+  return String(value || "")
+    .trim()
+    .replace(/[^\p{L}\p{N}\-_.]+/gu, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || "item";
+}
+
+function makeSectionStorageKey(section) {
+  return `GP_${safeStorageKeyPart(section?.building_gp_no || "")}_${safeStorageKeyPart(section?.building_name || "")}__${safeStorageKeyPart(normalizeStage(section?.stage || "П"))}_${safeStorageKeyPart(section?.section_code || "")}`;
+}
+
 function toYandexDiskPath(rawPath) {
   const normalized = normalizePathSeparators(rawPath);
   if (!normalized) return "";
@@ -91,6 +104,8 @@ function makeSiteQueuePath(section, folderName) {
 
 function getYandexCatalogsForSection(section) {
   const commonFolder = toYandexDiskPath(section?.common_storage_folder || "");
+  const gipFolder = toYandexDiskPath(section?.gip_storage_folder || "");
+  const sectionStorageKey = makeSectionStorageKey(section);
 
   return [
     {
@@ -110,16 +125,16 @@ function getYandexCatalogsForSection(section) {
     {
       value: "source",
       label: "Исходники",
-      path: makeSiteQueuePath(section, "Исходники"),
-      source: "служебная очередь сайта",
-      description: "На этом этапе только проверяем будущий каталог входящих исходников. Запись отключена.",
+      path: gipFolder ? joinDiskPath(gipFolder, "исходники", sectionStorageKey) : "",
+      source: "gip_storage_folder/исходники/<ключ раздела>",
+      description: "Существующая папка исходников из структуры локальной программы. На этом этапе только чтение.",
     },
     {
       value: "remark",
       label: "Замечания",
-      path: makeSiteQueuePath(section, "Замечания"),
-      source: "служебная очередь сайта",
-      description: "На этом этапе только проверяем будущий каталог входящих замечаний. Запись отключена.",
+      path: gipFolder ? joinDiskPath(gipFolder, "замечания", sectionStorageKey) : "",
+      source: "gip_storage_folder/замечания/<ключ раздела>",
+      description: "Существующая папка замечаний из структуры локальной программы. На этом этапе только чтение.",
     },
   ];
 }
