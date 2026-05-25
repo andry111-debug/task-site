@@ -33,11 +33,13 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_128";
-const APP_DEPLOY_NAME = "N_128_project_site_yandex_disk_path_mapping_and_version";
+const APP_VERSION = "N_129";
+const APP_DEPLOY_NAME = "N_129_project_site_yandex_disk_root_and_error_details";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
-const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "";
+// Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
+// For this project that sync root corresponds to /Для Технического заказчика on Yandex.Disk.
+const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "/Для Технического заказчика";
 const YANDEX_LOCAL_ROOTS = String(
   import.meta.env.VITE_YANDEX_LOCAL_ROOTS ||
     import.meta.env.VITE_YANDEX_LOCAL_ROOT ||
@@ -2509,6 +2511,45 @@ function App() {
     return `${section?.id || "section"}:${catalog?.value || "catalog"}`;
   }
 
+  async function invokeYandexReadonly(payload) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Не заполнены VITE_SUPABASE_URL и VITE_SUPABASE_KEY / VITE_SUPABASE_ANON_KEY.");
+    }
+
+    const functionUrl = `${String(supabaseUrl).replace(/\/+$/g, "")}/functions/v1/${YANDEX_READONLY_FUNCTION}`;
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { raw: text };
+    }
+
+    if (!response.ok) {
+      const message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
+      throw new Error(String(message));
+    }
+
+    if (data?.error) {
+      throw new Error(String(data.error));
+    }
+
+    return data || {};
+  }
+
   async function readYandexCatalog(section, catalog) {
     const key = yandexCatalogKey(section, catalog);
     const path = catalog?.path || "";
@@ -2545,12 +2586,7 @@ function App() {
     }));
 
     try {
-      const { data, error } = await supabase.functions.invoke(YANDEX_READONLY_FUNCTION, {
-        body: { action: "list", path },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await invokeYandexReadonly({ action: "list", path });
 
       setYandexCatalogState((prev) => ({
         ...prev,
@@ -2582,12 +2618,7 @@ function App() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke(YANDEX_READONLY_FUNCTION, {
-        body: { action: "download", path },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await invokeYandexReadonly({ action: "download", path });
       if (!data?.href) throw new Error("Яндекс.Диск не вернул ссылку на скачивание.");
 
       window.open(data.href, "_blank", "noopener,noreferrer");
