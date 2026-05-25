@@ -33,8 +33,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_139";
-const APP_DEPLOY_NAME = "N_139_project_site_path_map_reader";
+const APP_VERSION = "N_140";
+const APP_DEPLOY_NAME = "N_140_project_site_catalog_tester_button";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -2307,6 +2307,7 @@ function App() {
   const [fileYandexPath, setFileYandexPath] = useState("");
   const [selectedUploadFile, setSelectedUploadFile] = useState(null);
   const [yandexCatalogState, setYandexCatalogState] = useState({});
+  const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
@@ -2411,6 +2412,10 @@ function App() {
   const modalSiteSection = useMemo(() => {
     return siteSections.find((section) => section.id === siteSectionModalId) || null;
   }, [siteSections, siteSectionModalId]);
+
+  useEffect(() => {
+    setShowYandexCatalogTester(false);
+  }, [siteSectionModalId]);
 
   const selectedSiteSectionFiles = useMemo(() => {
     if (!selectedSiteSection) return [];
@@ -3590,11 +3595,27 @@ function App() {
             <button className="ghostButton" onClick={() => setSiteSectionModalId("")}>Закрыть</button>
           </div>
 
-          <div className="modalContentGrid">
+          <div className="modalToolsLine">
+            <button
+              type="button"
+              className="secondaryButton"
+              onClick={() => setShowYandexCatalogTester((value) => !value)}
+            >
+              {showYandexCatalogTester ? "Скрыть проверку каталогов" : "Проверить каталоги Яндекс.Диска"}
+            </button>
+            <span>Проверка каталогов нужна для диагностики сопоставления путей. В обычной работе она может быть скрыта.</span>
+          </div>
+
+          <div className={showYandexCatalogTester ? "modalContentGrid" : "modalContentGrid singleColumn"}>
             <section className="modalBlock">
               <div className="cardHeaderLine">
                 <p className="eyebrow">Карточки из базы сайта</p>
                 <h3>Зарегистрированные документы</h3>
+              </div>
+
+              <div className="registeredDocsHint">
+                Этот блок показывает только карточки документов, зарегистрированные в таблице сайта.
+                Файлы, найденные прямым чтением папок Яндекс.Диска, отображаются в отдельной проверке каталогов.
               </div>
 
               <div className="fileCategoryList">
@@ -3631,6 +3652,7 @@ function App() {
               </div>
             </section>
 
+            {showYandexCatalogTester && (
             <section className="modalBlock yandexReadOnlyBlock">
               <div className="cardHeaderLine">
                 <p className="eyebrow">Яндекс.Диск / только чтение</p>
@@ -3704,6 +3726,7 @@ function App() {
                 })}
               </div>
             </section>
+            )}
           </div>
         </section>
       </div>

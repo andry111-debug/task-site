@@ -3455,3 +3455,43 @@ h3 {
     display: grid;
   }
 }
+
+
+/* N_140: diagnostic Yandex.Disk catalog tester is hidden behind a separate button */
+.modalToolsLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #eef5ff;
+  border: 1px solid #d2e1f5;
+  color: #425674;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.modalToolsLine span {
+  color: #425674;
+}
+
+.modalContentGrid.singleColumn {
+  grid-template-columns: 1fr;
+}
+
+.registeredDocsHint {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #eef5ff;
+  border: 1px solid #d2e1f5;
+  color: #425674;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .modalToolsLine {
+    display: grid;
+  }
+}
