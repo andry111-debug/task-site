@@ -2880,3 +2880,199 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* N_122 architect interface readability and building list fixes */
+.interfaceChoiceCard {
+  max-width: 860px;
+}
+
+.choiceGrid {
+  grid-template-columns: repeat(2, minmax(230px, 1fr));
+}
+
+.choiceButton {
+  min-width: 0;
+  overflow: hidden;
+  align-content: start;
+}
+
+.choiceButton strong {
+  font-size: 18px;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.choiceButton span {
+  font-size: 15px;
+  overflow-wrap: break-word;
+}
+
+.architectShell,
+.architectShell h1,
+.architectShell h2,
+.architectShell h3,
+.architectPanel,
+.architectPanel label,
+.architectPanel input,
+.architectPanel select,
+.architectPanel textarea {
+  color: #10233f;
+}
+
+.architectPanel .eyebrow,
+.mainArchitectPanel .eyebrow,
+.cardHeaderLine .eyebrow {
+  color: #315d98;
+  font-weight: 900;
+}
+
+.buildingChooserPanel {
+  align-content: start;
+}
+
+.buildingChooserHeader label {
+  display: grid;
+  gap: 8px;
+  color: #10233f;
+  font-weight: 900;
+}
+
+.buildingChooserHeader input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #a9bdd6;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: #10233f;
+  font-weight: 700;
+}
+
+.buildingChooserHeader input::placeholder {
+  color: #6e7f99;
+}
+
+.buildingList {
+  display: grid;
+  gap: 8px;
+  max-height: 430px;
+  overflow: auto;
+  padding: 4px 2px 4px 0;
+}
+
+.buildingListItem {
+  display: grid;
+  grid-template-columns: minmax(42px, auto) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  border: 1px solid #c8d5e7;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: #10233f;
+  text-align: left;
+  cursor: pointer;
+}
+
+.buildingListItem:hover {
+  background: #eef5ff;
+  border-color: #7ea8e6;
+}
+
+.buildingListItem.active {
+  background: #183b72;
+  color: #ffffff;
+  border-color: #183b72;
+  box-shadow: 0 12px 28px rgba(24, 59, 114, 0.18);
+}
+
+.buildingListItem span {
+  color: inherit;
+  font-weight: 900;
+  opacity: 0.95;
+}
+
+.buildingListItem strong {
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.emptyBuildingList {
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff7e6;
+  color: #6f4b00;
+  font-weight: 900;
+  text-align: center;
+}
+
+.buildingInfoMini {
+  background: #eaf2ff;
+  color: #10233f;
+}
+
+.buildingInfoMini span,
+.buildingInfoMini strong {
+  color: #10233f;
+}
+
+.architectSectionTable {
+  background: #ffffff;
+}
+
+.architectSectionTable th {
+  background: #dfeaff;
+  color: #183b72;
+  font-weight: 900;
+}
+
+.architectSectionTable td {
+  background: #ffffff;
+  color: #152744;
+  font-weight: 650;
+}
+
+.architectSectionTable td strong {
+  color: #123f7c;
+}
+
+.architectSectionTable tr:hover td {
+  background: #eef5ff;
+  color: #0f2340;
+}
+
+.architectSectionTable .selectedRow td {
+  background: #cfe0ff;
+  color: #0b1f3b;
+  font-weight: 800;
+}
+
+.fileCard,
+.emptyFileBox,
+.smallHintBox {
+  color: #10233f;
+}
+
+.fileCard strong {
+  color: #10233f;
+}
+
+.fileCard span,
+.fileCard small,
+.fileNoLink {
+  color: #425674;
+}
+
+@media (max-width: 1050px) {
+  .choiceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .choiceButton strong {
+    font-size: 20px;
+  }
+}

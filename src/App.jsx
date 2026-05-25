@@ -2056,6 +2056,7 @@ function App() {
   const [siteDirectoryLoading, setSiteDirectoryLoading] = useState(false);
   const [siteDirectoryError, setSiteDirectoryError] = useState("");
   const [selectedSiteBuildingKey, setSelectedSiteBuildingKey] = useState("");
+  const [siteBuildingSearch, setSiteBuildingSearch] = useState("");
   const [selectedSiteSectionId, setSelectedSiteSectionId] = useState("");
   const [fileComment, setFileComment] = useState("");
   const [fileUrl, setFileUrl] = useState("");
@@ -2116,6 +2117,20 @@ function App() {
     });
     return Array.from(map.values()).sort((a, b) => String(a.title).localeCompare(String(b.title), "ru"));
   }, [siteSections]);
+
+
+  const filteredSiteBuildings = useMemo(() => {
+    const query = siteBuildingSearch.trim().toLowerCase();
+    if (!query) return siteBuildings;
+
+    return siteBuildings.filter((building) => {
+      const haystack = [building.gpNo, building.name, building.title]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [siteBuildings, siteBuildingSearch]);
 
   const selectedSiteBuildingSections = useMemo(() => {
     if (!selectedSiteBuildingKey) return [];
@@ -3046,18 +3061,34 @@ function App() {
           {siteDirectoryError && <div className="errorBox">{siteDirectoryError}</div>}
 
           <div className="architectGrid">
-            <aside className="architectPanel">
-              <label>
-                Выбор здания
-                <select
-                  value={selectedSiteBuildingKey}
-                  onChange={(event) => setSelectedSiteBuildingKey(event.target.value)}
-                >
-                  {siteBuildings.map((building) => (
-                    <option value={building.key} key={building.key}>{building.title}</option>
-                  ))}
-                </select>
-              </label>
+            <aside className="architectPanel buildingChooserPanel">
+              <div className="buildingChooserHeader">
+                <label>
+                  Фильтр по названию / номеру
+                  <input
+                    value={siteBuildingSearch}
+                    onChange={(event) => setSiteBuildingSearch(event.target.value)}
+                    placeholder="Начните вводить название или номер здания"
+                  />
+                </label>
+              </div>
+
+              <div className="buildingList" role="listbox" aria-label="Список зданий">
+                {filteredSiteBuildings.map((building) => (
+                  <button
+                    type="button"
+                    key={building.key}
+                    className={building.key === selectedSiteBuildingKey ? "buildingListItem active" : "buildingListItem"}
+                    onClick={() => setSelectedSiteBuildingKey(building.key)}
+                  >
+                    <span>{building.gpNo || "—"}</span>
+                    <strong>{building.name || building.title}</strong>
+                  </button>
+                ))}
+                {!filteredSiteBuildings.length && (
+                  <div className="emptyBuildingList">Здания по фильтру не найдены.</div>
+                )}
+              </div>
 
               <div className="buildingInfoMini">
                 <span>Выбрано здание</span>
