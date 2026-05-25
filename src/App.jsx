@@ -32,6 +32,106 @@ const ARCHITECT_FILE_CATEGORIES = [
   { value: "remark", label: "Замечания", shortLabel: "Замечания" },
 ];
 
+
+const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
+const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
+
+function normalizePathSeparators(value) {
+  return String(value || "").trim().replace(/\\+/g, "/").replace(/\/+/g, "/");
+}
+
+function trimSlashes(value) {
+  return String(value || "").replace(/^\/+|\/+$/g, "");
+}
+
+function joinDiskPath(...parts) {
+  const cleaned = parts
+    .map((part) => trimSlashes(normalizePathSeparators(part)))
+    .filter(Boolean);
+  return cleaned.length ? `/${cleaned.join("/")}` : "";
+}
+
+function safeDiskPart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[\\/:*?"<>|#%{}^~[\]`]+/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || "item";
+}
+
+function toYandexDiskPath(rawPath) {
+  const normalized = normalizePathSeparators(rawPath);
+  if (!normalized) return "";
+  if (normalized.startsWith("/")) return normalized;
+
+  const markers = ["Для Технического заказчика", "Внутренняя Технологии", "Программные файлы"];
+  const lower = normalized.toLowerCase();
+  for (const marker of markers) {
+    const index = lower.indexOf(marker.toLowerCase());
+    if (index >= 0) {
+      return `/${normalized.slice(index).replace(/^\/+/, "")}`;
+    }
+  }
+
+  return normalized;
+}
+
+function makeSiteQueuePath(section, folderName) {
+  const buildingPart = `${safeDiskPart(section?.building_gp_no || "-")}_${safeDiskPart(section?.building_name || "building")}`;
+  return joinDiskPath(
+    YANDEX_SERVICE_ROOT,
+    "upload_queue",
+    folderName,
+    buildingPart,
+    normalizeStage(section?.stage || "П"),
+    safeDiskPart(section?.section_code || "section")
+  );
+}
+
+function getYandexCatalogsForSection(section) {
+  const commonFolder = toYandexDiskPath(section?.common_storage_folder || "");
+
+  return [
+    {
+      value: "project_file",
+      label: "Файлы проекта",
+      path: commonFolder,
+      source: "common_storage_folder",
+      description: "Основная папка раздела из локальной программы. Структура папки не меняется.",
+    },
+    {
+      value: "tz",
+      label: "ТЗ",
+      path: commonFolder ? joinDiskPath(commonFolder, "ТЗ") : "",
+      source: "common_storage_folder/ТЗ",
+      description: "Подпапка ТЗ в общей папке раздела.",
+    },
+    {
+      value: "source",
+      label: "Исходники",
+      path: makeSiteQueuePath(section, "Исходники"),
+      source: "служебная очередь сайта",
+      description: "На этом этапе только проверяем будущий каталог входящих исходников. Запись отключена.",
+    },
+    {
+      value: "remark",
+      label: "Замечания",
+      path: makeSiteQueuePath(section, "Замечания"),
+      source: "служебная очередь сайта",
+      description: "На этом этапе только проверяем будущий каталог входящих замечаний. Запись отключена.",
+    },
+  ];
+}
+
+function formatFileSize(bytes) {
+  const value = Number(bytes || 0);
+  if (!Number.isFinite(value) || value <= 0) return "";
+  if (value < 1024) return `${value} Б`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} КБ`;
+  return `${(value / 1024 / 1024).toFixed(1)} МБ`;
+}
+
 function normalizeStage(value) {
   const raw = String(value || "").trim();
   const upper = raw.toUpperCase();
@@ -2097,6 +2197,7 @@ function App() {
   const [fileUrl, setFileUrl] = useState("");
   const [fileYandexPath, setFileYandexPath] = useState("");
   const [selectedUploadFile, setSelectedUploadFile] = useState(null);
+  const [yandexCatalogState, setYandexCatalogState] = useState({});
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
@@ -2342,6 +2443,97 @@ function App() {
       setSiteDirectoryError(`Ошибка загрузки справочника сайта: ${error.message}`);
     } finally {
       setSiteDirectoryLoading(false);
+    }
+  }
+
+  function yandexCatalogKey(section, catalog) {
+    return `${section?.id || "section"}:${catalog?.value || "catalog"}`;
+  }
+
+  async function readYandexCatalog(section, catalog) {
+    const key = yandexCatalogKey(section, catalog);
+    const path = catalog?.path || "";
+
+    if (!path) {
+      setYandexCatalogState((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          error: "Для этого каталога нет пути. Сначала синхронизируйте разделы из локальной программы.",
+          items: [],
+          normalizedPath: "",
+        },
+      }));
+      return;
+    }
+
+    if (!isSupabaseReady || !supabase) {
+      setYandexCatalogState((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          error: "Supabase не подключён. Невозможно вызвать серверную функцию Яндекс.Диска.",
+          items: [],
+          normalizedPath: path,
+        },
+      }));
+      return;
+    }
+
+    setYandexCatalogState((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), loading: true, error: "", items: [], normalizedPath: path },
+    }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke(YANDEX_READONLY_FUNCTION, {
+        body: { action: "list", path },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setYandexCatalogState((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          error: "",
+          items: Array.isArray(data?.items) ? data.items : [],
+          normalizedPath: data?.path || path,
+        },
+      }));
+    } catch (error) {
+      setYandexCatalogState((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          error: error?.message || "Не удалось прочитать каталог Яндекс.Диска.",
+          items: [],
+          normalizedPath: path,
+        },
+      }));
+    }
+  }
+
+  async function openYandexDiskFile(path) {
+    if (!path) return;
+    if (!isSupabaseReady || !supabase) {
+      setSiteDirectoryError("Supabase не подключён. Невозможно получить ссылку на скачивание.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke(YANDEX_READONLY_FUNCTION, {
+        body: { action: "download", path },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.href) throw new Error("Яндекс.Диск не вернул ссылку на скачивание.");
+
+      window.open(data.href, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка получения ссылки Яндекс.Диска: ${error.message}`);
     }
   }
 
@@ -3079,7 +3271,7 @@ function App() {
             </button>
             <button className="choiceButton primaryChoice" onClick={() => chooseArchitectInterface("specialized")}>
               <strong>Специализированный интерфейс</strong>
-              <span>Выбор здания, список разделов, скачивание и регистрация файлов.</span>
+              <span>Выбор здания, список разделов и чтение файлов с Яндекс.Диска.</span>
             </button>
           </div>
           <button className="ghostButton choiceLogoutButton" onClick={logout}>Выйти</button>
@@ -3226,7 +3418,7 @@ function App() {
               </div>
 
               <div className="smallHintBox">
-                Нажмите на строку раздела, чтобы открыть карточку раздела с загрузкой и выгрузкой файлов, ТЗ, исходников и замечаний.
+                Нажмите на строку раздела, чтобы открыть карточку раздела и проверить чтение каталогов Яндекс.Диска по файлам проекта, ТЗ, исходникам и замечаниям.
               </div>
             </section>
           </div>
@@ -3258,8 +3450,8 @@ function App() {
           <div className="modalContentGrid">
             <section className="modalBlock">
               <div className="cardHeaderLine">
-                <p className="eyebrow">Выгрузка / скачивание</p>
-                <h3>Документы раздела</h3>
+                <p className="eyebrow">Карточки из базы сайта</p>
+                <h3>Зарегистрированные документы</h3>
               </div>
 
               <div className="fileCategoryList">
@@ -3296,42 +3488,70 @@ function App() {
               </div>
             </section>
 
-            <section className="modalBlock">
+            <section className="modalBlock yandexReadOnlyBlock">
               <div className="cardHeaderLine">
-                <p className="eyebrow">Загрузка / регистрация</p>
-                <h3>Добавить документ</h3>
+                <p className="eyebrow">Яндекс.Диск / только чтение</p>
+                <h3>Проверка сопоставления каталогов</h3>
               </div>
 
-              <form className="fileUploadForm" onSubmit={addFileToSiteSection}>
-                <label>
-                  Тип документа
-                  <select value={fileCategory} onChange={(event) => setFileCategory(event.target.value)}>
-                    {ARCHITECT_FILE_CATEGORIES.map((category) => (
-                      <option key={category.value} value={category.value}>{category.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Файл для прямой загрузки
-                  <input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} />
-                </label>
-                <label>
-                  Прямая ссылка на файл
-                  <input value={fileUrl} onChange={(event) => setFileUrl(event.target.value)} placeholder="https://..." />
-                </label>
-                <label>
-                  Путь в Яндекс.Диске
-                  <input value={fileYandexPath} onChange={(event) => setFileYandexPath(event.target.value)} placeholder="/ОПР_Донецкий/Сайт_входящие/..." />
-                </label>
-                <label>
-                  Комментарий
-                  <input value={fileComment} onChange={(event) => setFileComment(event.target.value)} placeholder="Что это за документ" />
-                </label>
-                <button className="primaryButton" type="submit">Загрузить / зарегистрировать</button>
-                <div className="smallHintBox">
-                  База хранит только карточку документа: тип, имя, ссылку, путь и комментарий. Сам файл хранится вне таблицы базы. Для прямой загрузки нужен bucket VITE_SITE_FILES_BUCKET; для Яндекс.Диска можно указать ссылку или путь.
-                </div>
-              </form>
+              <div className="readOnlyNotice">
+                На этом этапе запись отключена: сайт только читает существующие каталоги Яндекс.Диска и получает ссылки на скачивание.
+              </div>
+
+              <div className="yandexCatalogList">
+                {getYandexCatalogsForSection(modalSiteSection).map((catalog) => {
+                  const stateKey = yandexCatalogKey(modalSiteSection, catalog);
+                  const readState = yandexCatalogState[stateKey] || {};
+                  const files = Array.isArray(readState.items) ? readState.items : [];
+
+                  return (
+                    <article className="yandexCatalogCard" key={catalog.value}>
+                      <div className="yandexCatalogHeader">
+                        <div>
+                          <strong>{catalog.label}</strong>
+                          <span>{catalog.source}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="smallButton"
+                          onClick={() => readYandexCatalog(modalSiteSection, catalog)}
+                          disabled={readState.loading}
+                        >
+                          {readState.loading ? "Читаю..." : "Проверить каталог"}
+                        </button>
+                      </div>
+
+                      <div className="diskPathBox">{catalog.path || "Путь не определен"}</div>
+                      <p className="catalogDescription">{catalog.description}</p>
+
+                      {readState.error && <div className="errorBox compactError">{readState.error}</div>}
+
+                      {readState.normalizedPath && !readState.error && (
+                        <div className="catalogResultInfo">
+                          Прочитан путь: <strong>{readState.normalizedPath}</strong>. Найдено: <strong>{files.length}</strong>
+                        </div>
+                      )}
+
+                      <div className="diskFileList">
+                        {files.map((item) => (
+                          <div className="diskFileRow" key={item.path || item.name}>
+                            <div>
+                              <strong>{item.name}</strong>
+                              <span>{item.type === "dir" ? "Папка" : "Файл"}{item.size ? ` / ${formatFileSize(item.size)}` : ""}</span>
+                              {item.modified && <small>{item.modified}</small>}
+                            </div>
+                            {item.type !== "dir" && (
+                              <button className="smallButton" type="button" onClick={() => openYandexDiskFile(item.path)}>
+                                Скачать
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </section>
           </div>
         </section>

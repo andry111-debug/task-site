@@ -3309,3 +3309,117 @@ h3 {
     display: grid;
   }
 }
+
+/* N_126 read-only Yandex.Disk catalog mapping */
+.yandexReadOnlyBlock {
+  align-content: start;
+}
+
+.readOnlyNotice {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff8e7;
+  border: 1px solid #f0c968;
+  color: #4f3900;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.yandexCatalogList {
+  display: grid;
+  gap: 14px;
+}
+
+.yandexCatalogCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fbff;
+  border: 1px solid #cddcf0;
+}
+
+.yandexCatalogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.yandexCatalogHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.yandexCatalogHeader strong {
+  color: #183b72;
+  font-size: 16px;
+}
+
+.yandexCatalogHeader span,
+.catalogDescription,
+.catalogResultInfo {
+  color: #425674;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.diskPathBox {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #10233f;
+  color: #ffffff;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.compactError {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+.diskFileList {
+  display: grid;
+  gap: 8px;
+}
+
+.diskFileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #d9e4f2;
+}
+
+.diskFileRow > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.diskFileRow strong {
+  color: #10233f;
+  overflow-wrap: anywhere;
+}
+
+.diskFileRow span,
+.diskFileRow small {
+  color: #53657f;
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .yandexCatalogHeader,
+  .diskFileRow {
+    display: grid;
+  }
+}
