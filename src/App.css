@@ -3065,6 +3065,31 @@ h3 {
   font-weight: 800;
 }
 
+.architectSectionTable .missingProjectFileRow td {
+  background: #fff0f0;
+  color: #7a1515;
+}
+
+.architectSectionTable .missingProjectFileRow td strong {
+  color: #9c1111;
+}
+
+.architectSectionTable .missingProjectFileRow:hover td {
+  background: #ffe3e3;
+  color: #6f1010;
+}
+
+.architectSectionTable .missingProjectFileRow.selectedRow td {
+  background: #ffd6d6;
+  color: #5c0d0d;
+  font-weight: 850;
+}
+
+.missingProjectFileText {
+  color: #b00020;
+  font-weight: 900;
+}
+
 .fileCard,
 .emptyFileBox,
 .smallHintBox {

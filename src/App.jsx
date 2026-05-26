@@ -34,8 +34,8 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_149";
-const APP_DEPLOY_NAME = "N_149_project_site_incoming_uploads";
+const APP_VERSION = "N_153";
+const APP_DEPLOY_NAME = "N_153_project_site_missing_project_highlight";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
@@ -2534,6 +2534,18 @@ function App() {
       .sort((a, b) => String(b.registered_at || b.created_at || "").localeCompare(String(a.registered_at || a.created_at || "")));
   }, [siteFiles, modalSiteSection]);
 
+  function siteSectionHasProjectFile(section) {
+    if (!section) return false;
+    if (String(section.common_latest_version_name || "").trim()) return true;
+    const sectionId = section.id;
+    return siteFiles.some((file) => {
+      if (file.active === false) return false;
+      if (file.section_id !== sectionId && file.site_section_id !== sectionId) return false;
+      if (getArchitectFileCategory(file) !== "project_file") return false;
+      return Boolean(String(file.file_name || file.original_name || file.file_url || getArchitectFileYandexPath(file) || "").trim());
+    });
+  }
+
   const isAdmin = currentUser?.role === "admin";
   const canEditPpt = currentUser?.role === "admin" || currentUser?.role === "designer" || currentUser?.role === "architect";
 
@@ -2952,7 +2964,7 @@ function App() {
       setFileYandexPath("");
       setSelectedUploadFile(null);
       setFileCategory("project_file");
-      setNotice("Файл загружен во входящую очередь. Он появится у ГИПа после синхронизации Яндекс.Диска.");
+      setNotice("загрузка успешно завершено. файл будет размещен после проверки ГИПом");
     } catch (error) {
       setSiteDirectoryError(`Ошибка загрузки файла во входящую очередь: ${error.message}`);
     } finally {
@@ -3737,22 +3749,29 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedSiteBuildingSections.map((section) => (
-                      <tr
-                        key={section.id}
-                        className={selectedSiteSection?.id === section.id ? "selectedRow" : ""}
-                        onClick={() => {
-                          setSelectedSiteSectionId(section.id);
-                          setSiteSectionModalId(section.id);
-                        }}
-                      >
-                        <td>{normalizeStage(section.stage)}</td>
-                        <td><strong>{section.section_code}</strong></td>
-                        <td>{section.section_title}</td>
-                        <td>{section.cipher}</td>
-                        <td>{section.common_latest_version_name || "—"}</td>
-                      </tr>
-                    ))}
+                    {selectedSiteBuildingSections.map((section) => {
+                      const hasProjectFile = siteSectionHasProjectFile(section);
+                      const rowClassName = [
+                        selectedSiteSection?.id === section.id ? "selectedRow" : "",
+                        hasProjectFile ? "" : "missingProjectFileRow",
+                      ].filter(Boolean).join(" ");
+                      return (
+                        <tr
+                          key={section.id}
+                          className={rowClassName}
+                          onClick={() => {
+                            setSelectedSiteSectionId(section.id);
+                            setSiteSectionModalId(section.id);
+                          }}
+                        >
+                          <td>{normalizeStage(section.stage)}</td>
+                          <td><strong>{section.section_code}</strong></td>
+                          <td>{section.section_title}</td>
+                          <td>{section.cipher}</td>
+                          <td>{hasProjectFile ? (section.common_latest_version_name || "Есть") : <span className="missingProjectFileText">Файл проекта не прикреплен</span>}</td>
+                        </tr>
+                      );
+                    })}
                     {!selectedSiteBuildingSections.length && (
                       <tr>
                         <td colSpan="5" className="emptyCell">Для выбранного здания и стадии разделы не найдены. Выполните синхронизацию из локальной программы.</td>
