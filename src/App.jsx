@@ -34,7 +34,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_167";
+const APP_VERSION = "N_168";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -2408,6 +2408,8 @@ function App() {
   const [fileYandexPath, setFileYandexPath] = useState("");
   const [selectedUploadFile, setSelectedUploadFile] = useState(null);
   const [incomingUploadSubmitting, setIncomingUploadSubmitting] = useState(false);
+  const [incomingUploadError, setIncomingUploadError] = useState("");
+  const [incomingUploadNotice, setIncomingUploadNotice] = useState("");
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
@@ -2870,30 +2872,37 @@ function App() {
     event.preventDefault();
     setNotice("");
     setSiteDirectoryError("");
+    setIncomingUploadError("");
+    setIncomingUploadNotice("");
+
+    const setUploadError = (message) => {
+      setIncomingUploadError(message);
+      setIncomingUploadNotice("");
+    };
 
     const targetSection = modalSiteSection || selectedSiteSection;
     if (!targetSection) {
-      setSiteDirectoryError("Выберите раздел.");
+      setUploadError("Выберите раздел.");
       return;
     }
     if (!selectedUploadFile) {
-      setSiteDirectoryError("Выберите файл для загрузки.");
+      setUploadError("Выберите файл для загрузки.");
       return;
     }
     if (selectedUploadFile.size > MAX_INCOMING_UPLOAD_BYTES) {
-      setSiteDirectoryError(`Файл слишком большой. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
+      setUploadError(`Файл слишком большой. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
       return;
     }
     if (isBlockedUploadFile(selectedUploadFile.name)) {
-      setSiteDirectoryError("Этот тип файла запрещен для загрузки во входящую очередь.");
+      setUploadError("Этот тип файла запрещен для загрузки во входящую очередь.");
       return;
     }
     if (!fileComment.trim()) {
-      setSiteDirectoryError("Кратко опишите, что это за файл и куда его нужно вставить.");
+      setUploadError("Кратко опишите, что это за файл и куда его нужно вставить.");
       return;
     }
     if (!isSupabaseReady || !supabase) {
-      setSiteDirectoryError("GIP API не подключён. Загрузка во входящую очередь невозможна.");
+      setUploadError("GIP API не подключён. Загрузка во входящую очередь невозможна.");
       return;
     }
 
@@ -2946,9 +2955,9 @@ function App() {
       setFileYandexPath("");
       setSelectedUploadFile(null);
       setFileCategory("project_file");
-      setNotice("загрузка успешно завершено. файл будет размещен после проверки ГИПом");
+      setIncomingUploadNotice("загрузка успешно завершено. файл будет размещен после проверки ГИПом");
     } catch (error) {
-      setSiteDirectoryError(`Ошибка загрузки файла во входящую очередь: ${error.message}`);
+      setIncomingUploadError(`Ошибка загрузки файла во входящую очередь: ${error.message}`);
     } finally {
       setIncomingUploadSubmitting(false);
     }
@@ -3899,6 +3908,8 @@ function App() {
                     rows={3}
                   />
                 </label>
+                {incomingUploadError && <div className="errorBox incomingUploadMessage">{incomingUploadError}</div>}
+                {incomingUploadNotice && <div className="noticeBox incomingUploadMessage">{incomingUploadNotice}</div>}
                 <button className="primaryButton" type="submit" disabled={incomingUploadSubmitting}>
                   {incomingUploadSubmitting ? "Загружаю..." : "Загрузить ГИПу"}
                 </button>

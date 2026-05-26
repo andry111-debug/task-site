@@ -3574,6 +3574,21 @@ h3 {
   margin-top: 14px;
 }
 
+.incomingUploadForm label {
+  color: #10233f;
+  font-weight: 950;
+}
+
+.incomingUploadForm label > select,
+.incomingUploadForm label > input,
+.incomingUploadForm label > textarea {
+  margin-top: 2px;
+}
+
+.incomingUploadMessage {
+  margin-top: 0;
+}
+
 .incomingUploadForm textarea {
   width: 100%;
   border: 1px solid #c8d5e7;
