@@ -34,9 +34,10 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_153";
-const APP_DEPLOY_NAME = "N_153_project_site_missing_project_highlight";
-const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
+const APP_VERSION = "N_160";
+const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
+const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
+const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
 // For this project that sync root corresponds to /Для Технического заказчика on Yandex.Disk.
@@ -2641,7 +2642,7 @@ function App() {
 
   async function loadSiteDirectory() {
     if (!isSupabaseReady || !supabase) {
-      setSiteDirectoryError("Supabase не подключён. Проверьте .env.local.");
+      setSiteDirectoryError("GIP API не подключён. Проверьте .env.local.");
       return;
     }
 
@@ -2679,30 +2680,20 @@ function App() {
     return `${section?.id || "section"}:${catalog?.value || "catalog"}`;
   }
 
-  function getYandexFunctionConfig() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+  function getGipApiHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    if (GIP_API_KEY) headers["x-gip-api-key"] = GIP_API_KEY;
+    return headers;
+  }
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Не заполнены VITE_SUPABASE_URL и VITE_SUPABASE_KEY / VITE_SUPABASE_ANON_KEY.");
-    }
-
-    return {
-      functionUrl: `${String(supabaseUrl).replace(/\/+$/g, "")}/functions/v1/${YANDEX_READONLY_FUNCTION}`,
-      supabaseKey,
-    };
+  function getGipApiUrl(path) {
+    return `${GIP_API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
   }
 
   async function invokeYandexReadonly(payload) {
-    const { functionUrl, supabaseKey } = getYandexFunctionConfig();
-
-    const response = await fetch(functionUrl, {
+    const response = await fetch(getGipApiUrl("/yandex"), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
+      headers: getGipApiHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -2715,12 +2706,8 @@ function App() {
     }
 
     if (!response.ok) {
-      let message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
-      message = String(message);
-      if (message.includes("Unsupported action: content")) {
-        message = "На сервере Supabase еще старая версия Edge Function yandex-disk-readonly. Обновите код функции из архива N_146 и нажмите Deploy, иначе скачивание архивом работать не будет.";
-      }
-      throw new Error(message);
+      const message = data?.error || data?.message || data?.description || data?.raw || `GIP API HTTP ${response.status}`;
+      throw new Error(String(message));
     }
 
     if (data?.error) {
@@ -2731,14 +2718,9 @@ function App() {
   }
 
   async function fetchYandexFileBlob(path) {
-    const { functionUrl, supabaseKey } = getYandexFunctionConfig();
-    const response = await fetch(functionUrl, {
+    const response = await fetch(getGipApiUrl("/yandex"), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-      },
+      headers: getGipApiHeaders(),
       body: JSON.stringify({ action: "content", path }),
     });
 
@@ -2750,7 +2732,7 @@ function App() {
       } catch {
         data = { raw: text };
       }
-      const message = data?.error || data?.message || data?.description || data?.raw || `Edge Function HTTP ${response.status}`;
+      const message = data?.error || data?.message || data?.description || data?.raw || `GIP API HTTP ${response.status}`;
       throw new Error(String(message));
     }
 
@@ -2824,7 +2806,7 @@ function App() {
   async function openYandexDiskFile(path) {
     if (!path) return;
     if (!isSupabaseReady || !supabase) {
-      setSiteDirectoryError("Supabase не подключён. Невозможно получить ссылку на скачивание.");
+      setSiteDirectoryError("GIP API не подключён. Невозможно получить ссылку на скачивание.");
       return;
     }
 
@@ -2911,7 +2893,7 @@ function App() {
       return;
     }
     if (!isSupabaseReady || !supabase) {
-      setSiteDirectoryError("Supabase не подключён. Загрузка во входящую очередь невозможна.");
+      setSiteDirectoryError("GIP API не подключён. Загрузка во входящую очередь невозможна.");
       return;
     }
 
@@ -2996,7 +2978,7 @@ function App() {
     setNotice("");
 
     if (!isSupabaseReady) {
-      setLoginError("Supabase не подключён. Проверь .env.local.");
+      setLoginError("GIP API не подключён. Проверь .env.local.");
       return;
     }
 
@@ -4013,7 +3995,7 @@ function App() {
 
           {!isSupabaseReady && (
             <div className="warningBox">
-              Supabase не подключён. Проверьте переменные VITE_SUPABASE_URL и VITE_SUPABASE_KEY.
+              GIP API не подключён. Проверьте переменную VITE_GIP_API_BASE_URL.
             </div>
           )}
 
