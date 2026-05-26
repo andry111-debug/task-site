@@ -3538,3 +3538,39 @@ h3 {
   color: #ffffff;
   border-color: rgba(207, 224, 255, 0.45);
 }
+
+.incomingUploadBlock {
+  margin-top: 14px;
+}
+
+.incomingUploadForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.incomingUploadForm textarea {
+  width: 100%;
+  border: 1px solid #c8d5e7;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #ffffff;
+  color: #12213f;
+  outline: none;
+  resize: vertical;
+  font: inherit;
+}
+
+.incomingUploadForm textarea:focus {
+  border-color: #2f65ed;
+  box-shadow: 0 0 0 4px rgba(47, 101, 237, 0.12);
+}
+
+.selectedUploadFileInfo {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #eef6ff;
+  border: 1px solid #c8d5e7;
+  color: #12213f;
+  font-size: 14px;
+}

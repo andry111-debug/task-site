@@ -34,14 +34,16 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_146";
-const APP_DEPLOY_NAME = "N_145_project_site_archive_download_fix";
+const APP_VERSION = "N_149";
+const APP_DEPLOY_NAME = "N_149_project_site_incoming_uploads";
 const YANDEX_READONLY_FUNCTION = import.meta.env.VITE_YANDEX_DISK_FUNCTION || "yandex-disk-readonly";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
 // Local Windows paths from the GIP program usually start after the Yandex.Disk sync root.
 // For this project that sync root corresponds to /Для Технического заказчика on Yandex.Disk.
 const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "/Для Технического заказчика";
 const YANDEX_GIP_ROOT = import.meta.env.VITE_YANDEX_GIP_ROOT || "/Папка ГИПа";
+const YANDEX_INCOMING_FOLDER = import.meta.env.VITE_YANDEX_INCOMING_FOLDER || "_Входящие_с_сайта";
+const MAX_INCOMING_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_INCOMING_UPLOAD_BYTES || 150 * 1024 * 1024);
 const YANDEX_LOCAL_ROOTS = String(
   import.meta.env.VITE_YANDEX_LOCAL_ROOTS ||
     import.meta.env.VITE_YANDEX_LOCAL_ROOT ||
@@ -303,6 +305,59 @@ function makeUniqueZipName(usedNames, requestedName) {
   const uniqueName = `${stem}_${counter}${suffix}`;
   usedNames.add(uniqueName);
   return uniqueName;
+}
+
+function safeUploadFileName(value) {
+  const cleaned = String(value || "file")
+    .trim()
+    .replace(/[^\p{L}\p{N}_.-]+/gu, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned || "file";
+}
+
+function randomUploadId() {
+  const randomPart = Math.random().toString(16).slice(2);
+  return `upload_${Date.now()}_${randomPart}`;
+}
+
+function getFileExtension(name) {
+  const text = String(name || "").toLowerCase();
+  const index = text.lastIndexOf(".");
+  return index >= 0 ? text.slice(index) : "";
+}
+
+function isBlockedUploadFile(name) {
+  const blocked = new Set([".exe", ".bat", ".cmd", ".com", ".scr", ".vbs", ".js", ".ps1", ".msi", ".jar"]);
+  return blocked.has(getFileExtension(name));
+}
+
+async function fileArrayBuffer(file) {
+  return file.arrayBuffer();
+}
+
+async function fileSha256(file) {
+  if (!window.crypto?.subtle) return "";
+  const buffer = await fileArrayBuffer(file);
+  const hash = await window.crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function makeIncomingDiskPath(section, uploadId, fileName) {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return joinDiskPath(YANDEX_GIP_ROOT, YANDEX_INCOMING_FOLDER, year, month, uploadId, fileName);
 }
 
 const ACCESS_ELEMENTS = [
@@ -2351,11 +2406,13 @@ function App() {
   const [fileUrl, setFileUrl] = useState("");
   const [fileYandexPath, setFileYandexPath] = useState("");
   const [selectedUploadFile, setSelectedUploadFile] = useState(null);
+  const [incomingUploadSubmitting, setIncomingUploadSubmitting] = useState(false);
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
+  const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
 
   const scheduleBounds = useMemo(() => getScheduleBounds(scheduleRows), [scheduleRows]);
@@ -2821,65 +2878,73 @@ function App() {
     setSiteDirectoryError("");
 
     const targetSection = modalSiteSection || selectedSiteSection;
-
     if (!targetSection) {
       setSiteDirectoryError("Выберите раздел.");
       return;
     }
-
-    if (!fileUrl.trim() && !fileYandexPath.trim() && !selectedUploadFile) {
-      setSiteDirectoryError("Укажите ссылку/путь к файлу или выберите файл для загрузки.");
+    if (!selectedUploadFile) {
+      setSiteDirectoryError("Выберите файл для загрузки.");
+      return;
+    }
+    if (selectedUploadFile.size > MAX_INCOMING_UPLOAD_BYTES) {
+      setSiteDirectoryError(`Файл слишком большой. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
+      return;
+    }
+    if (isBlockedUploadFile(selectedUploadFile.name)) {
+      setSiteDirectoryError("Этот тип файла запрещен для загрузки во входящую очередь.");
+      return;
+    }
+    if (!fileComment.trim()) {
+      setSiteDirectoryError("Кратко опишите, что это за файл и куда его нужно вставить.");
+      return;
+    }
+    if (!isSupabaseReady || !supabase) {
+      setSiteDirectoryError("Supabase не подключён. Загрузка во входящую очередь невозможна.");
       return;
     }
 
-    let uploadedUrl = fileUrl.trim();
-    let fileName = selectedUploadFile?.name || uploadedUrl.split("/").pop() || fileYandexPath.split(/[\\/]/).pop() || "file";
-    let storagePath = "";
+    setIncomingUploadSubmitting(true);
 
     try {
-      if (selectedUploadFile) {
-        if (!siteFilesBucket) {
-          setSiteDirectoryError(
-            "Для прямой загрузки файла укажите VITE_SITE_FILES_BUCKET. Без bucket можно зарегистрировать ссылку или путь к Яндекс.Диску."
-          );
-          return;
-        }
-        const safeName = selectedUploadFile.name.replace(/[^\p{L}\p{N}_.-]+/gu, "_");
-        storagePath = [
-          targetSection.project_key || "opr_donetsk",
-          targetSection.building_gp_no || "building",
-          targetSection.stage || "stage",
-          targetSection.section_code || "section",
-          `${Date.now()}_${safeName}`,
-        ].join("/");
+      const uploadId = randomUploadId();
+      const safeName = safeUploadFileName(selectedUploadFile.name);
+      const diskPath = makeIncomingDiskPath(targetSection, uploadId, safeName);
+      const buffer = await fileArrayBuffer(selectedUploadFile);
+      const fileBase64 = arrayBufferToBase64(buffer);
+      const sha256 = await fileSha256(selectedUploadFile);
 
-        const { error: uploadError } = await supabase.storage
-          .from(siteFilesBucket)
-          .upload(storagePath, selectedUploadFile, { upsert: false });
-
-        if (uploadError) throw uploadError;
-
-        const { data: publicData } = supabase.storage.from(siteFilesBucket).getPublicUrl(storagePath);
-        uploadedUrl = publicData?.publicUrl || uploadedUrl;
-      }
+      await invokeYandexReadonly({
+        action: "upload",
+        path: diskPath,
+        file_base64: fileBase64,
+        content_type: selectedUploadFile.type || "application/octet-stream",
+        overwrite: false,
+      });
 
       const payload = {
-        section_id: targetSection.id,
         project_key: targetSection.project_key || "opr_donetsk",
+        site_section_id: targetSection.id,
         building_gp_no: targetSection.building_gp_no || "",
         building_name: targetSection.building_name || "",
-        stage: targetSection.stage || "",
+        stage: normalizeStage(targetSection.stage || ""),
         section_code: targetSection.section_code || "",
         section_title: targetSection.section_title || "",
-        file_name: fileName,
-        file_url: uploadedUrl,
-        yandex_path: fileYandexPath.trim(),
-        storage_path: storagePath,
-        comment: `[file_category:${fileCategory}] ${fileComment.trim()}`.trim(),
-        uploaded_by: currentUser?.name || "",
+        target_area: fileCategory,
+        target_yandex_folder: getYandexCatalogsForSection(targetSection).find((item) => item.value === fileCategory)?.path || "",
+        original_filename: selectedUploadFile.name,
+        stored_filename: safeName,
+        yandex_temp_path: diskPath,
+        file_size: selectedUploadFile.size,
+        sha256,
+        mime_type: selectedUploadFile.type || "application/octet-stream",
+        uploaded_by: currentUser?.name || currentUser?.login || "",
+        uploaded_by_email: currentUser?.email || "",
+        user_comment: fileComment.trim(),
+        status: "pending",
+        active: true,
       };
 
-      const { error } = await supabase.from(siteFilesTable).insert(payload);
+      const { error } = await supabase.from(siteIncomingTable).insert(payload);
       if (error) throw error;
 
       setFileComment("");
@@ -2887,10 +2952,11 @@ function App() {
       setFileYandexPath("");
       setSelectedUploadFile(null);
       setFileCategory("project_file");
-      await loadSiteDirectory();
-      setNotice("Файл зарегистрирован в разделе.");
+      setNotice("Файл загружен во входящую очередь. Он появится у ГИПа после синхронизации Яндекс.Диска.");
     } catch (error) {
-      setSiteDirectoryError(`Ошибка регистрации файла: ${error.message}`);
+      setSiteDirectoryError(`Ошибка загрузки файла во входящую очередь: ${error.message}`);
+    } finally {
+      setIncomingUploadSubmitting(false);
     }
   }
 
@@ -3792,6 +3858,50 @@ function App() {
                   );
                 })}
               </div>
+            </section>
+
+            <section className="modalBlock incomingUploadBlock">
+              <div className="cardHeaderLine">
+                <p className="eyebrow">Входящие с сайта</p>
+                <h3>Загрузить файл ГИПу на проверку</h3>
+              </div>
+              <div className="readOnlyNotice">
+                Файл будет помещен во временную папку Яндекс.Диска и появится в локальной программе ГИПа как заявка. В рабочие папки раздела файл попадет только после принятия ГИПом.
+              </div>
+              <form className="incomingUploadForm" onSubmit={addFileToSiteSection}>
+                <label>
+                  Тип вставки
+                  <select value={fileCategory} onChange={(event) => setFileCategory(event.target.value)}>
+                    {ARCHITECT_FILE_CATEGORIES.map((category) => (
+                      <option key={category.value} value={category.value}>{category.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Файл
+                  <input
+                    type="file"
+                    onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)}
+                  />
+                </label>
+                {selectedUploadFile && (
+                  <div className="selectedUploadFileInfo">
+                    Выбран файл: <strong>{selectedUploadFile.name}</strong> / {formatFileSize(selectedUploadFile.size)}
+                  </div>
+                )}
+                <label>
+                  Что сделать с файлом
+                  <textarea
+                    value={fileComment}
+                    onChange={(event) => setFileComment(event.target.value)}
+                    placeholder="Например: добавить как исходник по разделу АР; заменить ТЗ; принять как файл замечаний."
+                    rows={3}
+                  />
+                </label>
+                <button className="primaryButton" type="submit" disabled={incomingUploadSubmitting}>
+                  {incomingUploadSubmitting ? "Загружаю..." : "Загрузить ГИПу"}
+                </button>
+              </form>
             </section>
 
             {showYandexCatalogTester && (
