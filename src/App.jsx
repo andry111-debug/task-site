@@ -34,7 +34,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_168";
+const APP_VERSION = "N_170";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -45,6 +45,7 @@ const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "/Для Те�
 const YANDEX_GIP_ROOT = import.meta.env.VITE_YANDEX_GIP_ROOT || "/Папка ГИПа";
 const YANDEX_INCOMING_FOLDER = import.meta.env.VITE_YANDEX_INCOMING_FOLDER || "_Входящие_с_сайта";
 const MAX_INCOMING_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_INCOMING_UPLOAD_BYTES || 150 * 1024 * 1024);
+const INCOMING_UPLOAD_CHUNK_BYTES = Number(import.meta.env.VITE_INCOMING_UPLOAD_CHUNK_BYTES || 2 * 1024 * 1024);
 const YANDEX_LOCAL_ROOTS = String(
   import.meta.env.VITE_YANDEX_LOCAL_ROOTS ||
     import.meta.env.VITE_YANDEX_LOCAL_ROOT ||
@@ -2692,8 +2693,12 @@ function App() {
     return `${GIP_API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
   }
 
-  async function invokeYandexReadonly(payload) {
-    const response = await fetch(getGipApiUrl("/yandex"), {
+  function extractGipApiMessage(data, fallback) {
+    return data?.error?.message || data?.error || data?.message || data?.description || data?.raw || fallback;
+  }
+
+  async function invokeGipJson(path, payload) {
+    const response = await fetch(getGipApiUrl(path), {
       method: "POST",
       headers: getGipApiHeaders(),
       body: JSON.stringify(payload),
@@ -2708,15 +2713,50 @@ function App() {
     }
 
     if (!response.ok) {
-      const message = data?.error || data?.message || data?.description || data?.raw || `GIP API HTTP ${response.status}`;
-      throw new Error(String(message));
+      throw new Error(String(extractGipApiMessage(data, `GIP API HTTP ${response.status}`)));
     }
 
     if (data?.error) {
-      throw new Error(String(data.error));
+      throw new Error(String(extractGipApiMessage(data, "GIP API error")));
     }
 
     return data || {};
+  }
+
+  async function invokeYandexReadonly(payload) {
+    return invokeGipJson("/yandex", payload);
+  }
+
+  async function uploadIncomingFileInChunks(file, options) {
+    const chunkSize = Math.max(256 * 1024, Number(INCOMING_UPLOAD_CHUNK_BYTES || 2 * 1024 * 1024));
+    const totalChunks = Math.ceil(file.size / chunkSize);
+
+    for (let index = 0; index < totalChunks; index += 1) {
+      const start = index * chunkSize;
+      const end = Math.min(file.size, start + chunkSize);
+      const chunkBuffer = await file.slice(start, end).arrayBuffer();
+      const chunkBase64 = arrayBufferToBase64(chunkBuffer);
+      setIncomingUploadNotice(`Загружаю файл: часть ${index + 1} из ${totalChunks}.`);
+      await invokeGipJson("/incoming/upload-chunk", {
+        upload_id: options.uploadId,
+        chunk_index: index,
+        total_chunks: totalChunks,
+        chunk_base64: chunkBase64,
+      });
+    }
+
+    setIncomingUploadNotice("Завершаю загрузку файла и создаю заявку для ГИПа.");
+    return invokeGipJson("/incoming/finish-upload", {
+      upload_id: options.uploadId,
+      total_chunks: totalChunks,
+      disk_path: options.diskPath,
+      content_type: options.contentType || "application/octet-stream",
+      file_size: file.size,
+      sha256: options.sha256 || "",
+      incoming_table: options.incomingTable,
+      incoming_payload: options.payload,
+      overwrite: false,
+    });
   }
 
   async function fetchYandexFileBlob(path) {
@@ -2889,6 +2929,10 @@ function App() {
       setUploadError("Выберите файл для загрузки.");
       return;
     }
+    if (selectedUploadFile.size <= 0) {
+      setUploadError("Пустой файл нельзя загрузить во входящую очередь.");
+      return;
+    }
     if (selectedUploadFile.size > MAX_INCOMING_UPLOAD_BYTES) {
       setUploadError(`Файл слишком большой. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
       return;
@@ -2912,17 +2956,7 @@ function App() {
       const uploadId = randomUploadId();
       const safeName = safeUploadFileName(selectedUploadFile.name);
       const diskPath = makeIncomingDiskPath(targetSection, uploadId, safeName);
-      const buffer = await fileArrayBuffer(selectedUploadFile);
-      const fileBase64 = arrayBufferToBase64(buffer);
       const sha256 = await fileSha256(selectedUploadFile);
-
-      await invokeYandexReadonly({
-        action: "upload",
-        path: diskPath,
-        file_base64: fileBase64,
-        content_type: selectedUploadFile.type || "application/octet-stream",
-        overwrite: false,
-      });
 
       const payload = {
         project_key: targetSection.project_key || "opr_donetsk",
@@ -2947,8 +2981,14 @@ function App() {
         active: true,
       };
 
-      const { error } = await supabase.from(siteIncomingTable).insert(payload);
-      if (error) throw error;
+      await uploadIncomingFileInChunks(selectedUploadFile, {
+        uploadId,
+        diskPath,
+        contentType: selectedUploadFile.type || "application/octet-stream",
+        sha256,
+        incomingTable: siteIncomingTable,
+        payload,
+      });
 
       setFileComment("");
       setFileUrl("");
