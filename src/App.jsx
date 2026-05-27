@@ -7,6 +7,7 @@ const ROLE_LABELS = {
   admin: "Админ",
   architect: "Архитектор",
   designer: "Проектанты",
+  project_manager: "Руководитель проекта",
   customer_service: "Служба заказчика",
   external: "Сторонние люди",
   employee: "Проектанты",
@@ -16,6 +17,7 @@ const ROLE_OPTIONS = [
   { value: "admin", label: "Админ" },
   { value: "architect", label: "Архитектор" },
   { value: "designer", label: "Проектанты" },
+  { value: "project_manager", label: "Руководитель проекта" },
   { value: "customer_service", label: "Служба заказчика" },
   { value: "external", label: "Сторонние люди" },
 ];
@@ -34,7 +36,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_182";
+const APP_VERSION = "N_184";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -367,13 +369,15 @@ const ACCESS_ELEMENTS = [
   { key: "compact", label: "График ППТ" },
   { key: "ppt", label: "Расширенный график ППТ" },
   { key: "buildings", label: "Страницы зданий" },
+  { key: "project_manager_dashboard", label: "Кабинет руководителя проекта" },
   { key: "accounts", label: "Управление учетными записями" },
 ];
 
 const ROLE_DEFAULT_ACCESS = {
-  admin: ["schedule", "compact", "ppt", "buildings", "accounts"],
+  admin: ["schedule", "compact", "ppt", "buildings", "project_manager_dashboard", "accounts"],
   architect: ["schedule", "compact", "ppt", "buildings"],
   designer: ["schedule", "compact", "ppt", "buildings"],
+  project_manager: ["project_manager_dashboard", "schedule", "compact", "ppt", "buildings"],
   customer_service: ["schedule", "compact", "ppt", "buildings"],
   external: ["schedule", "compact", "buildings"],
   employee: ["schedule", "compact", "ppt", "buildings"],
@@ -408,12 +412,15 @@ function hasAccess(user, elementKey) {
 }
 
 function normalizeAccountRole(role) {
-  if (role === "employee") return "designer";
-  if (role === "architect" || role === "arhitect" || role === "архитектор") return "architect";
-  if (role === "projectant" || role === "proektant") return "designer";
-  if (role === "customer" || role === "client" || role === "zakazchik") return "customer_service";
-  if (role === "other" || role === "guest" || role === "external_people") return "external";
-  if (["admin", "architect", "designer", "customer_service", "external"].includes(role)) return role;
+  const raw = String(role || "").trim();
+  const normalized = raw.toLowerCase();
+  if (normalized === "employee") return "designer";
+  if (normalized === "architect" || normalized === "arhitect" || normalized === "архитектор") return "architect";
+  if (normalized === "projectant" || normalized === "proektant") return "designer";
+  if (normalized === "project_manager" || normalized === "project-manager" || normalized === "pm" || normalized === "руководитель проекта") return "project_manager";
+  if (normalized === "customer" || normalized === "client" || normalized === "zakazchik") return "customer_service";
+  if (normalized === "other" || normalized === "guest" || normalized === "external_people") return "external";
+  if (["admin", "architect", "designer", "project_manager", "customer_service", "external"].includes(normalized)) return normalized;
   return "designer";
 }
 
@@ -2217,6 +2224,82 @@ function createEmptyAccount() {
   };
 }
 
+const projectManagerSections = [
+  {
+    key: "info",
+    title: "Общая информация",
+    description: "Здания комплекса: назначение, площади, описание и основные картинки.",
+    metric: `${buildingPages.length} зданий`,
+  },
+  {
+    key: "graphs",
+    title: "Графики",
+    description: "Выбор графиков: проектирование, ППТ и РНС.",
+    metric: "3 графика",
+  },
+  {
+    key: "meetings",
+    title: "Совещания",
+    description: "Последние протоколы, актуальная повестка и задачи по ответственным.",
+    metric: "оперативный блок",
+  },
+  {
+    key: "finance",
+    title: "Финансирование",
+    description: "Потребность в финансировании на ближайшие 3 месяца.",
+    metric: "3 месяца",
+  },
+];
+
+const projectManagerMeetings = {
+  protocols: [
+    {
+      date: "20.05.2026",
+      title: "Протокол совещания по статусу проектирования",
+      status: "последний",
+      summary: "Зафиксированы критичные разделы, сроки передачи исходных данных и порядок закрытия замечаний.",
+    },
+    {
+      date: "13.05.2026",
+      title: "Протокол по ППТ и внешним согласованиям",
+      status: "рабочий",
+      summary: "Обсуждены материалы для ППТ, запросы в органы и подготовка дорожной карты по РНС.",
+    },
+    {
+      date: "06.05.2026",
+      title: "Протокол по зданиям и разделам стадии П",
+      status: "архив",
+      summary: "Согласованы приоритетные здания, перечень первоочередных разделов и формат обмена файлами.",
+    },
+  ],
+  agenda: [
+    "Проверить готовность разделов по зданиям с ближайшими контрольными сроками.",
+    "Сверить перечень исходных данных для ППТ и РНС.",
+    "Подтвердить статус замечаний и ответственных за закрытие.",
+    "Уточнить потребность в финансировании на ближайший трехмесячный период.",
+  ],
+  tasks: [
+    { owner: "ГИП", task: "Собрать сводку по критичным разделам и загрузкам с сайта", due: "до ближайшего совещания", status: "в работе" },
+    { owner: "Архитектор", task: "Актуализировать карточки зданий и изображения", due: "текущая неделя", status: "в работе" },
+    { owner: "ППТ", task: "Подготовить статус согласований и запросов", due: "текущая неделя", status: "контроль" },
+    { owner: "Финансовый блок", task: "Проверить план потребности на 3 месяца", due: "до следующего отчета", status: "ожидает данных" },
+  ],
+};
+
+const projectManagerFinancePlan = [
+  { month: "Июнь 2026", amount: 42, label: "42 млн ₽", note: "проектирование и первоочередные согласования" },
+  { month: "Июль 2026", amount: 58, label: "58 млн ₽", note: "ППТ, РНС и инженерные исходные данные" },
+  { month: "Август 2026", amount: 64, label: "64 млн ₽", note: "закрытие замечаний и подготовка следующего пакета" },
+];
+
+const projectManagerRnsItems = [
+  { code: "РНС-1", title: "Сбор исходных данных для разрешения на строительство", start: "2026-06-01", end: "2026-06-18", progress: 35 },
+  { code: "РНС-2", title: "Подготовка комплектности проектной документации", start: "2026-06-12", end: "2026-07-10", progress: 20 },
+  { code: "РНС-3", title: "Проверка замечаний и корректировка материалов", start: "2026-07-05", end: "2026-07-28", progress: 10 },
+  { code: "РНС-4", title: "Подача пакета на получение РНС", start: "2026-08-01", end: "2026-08-14", progress: 0 },
+];
+
+
 function dateToTime(value) {
   return new Date(`${value}T00:00:00`).getTime();
 }
@@ -2414,6 +2497,8 @@ function App() {
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
+  const [projectManagerView, setProjectManagerView] = useState("home");
+  const [projectManagerGraphType, setProjectManagerGraphType] = useState("design");
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
@@ -2622,6 +2707,9 @@ function App() {
 
   useEffect(() => {
     if (currentUser?.role === "architect" && interfaceChoice === "specialized") {
+      loadSiteDirectory();
+    }
+    if (currentUser?.role === "project_manager") {
       loadSiteDirectory();
     }
   }, [currentUser, interfaceChoice]);
@@ -3077,6 +3165,9 @@ function App() {
       setCurrentUser(normalizedUser);
       if (normalizedUser.role === "architect") {
         setInterfaceChoice(null);
+      } else if (normalizedUser.role === "project_manager") {
+        setInterfaceChoice("project_manager");
+        setProjectManagerView("home");
       } else {
         setInterfaceChoice("general");
       }
@@ -3108,6 +3199,8 @@ function App() {
     setLoginError("");
     setNotice("");
     setInterfaceChoice(null);
+    setProjectManagerView("home");
+    setProjectManagerGraphType("design");
     setSiteSections([]);
     setSiteFiles([]);
   }
@@ -4702,6 +4795,383 @@ function App() {
     );
   }
 
+
+  function openProjectManagerBuilding(buildingId) {
+    setSelectedBuildingId(buildingId);
+    setProjectManagerView("buildingDetail");
+  }
+
+  function renderProjectManagerHeader(title, subtitle) {
+    return (
+      <header className="topBar projectManagerTopBar">
+        <div>
+          <p className="eyebrow">Кабинет руководителя проекта</p>
+          <h1>{title}</h1>
+          {subtitle && <p className="projectManagerSubtitle">{subtitle}</p>}
+        </div>
+
+        <div className="userPanel">
+          <div>
+            <strong>{currentUser.name}</strong>
+            <span>{ROLE_LABELS[currentUser.role] || currentUser.role}</span>
+          </div>
+          {projectManagerView !== "home" && (
+            <button className="secondaryButton" onClick={() => setProjectManagerView("home")}>К 4 разделам</button>
+          )}
+          <button className="ghostButton" onClick={logout}>Выйти</button>
+        </div>
+      </header>
+    );
+  }
+
+  function renderProjectManagerHome() {
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader(
+          "Руководитель проекта",
+          "Стартовый экран с четырьмя основными блоками контроля проекта."
+        )}
+
+        <section className="projectManagerHero">
+          <div>
+            <p className="eyebrow">Обзор</p>
+            <h2>Выберите раздел для просмотра</h2>
+          </div>
+          <div className="projectManagerHeroStats">
+            <span>{buildingPages.length} зданий</span>
+            <span>{scheduleRows.length} задач проектирования</span>
+            <span>{projectManagerFinancePlan.length} месяца финансирования</span>
+          </div>
+        </section>
+
+        <section className="projectManagerTileGrid">
+          {projectManagerSections.map((section, index) => (
+            <button
+              key={section.key}
+              type="button"
+              className="projectManagerTile"
+              onClick={() => setProjectManagerView(section.key)}
+            >
+              <span className="projectManagerTileNumber">{index + 1}</span>
+              <strong>{section.title}</strong>
+              <p>{section.description}</p>
+              <small>{section.metric}</small>
+            </button>
+          ))}
+        </section>
+      </main>
+    );
+  }
+
+  function renderProjectManagerInfo() {
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader(
+          "Общая информация",
+          "Информация по зданиям: описание, площадь и картинки из карточек здания."
+        )}
+
+        <section className="projectManagerSectionBlock">
+          <div className="sectionHeader">
+            <div>
+              <p className="eyebrow">Здания комплекса</p>
+              <h2>Общее описание и изображения</h2>
+            </div>
+            <div className="roleBadge">{buildingPages.length} зданий</div>
+          </div>
+
+          <div className="projectManagerBuildingGrid">
+            {buildingPages.map((building) => {
+              const details = buildingDetails[building.id] || {};
+              const assets = buildingAssets[building.id] || {};
+              return (
+                <article className="projectManagerBuildingCard" key={building.id}>
+                  <button
+                    type="button"
+                    className="projectManagerBuildingImage"
+                    onClick={() => openProjectManagerBuilding(building.id)}
+                  >
+                    {assets.view ? (
+                      <img src={assets.view} alt={`${building.title}. Вид здания`} />
+                    ) : (
+                      <span>Изображение будет добавлено</span>
+                    )}
+                  </button>
+                  <div className="projectManagerBuildingBody">
+                    <div className="projectManagerBuildingMeta">
+                      <span>Здание {building.number}</span>
+                      <span>{building.area}</span>
+                    </div>
+                    <h3>{building.title}</h3>
+                    <p>{details.description || "Описание будет добавлено после уточнения исходных данных."}</p>
+                    <button className="smallButton" onClick={() => openProjectManagerBuilding(building.id)}>
+                      Открыть карточку
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        {imageViewer && (
+          <div className="imageViewerOverlay" onClick={closeImageViewer}>
+            <div className="imageViewerDialog" onClick={(event) => event.stopPropagation()}>
+              <div className="imageViewerHeader">
+                <strong>{imageViewer.title}</strong>
+                <button onClick={closeImageViewer}>Закрыть</button>
+              </div>
+              <img src={imageViewer.src} alt={imageViewer.title} />
+            </div>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  function renderProjectManagerBuildingDetail() {
+    const building = buildingPages.find((item) => item.id === selectedBuildingId) || buildingPages[0];
+    const details = buildingDetails[building.id] || {
+      description: "Описание будет добавлено после уточнения исходных данных.",
+      floors: [],
+      explication: [],
+    };
+    const assets = buildingAssets[building.id] || { view: "", floors: [] };
+
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader(building.title, "Карточка здания для руководителя проекта.")}
+
+        <section className="contentStack buildingDetailPage">
+          <div className="sectionHeader">
+            <div>
+              <p className="eyebrow">Страница здания</p>
+              <h2>{building.title}</h2>
+            </div>
+            <button className="secondaryButton" onClick={() => setProjectManagerView("info")}>К списку зданий</button>
+          </div>
+
+          <div className="buildingInfoGrid">
+            <div className="buildingInfoCard"><span>Номер</span><strong>{building.number}</strong></div>
+            <div className="buildingInfoCard"><span>Лист исходного PDF</span><strong>{building.sourcePage}</strong></div>
+            <div className="buildingInfoCard"><span>Площадь</span><strong>{building.area}</strong></div>
+          </div>
+
+          <div className="buildingPageGrid">
+            <div className="buildingVisualCard">
+              <p className="eyebrow">Вид здания</p>
+              {assets.view ? (
+                <button className="buildingImageButton" onClick={() => openImageViewer(assets.view, `${building.title}. Вид здания`)}>
+                  <img src={assets.view} alt={`${building.title}. Вид здания`} />
+                </button>
+              ) : (
+                <div className="buildingImagePlaceholder"><strong>Картинка здания</strong><span>Изображение будет добавлено после обработки листа</span></div>
+              )}
+              <div className="buildingImageCaption">Нажмите на изображение, чтобы открыть его крупно.</div>
+            </div>
+
+            <div className="buildingDescriptionCard">
+              <p className="eyebrow">Описание</p>
+              <h3>Функциональное назначение</h3>
+              <p>{details.description}</p>
+            </div>
+          </div>
+
+          <div className="buildingDataGrid">
+            <div className="buildingDataCard buildingPlansCard">
+              <div className="cardHeaderLine"><p className="eyebrow">Планы и экспликации</p><h3>Поэтажные планы</h3></div>
+              <div className="floorImageList">
+                {(assets.floors || []).map((floor, index) => (
+                  <article className="floorImageItem" key={`${building.id}-pm-floor-${index}`}>
+                    <div className="floorImageHeader"><strong>{floor.title}</strong>{details.floors[index] && <span>{details.floors[index]}</span>}</div>
+                    <div className="floorSplitGrid">
+                      <div className="floorSplitBlock">
+                        <div className="floorSplitTitle">План этажа</div>
+                        {floor.plan ? (
+                          <button className="buildingImageButton floorImageButton" onClick={() => openImageViewer(floor.plan, `${building.title}. ${floor.title}. План`)}>
+                            <img src={floor.plan} alt={`${building.title}. ${floor.title}. План`} />
+                          </button>
+                        ) : <div className="imageMissingBox">План не найден</div>}
+                      </div>
+                      <div className="floorSplitBlock">
+                        <div className="floorSplitTitle">Экспликация</div>
+                        {floor.explication ? (
+                          <button className="buildingImageButton floorImageButton" onClick={() => openImageViewer(floor.explication, `${building.title}. ${floor.title}. Экспликация`)}>
+                            <img src={floor.explication} alt={`${building.title}. ${floor.title}. Экспликация`} />
+                          </button>
+                        ) : <div className="imageMissingBox">Экспликация не найдена</div>}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="buildingDataCard">
+              <div className="cardHeaderLine"><p className="eyebrow">Экспликация</p><h3>Основные помещения и зоны</h3></div>
+              <div className="explicationList">
+                {(details.explication || []).map((item, index) => (
+                  <div className="explicationItem" key={`${building.id}-pm-exp-${index}`}><span>{index + 1}</span><p>{item}</p></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {imageViewer && (
+          <div className="imageViewerOverlay" onClick={closeImageViewer}>
+            <div className="imageViewerDialog" onClick={(event) => event.stopPropagation()}>
+              <div className="imageViewerHeader"><strong>{imageViewer.title}</strong><button onClick={closeImageViewer}>Закрыть</button></div>
+              <img src={imageViewer.src} alt={imageViewer.title} />
+            </div>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  function renderProjectManagerGraphs() {
+    const graphOptions = [
+      { key: "design", title: "Проектирование", description: "Сводный график проектирования по разделам." },
+      { key: "ppt", title: "ППТ", description: "График мероприятий по проекту планировки территории." },
+      { key: "rns", title: "РНС", description: "Дорожная карта получения разрешения на строительство." },
+    ];
+    const rnsBounds = getScheduleBounds(projectManagerRnsItems);
+
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader("Графики", "Выберите нужный график: проектирование, ППТ или РНС.")}
+
+        <section className="projectManagerSectionBlock">
+          <div className="projectManagerGraphChooser">
+            {graphOptions.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={projectManagerGraphType === option.key ? "projectManagerGraphButton active" : "projectManagerGraphButton"}
+                onClick={() => setProjectManagerGraphType(option.key)}
+              >
+                <strong>{option.title}</strong>
+                <span>{option.description}</span>
+              </button>
+            ))}
+          </div>
+
+          {projectManagerGraphType === "design" && renderSchedulePage()}
+          {projectManagerGraphType === "ppt" && renderCompactPptPage()}
+          {projectManagerGraphType === "rns" && (
+            <section className="contentStack">
+              <div className="sectionHeader">
+                <div><p className="eyebrow">График РНС</p><h2>Разрешение на строительство</h2></div>
+                <div className="roleBadge">дорожная карта</div>
+              </div>
+              <div className="scheduleList">
+                {projectManagerRnsItems.map((item) => (
+                  <article className="scheduleRow" key={item.code}>
+                    <div className="scheduleInfo">
+                      <strong>{item.code}</strong>
+                      <span>{item.title}</span>
+                      <small>{formatDate(item.start)} — {formatDate(item.end)}</small>
+                    </div>
+                    <div className="timelineTrack">
+                      <div className="timelineBar" style={getBarStyle(item, rnsBounds)}>
+                        <span>{item.progress}%</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  function renderProjectManagerMeetings() {
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader("Совещания", "Последние протоколы, актуальная повестка и задачи по ответственным.")}
+
+        <section className="projectManagerMeetingGrid">
+          <div className="projectManagerPanel wide">
+            <div className="cardHeaderLine"><p className="eyebrow">Протоколы</p><h2>Последние протоколы</h2></div>
+            <div className="projectManagerProtocolList">
+              {projectManagerMeetings.protocols.map((protocol) => (
+                <article className="projectManagerProtocol" key={`${protocol.date}-${protocol.title}`}>
+                  <div><strong>{protocol.date}</strong><span>{protocol.status}</span></div>
+                  <h3>{protocol.title}</h3>
+                  <p>{protocol.summary}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="projectManagerPanel">
+            <div className="cardHeaderLine"><p className="eyebrow">Повестка</p><h2>Актуальная повестка</h2></div>
+            <ol className="projectManagerAgendaList">
+              {projectManagerMeetings.agenda.map((item) => <li key={item}>{item}</li>)}
+            </ol>
+          </div>
+
+          <div className="projectManagerPanel wide">
+            <div className="cardHeaderLine"><p className="eyebrow">Задачи</p><h2>Кому какие задачи поставлены</h2></div>
+            <div className="projectManagerTaskList">
+              {projectManagerMeetings.tasks.map((task) => (
+                <article className="projectManagerTask" key={`${task.owner}-${task.task}`}>
+                  <strong>{task.owner}</strong>
+                  <p>{task.task}</p>
+                  <span>{task.due}</span>
+                  <small>{task.status}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function renderProjectManagerFinance() {
+    const maxAmount = Math.max(...projectManagerFinancePlan.map((item) => item.amount), 1);
+    const total = projectManagerFinancePlan.reduce((sum, item) => sum + item.amount, 0);
+
+    return (
+      <main className="appShell projectManagerShell">
+        {renderProjectManagerHeader("Финансирование", "График потребности в финансах на ближайшие 3 месяца.")}
+
+        <section className="projectManagerSectionBlock">
+          <div className="sectionHeader">
+            <div><p className="eyebrow">Финансы</p><h2>Потребность на 3 месяца</h2></div>
+            <div className="roleBadge">Итого: {total} млн ₽</div>
+          </div>
+
+          <div className="projectManagerFinanceChart">
+            {projectManagerFinancePlan.map((item) => (
+              <article className="projectManagerFinanceBar" key={item.month}>
+                <div className="projectManagerFinanceBarTop"><strong>{item.month}</strong><span>{item.label}</span></div>
+                <div className="projectManagerFinanceTrack"><div style={{ width: `${Math.round((item.amount / maxAmount) * 100)}%` }} /></div>
+                <p>{item.note}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function renderProjectManagerWorkspace() {
+    if (!hasAccess(currentUser, "project_manager_dashboard")) {
+      return renderAccessDenied("Кабинет руководителя проекта");
+    }
+    if (projectManagerView === "info") return renderProjectManagerInfo();
+    if (projectManagerView === "buildingDetail") return renderProjectManagerBuildingDetail();
+    if (projectManagerView === "graphs") return renderProjectManagerGraphs();
+    if (projectManagerView === "meetings") return renderProjectManagerMeetings();
+    if (projectManagerView === "finance") return renderProjectManagerFinance();
+    return renderProjectManagerHome();
+  }
+
   function renderAccountManagement() {
     if (!hasAccess(currentUser, "accounts")) {
       return renderAccessDenied("Управление учетными записями");
@@ -4896,6 +5366,10 @@ function App() {
 
   if (currentUser.role === "architect" && interfaceChoice === "specialized") {
     return renderArchitectWorkspace();
+  }
+
+  if (currentUser.role === "project_manager") {
+    return renderProjectManagerWorkspace();
   }
 
   return (
