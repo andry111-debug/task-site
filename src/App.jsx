@@ -34,7 +34,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_171";
+const APP_VERSION = "N_182";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -2407,7 +2407,7 @@ function App() {
   const [fileComment, setFileComment] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [fileYandexPath, setFileYandexPath] = useState("");
-  const [selectedUploadFile, setSelectedUploadFile] = useState(null);
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
   const [incomingUploadSubmitting, setIncomingUploadSubmitting] = useState(false);
   const [incomingUploadError, setIncomingUploadError] = useState("");
   const [incomingUploadNotice, setIncomingUploadNotice] = useState("");
@@ -2921,28 +2921,17 @@ function App() {
     };
 
     const targetSection = modalSiteSection || selectedSiteSection;
+    const filesToUpload = Array.isArray(selectedUploadFiles) ? selectedUploadFiles : [];
     if (!targetSection) {
       setUploadError("Выберите раздел.");
       return;
     }
-    if (!selectedUploadFile) {
-      setUploadError("Выберите файл для загрузки.");
-      return;
-    }
-    if (selectedUploadFile.size <= 0) {
-      setUploadError("Пустой файл нельзя загрузить во входящую очередь.");
-      return;
-    }
-    if (selectedUploadFile.size > MAX_INCOMING_UPLOAD_BYTES) {
-      setUploadError(`Файл слишком большой. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
-      return;
-    }
-    if (isBlockedUploadFile(selectedUploadFile.name)) {
-      setUploadError("Этот тип файла запрещен для загрузки во входящую очередь.");
+    if (!filesToUpload.length) {
+      setUploadError("Выберите один или несколько файлов для загрузки.");
       return;
     }
     if (!fileComment.trim()) {
-      setUploadError("Кратко опишите, что это за файл и куда его нужно вставить.");
+      setUploadError("Кратко опишите, что это за файлы и куда их нужно вставить.");
       return;
     }
     if (!isSupabaseReady || !supabase) {
@@ -2950,52 +2939,73 @@ function App() {
       return;
     }
 
+    for (const file of filesToUpload) {
+      if (file.size <= 0) {
+        setUploadError(`Пустой файл нельзя загрузить во входящую очередь: ${file.name}.`);
+        return;
+      }
+      if (file.size > MAX_INCOMING_UPLOAD_BYTES) {
+        setUploadError(`Файл слишком большой: ${file.name}. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
+        return;
+      }
+      if (isBlockedUploadFile(file.name)) {
+        setUploadError(`Этот тип файла запрещен для загрузки во входящую очередь: ${file.name}.`);
+        return;
+      }
+    }
+
     setIncomingUploadSubmitting(true);
 
     try {
-      const uploadId = randomUploadId();
-      const safeName = safeUploadFileName(selectedUploadFile.name);
-      const diskPath = makeIncomingDiskPath(targetSection, uploadId, safeName);
-      const sha256 = await fileSha256(selectedUploadFile);
+      for (let index = 0; index < filesToUpload.length; index += 1) {
+        const uploadFile = filesToUpload[index];
+        setIncomingUploadNotice(`Готовлю файл ${index + 1} из ${filesToUpload.length}: ${uploadFile.name}`);
+        const uploadId = randomUploadId();
+        const safeName = safeUploadFileName(uploadFile.name);
+        const diskPath = makeIncomingDiskPath(targetSection, uploadId, safeName);
+        const sha256 = await fileSha256(uploadFile);
 
-      const payload = {
-        project_key: targetSection.project_key || "opr_donetsk",
-        site_section_id: targetSection.id,
-        building_gp_no: targetSection.building_gp_no || "",
-        building_name: targetSection.building_name || "",
-        stage: normalizeStage(targetSection.stage || ""),
-        section_code: targetSection.section_code || "",
-        section_title: targetSection.section_title || "",
-        target_area: fileCategory,
-        target_yandex_folder: getYandexCatalogsForSection(targetSection).find((item) => item.value === fileCategory)?.path || "",
-        original_filename: selectedUploadFile.name,
-        stored_filename: safeName,
-        yandex_temp_path: diskPath,
-        file_size: selectedUploadFile.size,
-        sha256,
-        mime_type: selectedUploadFile.type || "application/octet-stream",
-        uploaded_by: currentUser?.name || currentUser?.login || "",
-        uploaded_by_email: currentUser?.email || "",
-        user_comment: fileComment.trim(),
-        status: "pending",
-        active: true,
-      };
+        const payload = {
+          project_key: targetSection.project_key || "opr_donetsk",
+          site_section_id: targetSection.id,
+          building_gp_no: targetSection.building_gp_no || "",
+          building_name: targetSection.building_name || "",
+          stage: normalizeStage(targetSection.stage || ""),
+          section_code: targetSection.section_code || "",
+          section_title: targetSection.section_title || "",
+          target_area: fileCategory,
+          target_yandex_folder: getYandexCatalogsForSection(targetSection).find((item) => item.value === fileCategory)?.path || "",
+          original_filename: uploadFile.name,
+          stored_filename: safeName,
+          yandex_temp_path: diskPath,
+          file_size: uploadFile.size,
+          sha256,
+          mime_type: uploadFile.type || "application/octet-stream",
+          uploaded_by: currentUser?.name || currentUser?.login || "",
+          uploaded_by_email: currentUser?.email || "",
+          user_comment: fileComment.trim(),
+          status: "pending",
+          active: true,
+        };
 
-      await uploadIncomingFileInChunks(selectedUploadFile, {
-        uploadId,
-        diskPath,
-        contentType: selectedUploadFile.type || "application/octet-stream",
-        sha256,
-        incomingTable: siteIncomingTable,
-        payload,
-      });
+        await uploadIncomingFileInChunks(uploadFile, {
+          uploadId,
+          diskPath,
+          contentType: uploadFile.type || "application/octet-stream",
+          sha256,
+          incomingTable: siteIncomingTable,
+          payload,
+        });
+      }
 
       setFileComment("");
       setFileUrl("");
       setFileYandexPath("");
-      setSelectedUploadFile(null);
+      setSelectedUploadFiles([]);
       setFileCategory("project_file");
-      setIncomingUploadNotice("загрузка успешно завершено. файл будет размещен после проверки ГИПом");
+      setIncomingUploadNotice(filesToUpload.length === 1
+        ? "загрузка успешно завершена. файл будет размещен после проверки ГИПом"
+        : `загрузка успешно завершена. файлов отправлено ГИПу: ${filesToUpload.length}`);
     } catch (error) {
       setIncomingUploadError(`Ошибка загрузки файла во входящую очередь: ${error.message}`);
     } finally {
@@ -3868,7 +3878,7 @@ function App() {
                       <div className="fileCategoryTitle">
                         <strong>{category.label}</strong>
                         <div className="fileCategoryActions">
-                          {(category.value === "source" || category.value === "remark") && (
+                          {(category.value === "tz" || category.value === "source" || category.value === "remark") && (
                             <button
                               type="button"
                               className="archiveButton"
@@ -3931,12 +3941,18 @@ function App() {
                   Файл
                   <input
                     type="file"
-                    onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)}
+                    multiple
+                    onChange={(event) => setSelectedUploadFiles(Array.from(event.target.files || []))}
                   />
                 </label>
-                {selectedUploadFile && (
+                {selectedUploadFiles.length > 0 && (
                   <div className="selectedUploadFileInfo">
-                    Выбран файл: <strong>{selectedUploadFile.name}</strong> / {formatFileSize(selectedUploadFile.size)}
+                    Выбрано файлов: <strong>{selectedUploadFiles.length}</strong>
+                    <ul>
+                      {selectedUploadFiles.map((file) => (
+                        <li key={`${file.name}:${file.size}`}>{file.name} / {formatFileSize(file.size)}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
                 <label>
@@ -3944,7 +3960,7 @@ function App() {
                   <textarea
                     value={fileComment}
                     onChange={(event) => setFileComment(event.target.value)}
-                    placeholder="Например: добавить как исходник по разделу АР; заменить ТЗ; принять как файл замечаний."
+                    placeholder="Например: добавить как исходник по разделу АР; добавить в набор ТЗ; принять как файл замечаний."
                     rows={3}
                   />
                 </label>
