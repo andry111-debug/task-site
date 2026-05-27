@@ -3984,3 +3984,198 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+.sectionHeaderActions,
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.historyModalBackdrop {
+  z-index: 80;
+}
+
+.gapaHistoryModal {
+  width: min(1480px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
+
+.historyTabs {
+  display: flex;
+  gap: 10px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+
+.historyTab {
+  border: 1px solid #d4dfef;
+  background: #f7faff;
+  border-radius: 999px;
+  color: #233b5e;
+  cursor: pointer;
+  padding: 10px 16px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.historyTab span {
+  background: #e7eefb;
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #2454b8;
+  font-size: 12px;
+}
+
+.historyTab.active {
+  background: #2454b8;
+  border-color: #2454b8;
+  color: #ffffff;
+}
+
+.historyTab.active span {
+  background: rgba(255,255,255,0.22);
+  color: #ffffff;
+}
+
+.historyTableWrap {
+  border: 1px solid #d9e3f1;
+  border-radius: 18px;
+  overflow: auto;
+  background: #ffffff;
+  max-height: 62vh;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1180px;
+}
+
+.historyTable th,
+.historyTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6edf7;
+  text-align: left;
+  vertical-align: top;
+}
+
+.historyTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f3f7fd;
+  color: #415575;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.historyTable td {
+  color: #182b48;
+  font-size: 14px;
+}
+
+.historyFileCell,
+.historyStatusCell {
+  display: grid;
+  gap: 5px;
+}
+
+.historyFileCell small,
+.historyStatusCell small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.historyStatusCell span {
+  font-weight: 900;
+  color: #2454b8;
+}
+
+.pendingHistoryList {
+  display: grid;
+  gap: 12px;
+  max-height: 62vh;
+  overflow: auto;
+}
+
+.pendingHistoryCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid #d9e3f1;
+  border-radius: 18px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.pendingHistoryHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pendingHistoryHeader strong {
+  color: #10233f;
+  font-size: 16px;
+}
+
+.pendingHistoryHeader span {
+  color: #2454b8;
+  background: #edf4ff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.pendingHistoryCard p {
+  margin: 0 0 10px;
+  color: #53647b;
+  line-height: 1.35;
+}
+
+.pendingHistoryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pendingHistoryMeta span {
+  background: #f3f7fd;
+  border-radius: 999px;
+  color: #415575;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pendingHistoryComment {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8e8;
+  color: #5d4a1f;
+  font-weight: 700;
+}
+
+@media (max-width: 820px) {
+  .pendingHistoryCard {
+    grid-template-columns: 1fr;
+  }
+
+  .pendingHistoryHeader {
+    display: grid;
+  }
+}

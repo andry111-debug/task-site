@@ -36,7 +36,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_185";
+const APP_VERSION = "N_207";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -285,6 +285,63 @@ function getArchitectFileYandexPath(file) {
 
 function getArchitectFileDate(file) {
   return file?.registered_at || file?.modified_at || file?.created_at || "";
+}
+
+function formatActionDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getFileCategoryLabel(value) {
+  const normalized = normalizeDocumentType(value || "");
+  return ARCHITECT_FILE_CATEGORIES.find((item) => item.value === normalized)?.label || normalized || "—";
+}
+
+function normalizeIncomingStatus(value, decision) {
+  const status = String(value || "").trim().toLowerCase();
+  const gipDecision = String(decision || "").trim().toLowerCase();
+  if (status === "cancelled" || gipDecision.includes("cancel")) return "cancelled";
+  return status || "pending";
+}
+
+function getIncomingStatusLabel(value, decision) {
+  const status = normalizeIncomingStatus(value, decision);
+  if (status === "pending") return "ожидает ГИПа";
+  if (status === "viewed") return "просмотрено ГИПом";
+  if (status === "processing") return "в обработке у ГИПа";
+  if (status === "approved" || status === "done") return "принято ГИПом";
+  if (status === "rejected") return "отклонено ГИПом";
+  if (status === "cancelled") return "отменено пользователем";
+  if (status === "error") return "ошибка обработки";
+  return status || "—";
+}
+
+function isIncomingFinalStatus(value, decision) {
+  const status = normalizeIncomingStatus(value, decision);
+  return ["approved", "done", "rejected", "cancelled", "error"].includes(status);
+}
+
+function isIncomingCancelable(row) {
+  if (!row || row.active === false) return false;
+  const status = normalizeIncomingStatus(row.status, row.gip_decision);
+  return status === "pending" || status === "viewed";
+}
+
+function getHistoryActionLabel(actionType) {
+  const action = String(actionType || "").trim();
+  if (action === "download_file") return "Скачивание файла";
+  if (action === "download_archive") return "Скачивание архива";
+  if (action === "upload_to_gip") return "Загрузка ГИПу";
+  if (action === "cancel_upload") return "Отмена загрузки ГИПу";
+  return action || "Действие";
 }
 
 function sanitizeZipPart(value) {
@@ -2512,9 +2569,17 @@ function App() {
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
   const [projectManagerView, setProjectManagerView] = useState("home");
   const [projectManagerGraphType, setProjectManagerGraphType] = useState("design");
+  const [gapaHistoryOpen, setGapaHistoryOpen] = useState(false);
+  const [gapaHistoryTab, setGapaHistoryTab] = useState("full");
+  const [gapaHistoryRows, setGapaHistoryRows] = useState([]);
+  const [gapaPendingRows, setGapaPendingRows] = useState([]);
+  const [gapaHistoryLoading, setGapaHistoryLoading] = useState(false);
+  const [gapaHistoryError, setGapaHistoryError] = useState("");
+  const [gapaCancelLoadingId, setGapaCancelLoadingId] = useState("");
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
+  const siteActionHistoryTable = import.meta.env.VITE_SITE_ACTION_HISTORY_TABLE || "opr_site_action_history";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
 
   const scheduleBounds = useMemo(() => getScheduleBounds(scheduleRows), [scheduleRows]);
@@ -2780,6 +2845,224 @@ function App() {
     }
   }
 
+  function makeHistorySectionText(row) {
+    const parts = [];
+    if (row?.building_gp_no || row?.building_name) parts.push(`${row?.building_gp_no || "—"} — ${row?.building_name || "Здание не указано"}`);
+    if (row?.stage || row?.section_code) parts.push(`стадия ${normalizeStage(row?.stage || "") || "—"} / ${row?.section_code || "—"}`);
+    if (row?.section_title) parts.push(row.section_title);
+    return parts.join(" / ") || "—";
+  }
+
+  function mapActionHistoryRow(row) {
+    return {
+      id: `action:${row.id || Math.random()}`,
+      source: "action",
+      eventAt: row.event_at || row.created_at || "",
+      actor: row.actor_name || row.actor_login || "—",
+      action: row.action_title || getHistoryActionLabel(row.action_type),
+      fileName: row.file_name || "—",
+      category: getFileCategoryLabel(row.target_area),
+      sectionText: makeHistorySectionText(row),
+      status: row.status || "—",
+      basis: row.comment || row.decision || "—",
+      details: row.yandex_path || row.file_url || "",
+    };
+  }
+
+  function mapIncomingUploadHistoryRow(row) {
+    return {
+      id: `incoming-upload:${row.id}`,
+      source: "incoming",
+      eventAt: row.uploaded_at || row.created_at || "",
+      actor: row.uploaded_by || row.uploaded_by_email || "—",
+      action: "Загрузка файла ГИПу",
+      fileName: row.original_filename || row.stored_filename || "—",
+      category: getFileCategoryLabel(row.target_area),
+      sectionText: makeHistorySectionText(row),
+      status: getIncomingStatusLabel(row.status, row.gip_decision),
+      basis: row.user_comment || "—",
+      details: row.final_yandex_path || row.yandex_temp_path || "",
+    };
+  }
+
+  function mapIncomingDecisionHistoryRow(row) {
+    const status = normalizeIncomingStatus(row.status, row.gip_decision);
+    const isRejected = status === "rejected";
+    const isCancelled = status === "cancelled";
+    const isError = status === "error";
+    return {
+      id: `incoming-decision:${row.id}`,
+      source: "incoming",
+      eventAt: row.processed_at || row.updated_at || row.created_at || row.uploaded_at || "",
+      actor: isCancelled ? (row.uploaded_by || row.uploaded_by_email || "пользователь сайта") : (row.processing_by || "ГИП"),
+      action: isCancelled ? "Отмена загрузки ГИПу" : isRejected ? "Отклонение ГИПом" : isError ? "Ошибка обработки ГИПом" : "Принятие ГИПом",
+      fileName: row.original_filename || row.stored_filename || "—",
+      category: getFileCategoryLabel(row.target_area),
+      sectionText: makeHistorySectionText(row),
+      status: getIncomingStatusLabel(row.status, row.gip_decision),
+      basis: row.gip_comment || row.error_message || row.gip_decision || "—",
+      details: row.final_yandex_path || row.yandex_temp_path || "",
+    };
+  }
+
+  function buildHistoryFromIncomingRows(incomingRows, actionRows) {
+    const rows = [];
+    const visibleIncoming = (incomingRows || []).filter((row) => row && row.active !== false || normalizeIncomingStatus(row?.status, row?.gip_decision) === "cancelled");
+
+    visibleIncoming.forEach((row) => {
+      rows.push(mapIncomingUploadHistoryRow(row));
+      if (isIncomingFinalStatus(row.status, row.gip_decision)) {
+        rows.push(mapIncomingDecisionHistoryRow(row));
+      }
+    });
+
+    (actionRows || [])
+      .filter((row) => !["upload_to_gip", "cancel_upload"].includes(String(row.action_type || "")))
+      .forEach((row) => rows.push(mapActionHistoryRow(row)));
+
+    return rows.sort((a, b) => String(b.eventAt || "").localeCompare(String(a.eventAt || "")));
+  }
+
+  async function logSiteAction(actionType, payload = {}) {
+    if (!isSupabaseReady || !supabase) return;
+    try {
+      await supabase.from(siteActionHistoryTable).insert({
+        project_key: payload.project_key || payload.projectKey || "opr_donetsk",
+        action_type: actionType,
+        action_title: payload.action_title || getHistoryActionLabel(actionType),
+        actor_name: currentUser?.name || currentUser?.login || "",
+        actor_login: currentUser?.login || "",
+        actor_role: currentUser?.role || "",
+        site_section_id: payload.site_section_id || payload.section_id || "",
+        incoming_file_id: payload.incoming_file_id || "",
+        document_card_id: payload.document_card_id || payload.file_id || "",
+        building_gp_no: payload.building_gp_no || "",
+        building_name: payload.building_name || "",
+        stage: payload.stage || "",
+        section_code: payload.section_code || "",
+        section_title: payload.section_title || "",
+        target_area: payload.target_area || "",
+        file_name: payload.file_name || "",
+        file_size: payload.file_size || null,
+        yandex_path: payload.yandex_path || "",
+        file_url: payload.file_url || "",
+        status: payload.status || "",
+        decision: payload.decision || "",
+        comment: payload.comment || "",
+        details: payload.details || {},
+        active: true,
+      });
+    } catch {
+      // Журнал действий не должен блокировать скачивание или загрузку файла.
+    }
+  }
+
+  async function loadGapaActionHistory() {
+    if (!isSupabaseReady || !supabase) {
+      setGapaHistoryError("GIP API не подключён. Историю действий загрузить нельзя.");
+      return;
+    }
+
+    setGapaHistoryLoading(true);
+    setGapaHistoryError("");
+
+    try {
+      const { data: incomingData, error: incomingError } = await supabase
+        .from(siteIncomingTable)
+        .select("*")
+        .order("uploaded_at", { ascending: false });
+      if (incomingError) throw incomingError;
+
+      let actionData = [];
+      const { data, error } = await supabase
+        .from(siteActionHistoryTable)
+        .select("*")
+        .order("event_at", { ascending: false });
+      if (error) {
+        setGapaHistoryError("Таблица истории действий ещё не создана. Выполните SQL из supabase_sql/N_207_gapa_action_history.sql. Пока показана история из очереди входящих файлов.");
+      } else {
+        actionData = data || [];
+      }
+
+      const incomingRows = incomingData || [];
+      const pendingRows = incomingRows
+        .filter((row) => row?.active !== false && !isIncomingFinalStatus(row.status, row.gip_decision))
+        .sort((a, b) => String(b.uploaded_at || b.created_at || "").localeCompare(String(a.uploaded_at || a.created_at || "")));
+
+      setGapaPendingRows(pendingRows);
+      setGapaHistoryRows(buildHistoryFromIncomingRows(incomingRows, actionData));
+    } catch (error) {
+      setGapaHistoryError(`Ошибка загрузки истории действий: ${error.message}`);
+    } finally {
+      setGapaHistoryLoading(false);
+    }
+  }
+
+  async function openGapaActionHistory() {
+    setGapaHistoryOpen(true);
+    await loadGapaActionHistory();
+  }
+
+  async function cancelIncomingUpload(row) {
+    if (!row?.id || !isIncomingCancelable(row)) return;
+    const confirmed = window.confirm(`Отменить загрузку ГИПу?\n\nФайл: ${row.original_filename || row.stored_filename || "—"}\nРаздел: ${row.section_code || "—"}\n\nЗаявка будет снята из активной очереди ГИПа.`);
+    if (!confirmed) return;
+
+    setGapaCancelLoadingId(row.id);
+    setGapaHistoryError("");
+    const nowIso = new Date().toISOString();
+    const basePayload = {
+      active: false,
+      status: "cancelled",
+      gip_decision: "cancelled_by_uploader",
+      gip_comment: "отменено загрузившим пользователем",
+      processed_at: nowIso,
+      processing_by: currentUser?.name || currentUser?.login || "пользователь сайта",
+    };
+
+    try {
+      let updateResult = await supabase
+        .from(siteIncomingTable)
+        .update(basePayload)
+        .eq("id", row.id);
+
+      if (updateResult.error) {
+        const message = String(updateResult.error.message || updateResult.error || "");
+        if (message.includes("status") || message.includes("check")) {
+          updateResult = await supabase
+            .from(siteIncomingTable)
+            .update({ ...basePayload, status: "rejected" })
+            .eq("id", row.id);
+        }
+      }
+
+      if (updateResult.error) throw updateResult.error;
+
+      await logSiteAction("cancel_upload", {
+        incoming_file_id: row.id,
+        site_section_id: row.site_section_id,
+        building_gp_no: row.building_gp_no,
+        building_name: row.building_name,
+        stage: row.stage,
+        section_code: row.section_code,
+        section_title: row.section_title,
+        target_area: row.target_area,
+        file_name: row.original_filename || row.stored_filename,
+        file_size: row.file_size,
+        yandex_path: row.yandex_temp_path,
+        status: "cancelled",
+        decision: "cancelled_by_uploader",
+        comment: "отменено загрузившим пользователем",
+      });
+
+      await loadGapaActionHistory();
+    } catch (error) {
+      setGapaHistoryError(`Не удалось отменить загрузку: ${error.message}`);
+    } finally {
+      setGapaCancelLoadingId("");
+    }
+  }
+
   function yandexCatalogKey(section, catalog) {
     return `${section?.id || "section"}:${catalog?.value || "catalog"}`;
   }
@@ -2946,7 +3229,7 @@ function App() {
     }
   }
 
-  async function openYandexDiskFile(path) {
+  async function openYandexDiskFile(path, metadata = {}) {
     if (!path) return;
     if (!isSupabaseReady || !supabase) {
       setSiteDirectoryError("GIP API не подключён. Невозможно получить ссылку на скачивание.");
@@ -2958,6 +3241,12 @@ function App() {
       if (!data?.href) throw new Error("Яндекс.Диск не вернул ссылку на скачивание.");
 
       window.open(data.href, "_blank", "noopener,noreferrer");
+      logSiteAction("download_file", {
+        ...metadata,
+        yandex_path: path,
+        file_name: metadata.file_name || String(path).split("/").pop() || "",
+        comment: "скачивание через Яндекс.Диск",
+      });
     } catch (error) {
       setSiteDirectoryError(`Ошибка получения ссылки Яндекс.Диска: ${error.message}`);
     }
@@ -3002,6 +3291,18 @@ function App() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      logSiteAction("download_archive", {
+        site_section_id: section.id || "",
+        building_gp_no: section.building_gp_no || "",
+        building_name: section.building_name || "",
+        stage: normalizeStage(section.stage || ""),
+        section_code: section.section_code || "",
+        section_title: section.section_title || "",
+        target_area: category,
+        file_name: `${archiveName}.zip`,
+        comment: `архив: ${categoryInfo?.label || category}; файлов: ${downloadableFiles.length}`,
+        details: { files_count: downloadableFiles.length },
+      });
     } catch (error) {
       setSiteDirectoryError(`Ошибка скачивания архива: ${error.message}`);
     } finally {
@@ -3089,13 +3390,29 @@ function App() {
           active: true,
         };
 
-        await uploadIncomingFileInChunks(uploadFile, {
+        const uploadResult = await uploadIncomingFileInChunks(uploadFile, {
           uploadId,
           diskPath,
           contentType: uploadFile.type || "application/octet-stream",
           sha256,
           incomingTable: siteIncomingTable,
           payload,
+        });
+
+        logSiteAction("upload_to_gip", {
+          incoming_file_id: uploadResult?.incoming?.id || uploadResult?.data?.id || "",
+          site_section_id: targetSection.id || "",
+          building_gp_no: targetSection.building_gp_no || "",
+          building_name: targetSection.building_name || "",
+          stage: normalizeStage(targetSection.stage || ""),
+          section_code: targetSection.section_code || "",
+          section_title: targetSection.section_title || "",
+          target_area: fileCategory,
+          file_name: uploadFile.name,
+          file_size: uploadFile.size,
+          yandex_path: diskPath,
+          status: "pending",
+          comment: fileComment.trim(),
         });
       }
 
@@ -3813,9 +4130,14 @@ function App() {
               <p className="eyebrow">Справочник из локальной программы ГИПа</p>
               <h2>Здания и разделы</h2>
             </div>
-            <button className="secondaryButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
-              {siteDirectoryLoading ? "Обновление..." : "Обновить"}
-            </button>
+            <div className="sectionHeaderActions">
+              <button className="secondaryButton" onClick={openGapaActionHistory} disabled={gapaHistoryLoading}>
+                {gapaHistoryLoading && gapaHistoryOpen ? "Загружаю историю..." : "История действий"}
+              </button>
+              <button className="secondaryButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
+                {siteDirectoryLoading ? "Обновление..." : "Обновить"}
+              </button>
+            </div>
           </div>
 
           {notice && <div className="noticeBox">{notice}</div>}
@@ -3938,6 +4260,7 @@ function App() {
           </div>
         </section>
         {renderArchitectSectionModal()}
+        {renderGapaActionHistoryModal()}
       </main>
     );
   }
@@ -4009,11 +4332,44 @@ function App() {
                               {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
                             {file.file_url ? (
-                              <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
+                              <button
+                                className="smallButton"
+                                onClick={() => {
+                                  window.open(file.file_url, "_blank", "noopener,noreferrer");
+                                  logSiteAction("download_file", {
+                                    site_section_id: modalSiteSection.id || "",
+                                    document_card_id: file.id || "",
+                                    building_gp_no: modalSiteSection.building_gp_no || "",
+                                    building_name: modalSiteSection.building_name || "",
+                                    stage: normalizeStage(modalSiteSection.stage || ""),
+                                    section_code: modalSiteSection.section_code || "",
+                                    section_title: modalSiteSection.section_title || "",
+                                    target_area: category.value,
+                                    file_name: file.file_name || file.original_name || "",
+                                    file_size: file.size_bytes || null,
+                                    file_url: file.file_url,
+                                    comment: "скачивание по прямой ссылке",
+                                  });
+                                }}
+                              >
                                 Скачать / открыть
                               </button>
                             ) : getArchitectFileYandexPath(file) ? (
-                              <button className="smallButton" onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file))}>
+                              <button
+                                className="smallButton"
+                                onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file), {
+                                  site_section_id: modalSiteSection.id || "",
+                                  document_card_id: file.id || "",
+                                  building_gp_no: modalSiteSection.building_gp_no || "",
+                                  building_name: modalSiteSection.building_name || "",
+                                  stage: normalizeStage(modalSiteSection.stage || ""),
+                                  section_code: modalSiteSection.section_code || "",
+                                  section_title: modalSiteSection.section_title || "",
+                                  target_area: category.value,
+                                  file_name: file.file_name || file.original_name || "",
+                                  file_size: file.size_bytes || null,
+                                })}
+                              >
                                 Скачать
                               </button>
                             ) : (
@@ -4143,7 +4499,21 @@ function App() {
                               {item.modified && <small>{item.modified}</small>}
                             </div>
                             {item.type !== "dir" && (
-                              <button className="smallButton" type="button" onClick={() => openYandexDiskFile(item.path)}>
+                              <button
+                                className="smallButton"
+                                type="button"
+                                onClick={() => openYandexDiskFile(item.path, {
+                                  site_section_id: modalSiteSection.id || "",
+                                  building_gp_no: modalSiteSection.building_gp_no || "",
+                                  building_name: modalSiteSection.building_name || "",
+                                  stage: normalizeStage(modalSiteSection.stage || ""),
+                                  section_code: modalSiteSection.section_code || "",
+                                  section_title: modalSiteSection.section_title || "",
+                                  target_area: catalog.value,
+                                  file_name: item.name || "",
+                                  file_size: item.size || null,
+                                })}
+                              >
                                 Скачать
                               </button>
                             )}
@@ -4157,6 +4527,137 @@ function App() {
             </section>
             )}
           </div>
+        </section>
+      </div>
+    );
+  }
+
+  function renderGapaActionHistoryModal() {
+    if (!gapaHistoryOpen) return null;
+
+    const activeRows = gapaHistoryTab === "pending" ? gapaPendingRows : gapaHistoryRows;
+
+    return (
+      <div className="architectModalBackdrop historyModalBackdrop" onClick={() => setGapaHistoryOpen(false)}>
+        <section className="architectSectionModal gapaHistoryModal" onClick={(event) => event.stopPropagation()}>
+          <div className="modalHeader">
+            <div>
+              <p className="eyebrow">ГАПА</p>
+              <h2>История действий</h2>
+              <p className="modalSubline">
+                Скачивания с сайта, загрузки файлов ГИПу и решения ГИПа по входящим файлам.
+              </p>
+            </div>
+            <div className="modalHeaderActions">
+              <button className="secondaryButton" type="button" onClick={loadGapaActionHistory} disabled={gapaHistoryLoading}>
+                {gapaHistoryLoading ? "Обновляю..." : "Обновить"}
+              </button>
+              <button className="ghostButton" type="button" onClick={() => setGapaHistoryOpen(false)}>Закрыть</button>
+            </div>
+          </div>
+
+          <div className="historyTabs">
+            <button
+              type="button"
+              className={gapaHistoryTab === "full" ? "historyTab active" : "historyTab"}
+              onClick={() => setGapaHistoryTab("full")}
+            >
+              Полная история
+              <span>{gapaHistoryRows.length}</span>
+            </button>
+            <button
+              type="button"
+              className={gapaHistoryTab === "pending" ? "historyTab active" : "historyTab"}
+              onClick={() => setGapaHistoryTab("pending")}
+            >
+              Что подвешено у ГИПа
+              <span>{gapaPendingRows.length}</span>
+            </button>
+          </div>
+
+          {gapaHistoryError && <div className="errorBox compactError">{gapaHistoryError}</div>}
+
+          {gapaHistoryTab === "full" ? (
+            <div className="historyTableWrap">
+              <table className="historyTable">
+                <thead>
+                  <tr>
+                    <th>Когда</th>
+                    <th>Кто</th>
+                    <th>Действие</th>
+                    <th>Файл</th>
+                    <th>Куда</th>
+                    <th>Тип</th>
+                    <th>Статус / основание</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeRows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{formatActionDate(row.eventAt)}</td>
+                      <td>{row.actor}</td>
+                      <td><strong>{row.action}</strong></td>
+                      <td>
+                        <div className="historyFileCell">
+                          <strong>{row.fileName}</strong>
+                          {row.details ? <small>{row.details}</small> : null}
+                        </div>
+                      </td>
+                      <td>{row.sectionText}</td>
+                      <td>{row.category}</td>
+                      <td>
+                        <div className="historyStatusCell">
+                          <span>{row.status}</span>
+                          <small>{row.basis}</small>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!activeRows.length && (
+                    <tr>
+                      <td colSpan="7" className="emptyCell">История пока пустая.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="pendingHistoryList">
+              {gapaPendingRows.map((row) => {
+                const cancelable = isIncomingCancelable(row);
+                return (
+                  <article className="pendingHistoryCard" key={row.id}>
+                    <div>
+                      <div className="pendingHistoryHeader">
+                        <strong>{row.original_filename || row.stored_filename || "Файл"}</strong>
+                        <span>{getIncomingStatusLabel(row.status, row.gip_decision)}</span>
+                      </div>
+                      <p>{makeHistorySectionText(row)}</p>
+                      <div className="pendingHistoryMeta">
+                        <span>{formatActionDate(row.uploaded_at || row.created_at)}</span>
+                        <span>{row.uploaded_by || row.uploaded_by_email || "—"}</span>
+                        <span>{getFileCategoryLabel(row.target_area)}</span>
+                        {row.file_size ? <span>{formatFileSize(row.file_size)}</span> : null}
+                      </div>
+                      {row.user_comment && <div className="pendingHistoryComment">{row.user_comment}</div>}
+                    </div>
+                    <button
+                      type="button"
+                      className="dangerButton"
+                      onClick={() => cancelIncomingUpload(row)}
+                      disabled={!cancelable || gapaCancelLoadingId === row.id}
+                      title={cancelable ? "Снять заявку из активной очереди ГИПа" : "Файл уже взят в обработку или не может быть отменён"}
+                    >
+                      {gapaCancelLoadingId === row.id ? "Отменяю..." : "Отменить загрузку ГИПу"}
+                    </button>
+                  </article>
+                );
+              })}
+              {!gapaPendingRows.length && (
+                <div className="emptyFileBox">Нет файлов, подвешенных у ГИПа.</div>
+              )}
+            </div>
+          )}
         </section>
       </div>
     );
