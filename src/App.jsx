@@ -36,7 +36,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_184";
+const APP_VERSION = "N_185";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -402,6 +402,11 @@ function normalizeAccessElements(value, role = "designer") {
   if (!Array.isArray(parsed)) return fallback;
 
   const cleaned = parsed.filter((item) => allowedKeys.includes(item));
+  const normalizedRole = normalizeAccountRole(role);
+  if (normalizedRole === "project_manager") {
+    const merged = [...new Set([...(cleaned.length ? cleaned : []), ...ROLE_DEFAULT_ACCESS.project_manager])];
+    return merged.filter((item) => allowedKeys.includes(item));
+  }
   return cleaned.length ? cleaned : fallback;
 }
 
@@ -422,6 +427,14 @@ function normalizeAccountRole(role) {
   if (normalized === "other" || normalized === "guest" || normalized === "external_people") return "external";
   if (["admin", "architect", "designer", "project_manager", "customer_service", "external"].includes(normalized)) return normalized;
   return "designer";
+}
+
+function formatAccountSaveError(error) {
+  const message = error?.message || String(error || "Неизвестная ошибка");
+  if (message.includes("employees_role_check")) {
+    return "В Supabase не обновлено ограничение employees_role_check. Выполните SQL-файл supabase_sql/N_185_employees_project_manager_role_check.sql и повторите действие.";
+  }
+  return message;
 }
 
 const scheduleItems = [
@@ -3232,19 +3245,22 @@ function App() {
       setNotice("Учетная запись добавлена.");
       await loadAccounts();
     } catch (error) {
-      setNotice(`Ошибка добавления учетной записи: ${error.message}`);
+      setNotice(`Ошибка добавления учетной записи: ${formatAccountSaveError(error)}`);
     }
   }
 
   async function updateAccount(account, patch) {
     setNotice("");
 
+    const nextRole = patch.role ? normalizeAccountRole(patch.role) : normalizeAccountRole(account.role);
     const normalizedPatch = {
       ...patch,
-      ...(patch.role ? { role: normalizeAccountRole(patch.role) } : {}),
+      ...(patch.role ? { role: nextRole } : {}),
       ...(patch.allowed_elements
-        ? { allowed_elements: normalizeAccessElements(patch.allowed_elements, patch.role || account.role) }
-        : {}),
+        ? { allowed_elements: normalizeAccessElements(patch.allowed_elements, nextRole) }
+        : patch.role
+          ? { allowed_elements: ROLE_DEFAULT_ACCESS[nextRole] || ROLE_DEFAULT_ACCESS.designer }
+          : {}),
     };
 
     try {
@@ -3258,7 +3274,7 @@ function App() {
       setNotice("Учетная запись обновлена.");
       await loadAccounts();
     } catch (error) {
-      setNotice(`Ошибка обновления учетной записи: ${error.message}`);
+      setNotice(`Ошибка обновления учетной записи: ${formatAccountSaveError(error)}`);
     }
   }
 
