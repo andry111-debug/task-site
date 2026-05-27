@@ -36,7 +36,7 @@ const ARCHITECT_FILE_CATEGORIES = [
 ];
 
 
-const APP_VERSION = "N_207";
+const APP_VERSION = "N_219";
 const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -335,11 +335,30 @@ function isIncomingCancelable(row) {
   return status === "pending" || status === "viewed";
 }
 
+function getIncomingRequestType(row) {
+  const value = String(row?.request_type || row?.operation_type || row?.action_type || "upload").trim().toLowerCase();
+  return value || "upload";
+}
+
+function isIncomingDeleteRequest(row) {
+  return getIncomingRequestType(row) === "delete_file";
+}
+
+function getIncomingRequestLabel(row) {
+  return isIncomingDeleteRequest(row) ? "Заявка на удаление файла" : "Загрузка файла ГИПу";
+}
+
+function getIncomingCancelButtonLabel(row, loading) {
+  if (loading) return "Отменяю...";
+  return isIncomingDeleteRequest(row) ? "Отменить заявку на удаление" : "Отменить загрузку ГИПу";
+}
+
 function getHistoryActionLabel(actionType) {
   const action = String(actionType || "").trim();
   if (action === "download_file") return "Скачивание файла";
   if (action === "download_archive") return "Скачивание архива";
   if (action === "upload_to_gip") return "Загрузка ГИПу";
+  if (action === "delete_request_to_gip") return "Заявка ГИПу на удаление";
   if (action === "cancel_upload") return "Отмена загрузки ГИПу";
   return action || "Действие";
 }
@@ -2576,6 +2595,7 @@ function App() {
   const [gapaHistoryLoading, setGapaHistoryLoading] = useState(false);
   const [gapaHistoryError, setGapaHistoryError] = useState("");
   const [gapaCancelLoadingId, setGapaCancelLoadingId] = useState("");
+  const [deleteRequestLoadingId, setDeleteRequestLoadingId] = useState("");
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
@@ -2875,7 +2895,7 @@ function App() {
       source: "incoming",
       eventAt: row.uploaded_at || row.created_at || "",
       actor: row.uploaded_by || row.uploaded_by_email || "—",
-      action: "Загрузка файла ГИПу",
+      action: getIncomingRequestLabel(row),
       fileName: row.original_filename || row.stored_filename || "—",
       category: getFileCategoryLabel(row.target_area),
       sectionText: makeHistorySectionText(row),
@@ -2895,7 +2915,13 @@ function App() {
       source: "incoming",
       eventAt: row.processed_at || row.updated_at || row.created_at || row.uploaded_at || "",
       actor: isCancelled ? (row.uploaded_by || row.uploaded_by_email || "пользователь сайта") : (row.processing_by || "ГИП"),
-      action: isCancelled ? "Отмена загрузки ГИПу" : isRejected ? "Отклонение ГИПом" : isError ? "Ошибка обработки ГИПом" : "Принятие ГИПом",
+      action: isCancelled
+        ? (isIncomingDeleteRequest(row) ? "Отмена заявки на удаление" : "Отмена загрузки ГИПу")
+        : isRejected
+          ? (isIncomingDeleteRequest(row) ? "Удаление отклонено ГИПом" : "Отклонение ГИПом")
+          : isError
+            ? "Ошибка обработки ГИПом"
+            : (isIncomingDeleteRequest(row) ? "Удаление подтверждено ГИПом" : "Принятие ГИПом"),
       fileName: row.original_filename || row.stored_filename || "—",
       category: getFileCategoryLabel(row.target_area),
       sectionText: makeHistorySectionText(row),
@@ -2917,7 +2943,7 @@ function App() {
     });
 
     (actionRows || [])
-      .filter((row) => !["upload_to_gip", "cancel_upload"].includes(String(row.action_type || "")))
+      .filter((row) => !["upload_to_gip", "delete_request_to_gip", "cancel_upload"].includes(String(row.action_type || "")))
       .forEach((row) => rows.push(mapActionHistoryRow(row)));
 
     return rows.sort((a, b) => String(b.eventAt || "").localeCompare(String(a.eventAt || "")));
@@ -3307,6 +3333,85 @@ function App() {
       setSiteDirectoryError(`Ошибка скачивания архива: ${error.message}`);
     } finally {
       setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
+    }
+  }
+
+
+  async function requestFileDeletion(file, category) {
+    const section = modalSiteSection || selectedSiteSection;
+    if (!section || !file) return;
+    const yandexPath = getArchitectFileYandexPath(file);
+    const fileName = file.file_name || file.original_name || "Файл";
+    const categoryLabel = getFileCategoryLabel(category);
+    const confirmed = window.confirm(
+      `Отправить ГИПу заявку на удаление файла?\n\nФайл: ${fileName}\nТип: ${categoryLabel}\nРаздел: ${section.building_gp_no || "—"} / ${normalizeStage(section.stage)} / ${section.section_code || "—"}\n\nФайл не будет удалён сайтом. ГИП должен подтвердить заявку в программе.`
+    );
+    if (!confirmed) return;
+
+    const loadingKey = file.id || yandexPath || fileName;
+    setDeleteRequestLoadingId(loadingKey);
+    setIncomingUploadError("");
+    setIncomingUploadNotice("");
+
+    try {
+      if (!isSupabaseReady || !supabase) {
+        throw new Error("GIP API не подключён. Заявку на удаление отправить нельзя.");
+      }
+      const requestPayload = {
+        project_key: section.project_key || "opr_donetsk",
+        request_type: "delete_file",
+        site_section_id: section.id,
+        document_card_id: file.id || "",
+        source_yandex_path: yandexPath || "",
+        source_local_path: file.local_file_path || "",
+        source_document_group: file.document_group || "",
+        building_gp_no: section.building_gp_no || "",
+        building_name: section.building_name || "",
+        stage: normalizeStage(section.stage || ""),
+        section_code: section.section_code || "",
+        section_title: section.section_title || "",
+        target_area: category,
+        target_yandex_folder: getYandexCatalogsForSection(section).find((item) => item.value === category)?.path || "",
+        original_filename: fileName,
+        stored_filename: fileName,
+        yandex_temp_path: yandexPath || file.local_file_path || fileName,
+        file_size: file.size_bytes || null,
+        sha256: file.source_hash || "",
+        mime_type: "",
+        uploaded_by: currentUser?.name || currentUser?.login || "",
+        uploaded_by_email: currentUser?.email || "",
+        user_comment: `Заявка на удаление файла. Тип: ${categoryLabel}.`,
+        status: "pending",
+        active: true,
+      };
+
+      const { data, error } = await supabase.from(siteIncomingTable).insert(requestPayload);
+      if (error) throw error;
+
+      await logSiteAction("delete_request_to_gip", {
+        incoming_file_id: data?.[0]?.id || data?.id || "",
+        site_section_id: section.id || "",
+        document_card_id: file.id || "",
+        building_gp_no: section.building_gp_no || "",
+        building_name: section.building_name || "",
+        stage: normalizeStage(section.stage || ""),
+        section_code: section.section_code || "",
+        section_title: section.section_title || "",
+        target_area: category,
+        file_name: fileName,
+        file_size: file.size_bytes || null,
+        yandex_path: yandexPath,
+        status: "pending",
+        decision: "delete_requested",
+        comment: "заявка на удаление файла ГИПу",
+      });
+
+      setIncomingUploadNotice(`Заявка на удаление отправлена ГИПу: ${fileName}`);
+      if (gapaHistoryOpen) await loadGapaActionHistory();
+    } catch (error) {
+      setIncomingUploadError(`Не удалось отправить заявку на удаление: ${error.message}`);
+    } finally {
+      setDeleteRequestLoadingId("");
     }
   }
 
@@ -4331,12 +4436,34 @@ function App() {
                               {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
                               {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
-                            {file.file_url ? (
-                              <button
-                                className="smallButton"
-                                onClick={() => {
-                                  window.open(file.file_url, "_blank", "noopener,noreferrer");
-                                  logSiteAction("download_file", {
+                            <div className="fileCardActions">
+                              {file.file_url ? (
+                                <button
+                                  className="smallButton"
+                                  onClick={() => {
+                                    window.open(file.file_url, "_blank", "noopener,noreferrer");
+                                    logSiteAction("download_file", {
+                                      site_section_id: modalSiteSection.id || "",
+                                      document_card_id: file.id || "",
+                                      building_gp_no: modalSiteSection.building_gp_no || "",
+                                      building_name: modalSiteSection.building_name || "",
+                                      stage: normalizeStage(modalSiteSection.stage || ""),
+                                      section_code: modalSiteSection.section_code || "",
+                                      section_title: modalSiteSection.section_title || "",
+                                      target_area: category.value,
+                                      file_name: file.file_name || file.original_name || "",
+                                      file_size: file.size_bytes || null,
+                                      file_url: file.file_url,
+                                      comment: "скачивание по прямой ссылке",
+                                    });
+                                  }}
+                                >
+                                  Скачать / открыть
+                                </button>
+                              ) : getArchitectFileYandexPath(file) ? (
+                                <button
+                                  className="smallButton"
+                                  onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file), {
                                     site_section_id: modalSiteSection.id || "",
                                     document_card_id: file.id || "",
                                     building_gp_no: modalSiteSection.building_gp_no || "",
@@ -4347,34 +4474,22 @@ function App() {
                                     target_area: category.value,
                                     file_name: file.file_name || file.original_name || "",
                                     file_size: file.size_bytes || null,
-                                    file_url: file.file_url,
-                                    comment: "скачивание по прямой ссылке",
-                                  });
-                                }}
-                              >
-                                Скачать / открыть
-                              </button>
-                            ) : getArchitectFileYandexPath(file) ? (
+                                  })}
+                                >
+                                  Скачать
+                                </button>
+                              ) : (
+                                <span className="fileNoLink">Нет ссылки</span>
+                              )}
                               <button
-                                className="smallButton"
-                                onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file), {
-                                  site_section_id: modalSiteSection.id || "",
-                                  document_card_id: file.id || "",
-                                  building_gp_no: modalSiteSection.building_gp_no || "",
-                                  building_name: modalSiteSection.building_name || "",
-                                  stage: normalizeStage(modalSiteSection.stage || ""),
-                                  section_code: modalSiteSection.section_code || "",
-                                  section_title: modalSiteSection.section_title || "",
-                                  target_area: category.value,
-                                  file_name: file.file_name || file.original_name || "",
-                                  file_size: file.size_bytes || null,
-                                })}
+                                type="button"
+                                className="dangerButton deleteFileButton"
+                                onClick={() => requestFileDeletion(file, category.value)}
+                                disabled={deleteRequestLoadingId === (file.id || getArchitectFileYandexPath(file) || file.file_name)}
                               >
-                                Скачать
+                                {deleteRequestLoadingId === (file.id || getArchitectFileYandexPath(file) || file.file_name) ? "Отправляю..." : "Удалить"}
                               </button>
-                            ) : (
-                              <span className="fileNoLink">Нет ссылки</span>
-                            )}
+                            </div>
                           </article>
                         ))}
                         {!files.length && <div className="emptyFileBox">Нет зарегистрированных документов этого типа.</div>}
@@ -4636,6 +4751,7 @@ function App() {
                       <div className="pendingHistoryMeta">
                         <span>{formatActionDate(row.uploaded_at || row.created_at)}</span>
                         <span>{row.uploaded_by || row.uploaded_by_email || "—"}</span>
+                        <span>{getIncomingRequestLabel(row)}</span>
                         <span>{getFileCategoryLabel(row.target_area)}</span>
                         {row.file_size ? <span>{formatFileSize(row.file_size)}</span> : null}
                       </div>
@@ -4646,9 +4762,9 @@ function App() {
                       className="dangerButton"
                       onClick={() => cancelIncomingUpload(row)}
                       disabled={!cancelable || gapaCancelLoadingId === row.id}
-                      title={cancelable ? "Снять заявку из активной очереди ГИПа" : "Файл уже взят в обработку или не может быть отменён"}
+                      title={cancelable ? "Снять заявку из активной очереди ГИПа" : "Заявка уже взята в обработку или не может быть отменена"}
                     >
-                      {gapaCancelLoadingId === row.id ? "Отменяю..." : "Отменить загрузку ГИПу"}
+                      {getIncomingCancelButtonLabel(row, gapaCancelLoadingId === row.id)}
                     </button>
                   </article>
                 );

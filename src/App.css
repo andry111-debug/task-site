@@ -4179,3 +4179,23 @@ h3 {
     display: grid;
   }
 }
+
+/* N_219: delete request button next to download in GAPA file cards */
+.fileCardActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deleteFileButton {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #991b1b;
+}
+
+.deleteFileButton:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
