@@ -1,0 +1,23 @@
+N_227 GIP API pagination support
+
+Назначение:
+- обновление GIP API через существующий deploy-agent / автодеплой;
+- исправление ограничения первой тысячи строк для диагностической утилиты и будущей загрузки сайта;
+- добавлена поддержка range/from/to/limit/count в /api/supabase/query;
+- добавлены операторы фильтров: eq, neq, gt, gte, lt, lte, like, ilike, is, in, contains;
+- сохранена совместимость со старыми запросами;
+- добавлена совместимость с payload и values для update/upsert/insert.
+
+Как деплоить:
+1. Открыть автодеплой с поддержкой GIP API через deploy-agent.
+2. Выбрать этот архив.
+3. Включить обновление GIP API через deploy-agent.
+4. SQL можно не включать: в архиве нет новых SQL-миграций.
+5. После деплоя проверить /api/health: версия должна быть N_227.
+
+Ожидаемая структура архива:
+- gip_api/src/server.js
+- gip_api/package.json
+- gip_api/.env.example
+
+.env на сервере C:\gip-api не заменяется и должен остаться прежним.
