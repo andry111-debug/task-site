@@ -1,18 +1,17 @@
 {
-  "version": "N_266",
+  "version": "N_268",
+  "name": "project_site_norm_controller_sql_fix",
   "date": "2026-06-24",
-  "base_version": "N_182 + N_201",
-  "type": "full_site_archive_for_autodeploy",
+  "base_version": "N_267_project_site_norm_controller_accounts_fix",
   "changes": [
-    "Добавлена роль norm_controller / Нормаконтролер.",
-    "Добавлен отдельный кабинет нормаконтролера с двумя листами: проекты и разделы выбранного проекта.",
-    "Добавлено формирование ZIP-архива по файлам norm_control_files выбранного раздела.",
-    "Встроен патч N_201: зеленая подсветка разделов с файлом проекта.",
-    "Добавлена миграция supabase_sql/N_266_norm_controller_site.sql."
+    "Fixed employees_role_check migration by preserving existing role values and adding norm_controller aliases.",
+    "Merged required N_266 norm-control schema changes into one N_268 SQL file.",
+    "Removed obsolete SQL migration files from supabase_sql so autodeploy shows only the SQL needed for this package."
   ],
   "sql_migrations": [
-    "supabase_sql/N_266_norm_controller_site.sql"
+    "supabase_sql/N_268_norm_controller_complete.sql"
   ],
-  "env_changes": [],
+  "vercel_env_changes": [],
+  "gip_api_changes": false,
   "telegram_webhook_reinstall_required": false
 }

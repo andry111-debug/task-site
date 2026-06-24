@@ -3693,3 +3693,55 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* N_267: account management layout fixes. */
+.adminGrid {
+  align-items: start;
+}
+
+.adminCard {
+  align-content: start;
+}
+
+.accountRow {
+  grid-template-columns: minmax(220px, 240px) minmax(210px, 0.9fr) minmax(280px, 1fr);
+  overflow: hidden;
+}
+
+.accountControls {
+  grid-template-columns: minmax(190px, 240px) minmax(180px, 1fr);
+  align-items: start;
+  min-width: 0;
+}
+
+.accountControls select,
+.accountControls input {
+  width: 100%;
+  min-width: 0;
+}
+
+.accountActionButtons {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.accountActionButtons button {
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .accountRow,
+  .accountControls {
+    grid-template-columns: 1fr;
+  }
+
+  .accountActionButtons {
+    grid-column: 1;
+  }
+}

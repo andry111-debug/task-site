@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_266";
-const APP_DEPLOY_NAME = "N_266_project_site_norm_controller";
+const APP_VERSION = "N_267";
+const APP_DEPLOY_NAME = "N_268_project_site_norm_controller_sql_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -5228,32 +5228,34 @@ function App() {
                       placeholder="Новый пароль"
                     />
 
-                    <button
-                      className="smallButton"
-                      onClick={() => changeAccountPassword(account)}
-                    >
-                      Сменить пароль
-                    </button>
+                    <div className="accountActionButtons">
+                      <button
+                        className="smallButton"
+                        onClick={() => changeAccountPassword(account)}
+                      >
+                        Сменить пароль
+                      </button>
 
-                    <button
-                      className={account.active ? "dangerButton" : "smallButton"}
-                      onClick={() => updateAccount(account, { active: !account.active })}
-                    >
-                      {account.active ? "Отключить" : "Включить"}
-                    </button>
+                      <button
+                        className={account.active ? "dangerButton" : "smallButton"}
+                        onClick={() => updateAccount(account, { active: !account.active })}
+                      >
+                        {account.active ? "Отключить" : "Включить"}
+                      </button>
 
-                    <button
-                      className="deleteButton"
-                      onClick={() => deleteAccount(account)}
-                      disabled={currentUser?.id === account.id}
-                      title={
-                        currentUser?.id === account.id
-                          ? "Нельзя удалить текущего пользователя"
-                          : "Удалить учетную запись"
-                      }
-                    >
-                      Удалить
-                    </button>
+                      <button
+                        className="deleteButton"
+                        onClick={() => deleteAccount(account)}
+                        disabled={currentUser?.id === account.id}
+                        title={
+                          currentUser?.id === account.id
+                            ? "Нельзя удалить текущего пользователя"
+                            : "Удалить учетную запись"
+                        }
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}
