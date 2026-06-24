@@ -7,9 +7,9 @@ const ROLE_LABELS = {
   admin: "Админ",
   architect: "Архитектор",
   designer: "Проектанты",
-  project_manager: "Руководитель проекта",
   customer_service: "Служба заказчика",
   external: "Сторонние люди",
+  norm_controller: "Нормаконтролер",
   employee: "Проектанты",
 };
 
@@ -17,9 +17,9 @@ const ROLE_OPTIONS = [
   { value: "admin", label: "Админ" },
   { value: "architect", label: "Архитектор" },
   { value: "designer", label: "Проектанты" },
-  { value: "project_manager", label: "Руководитель проекта" },
   { value: "customer_service", label: "Служба заказчика" },
   { value: "external", label: "Сторонние люди" },
+  { value: "norm_controller", label: "Нормаконтролер" },
 ];
 
 
@@ -35,9 +35,21 @@ const ARCHITECT_FILE_CATEGORIES = [
   { value: "remark", label: "Замечания", shortLabel: "Замечания" },
 ];
 
+const PROJECT_FILE_TYPES = new Set([
+  "project_file",
+  "project",
+  "project_files",
+  "file_project",
+  "design_file",
+  "project_document",
+  "файл_проекта",
+  "проектный_файл",
+  "проект",
+]);
 
-const APP_VERSION = "N_219";
-const APP_DEPLOY_NAME = "N_160_project_site_via_gip_api";
+
+const APP_VERSION = "N_266";
+const APP_DEPLOY_NAME = "N_266_project_site_norm_controller";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -257,10 +269,19 @@ function normalizeStage(value) {
 }
 
 function normalizeDocumentType(value) {
-  const raw = String(value || "").trim();
-  if (raw === "technical_task") return "tz";
+  const rawValue = value && typeof value === "object"
+    ? (value.document_type || value.document_group || value.type || "")
+    : value;
+  const raw = String(rawValue || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+  if (!raw) return "";
+  if (raw === "technical_task" || raw === "technical_task_file") return "tz";
   if (raw === "answer") return "remark";
-  if (raw === "project" || raw === "project_files") return "project_file";
+  if (PROJECT_FILE_TYPES.has(raw)) return "project_file";
+  if (raw.includes("проект") && raw.includes("файл")) return "project_file";
   return raw;
 }
 
@@ -285,82 +306,6 @@ function getArchitectFileYandexPath(file) {
 
 function getArchitectFileDate(file) {
   return file?.registered_at || file?.modified_at || file?.created_at || "";
-}
-
-function formatActionDate(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function getFileCategoryLabel(value) {
-  const normalized = normalizeDocumentType(value || "");
-  return ARCHITECT_FILE_CATEGORIES.find((item) => item.value === normalized)?.label || normalized || "—";
-}
-
-function normalizeIncomingStatus(value, decision) {
-  const status = String(value || "").trim().toLowerCase();
-  const gipDecision = String(decision || "").trim().toLowerCase();
-  if (status === "cancelled" || gipDecision.includes("cancel")) return "cancelled";
-  return status || "pending";
-}
-
-function getIncomingStatusLabel(value, decision) {
-  const status = normalizeIncomingStatus(value, decision);
-  if (status === "pending") return "ожидает ГИПа";
-  if (status === "viewed") return "просмотрено ГИПом";
-  if (status === "processing") return "в обработке у ГИПа";
-  if (status === "approved" || status === "done") return "принято ГИПом";
-  if (status === "rejected") return "отклонено ГИПом";
-  if (status === "cancelled") return "отменено пользователем";
-  if (status === "error") return "ошибка обработки";
-  return status || "—";
-}
-
-function isIncomingFinalStatus(value, decision) {
-  const status = normalizeIncomingStatus(value, decision);
-  return ["approved", "done", "rejected", "cancelled", "error"].includes(status);
-}
-
-function isIncomingCancelable(row) {
-  if (!row || row.active === false) return false;
-  const status = normalizeIncomingStatus(row.status, row.gip_decision);
-  return status === "pending" || status === "viewed";
-}
-
-function getIncomingRequestType(row) {
-  const value = String(row?.request_type || row?.operation_type || row?.action_type || "upload").trim().toLowerCase();
-  return value || "upload";
-}
-
-function isIncomingDeleteRequest(row) {
-  return getIncomingRequestType(row) === "delete_file";
-}
-
-function getIncomingRequestLabel(row) {
-  return isIncomingDeleteRequest(row) ? "Заявка на удаление файла" : "Загрузка файла ГИПу";
-}
-
-function getIncomingCancelButtonLabel(row, loading) {
-  if (loading) return "Отменяю...";
-  return isIncomingDeleteRequest(row) ? "Отменить заявку на удаление" : "Отменить загрузку ГИПу";
-}
-
-function getHistoryActionLabel(actionType) {
-  const action = String(actionType || "").trim();
-  if (action === "download_file") return "Скачивание файла";
-  if (action === "download_archive") return "Скачивание архива";
-  if (action === "upload_to_gip") return "Загрузка ГИПу";
-  if (action === "delete_request_to_gip") return "Заявка ГИПу на удаление";
-  if (action === "cancel_upload") return "Отмена загрузки ГИПу";
-  return action || "Действие";
 }
 
 function sanitizeZipPart(value) {
@@ -399,6 +344,65 @@ function safeUploadFileName(value) {
 function randomUploadId() {
   const randomPart = Math.random().toString(16).slice(2);
   return `upload_${Date.now()}_${randomPart}`;
+}
+
+function parseMaybeJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function isTruthyFlag(value) {
+  if (value === true) return true;
+  const text = String(value || "").trim().toLowerCase();
+  return ["true", "1", "yes", "да", "готов", "ready"].includes(text);
+}
+
+function isNormControlCompleted(section) {
+  if (!section) return false;
+  if (section.norm_control_completed === true) return true;
+  const text = String(section.norm_control_completed || section.norm_control_status || "").trim().toLowerCase();
+  return ["true", "1", "yes", "completed", "complete", "done", "завершен", "завершено", "готово"].includes(text);
+}
+
+function isSectionReadyForNormControl(section) {
+  return Boolean(section && section.active !== false && isTruthyFlag(section.norm_control_ready) && !isNormControlCompleted(section));
+}
+
+function normalizeNormControlFiles(value) {
+  return parseMaybeJsonArray(value)
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => {
+      const name = String(item.name || item.file_name || item.original_name || item.stored_filename || "").trim();
+      const yandexPath = String(item.yandex_disk_path || item.yandex_path || item.storage_path || "").trim();
+      const localPath = String(item.local_file_path || item.path || "").trim();
+      return {
+        ...item,
+        name: name || yandexPath.split("/").pop() || localPath.split(/[\\/]/).pop() || `file_${index + 1}`,
+        kind: String(item.kind || item.document_group || item.document_type || "файл").trim(),
+        yandex_disk_path: yandexPath,
+        local_file_path: localPath,
+      };
+    });
+}
+
+function getNormProjectKey(section) {
+  return [
+    section?.project_key || "opr_donetsk",
+    section?.building_key || `${section?.building_gp_no || ""} — ${section?.building_name || ""}`,
+  ].join("::");
+}
+
+function getNormProjectTitle(section) {
+  return section?.building_key || [section?.building_gp_no, section?.building_name].filter(Boolean).join(" — ") || section?.project_key || "Проект";
 }
 
 function getFileExtension(name) {
@@ -445,17 +449,17 @@ const ACCESS_ELEMENTS = [
   { key: "compact", label: "График ППТ" },
   { key: "ppt", label: "Расширенный график ППТ" },
   { key: "buildings", label: "Страницы зданий" },
-  { key: "project_manager_dashboard", label: "Кабинет руководителя проекта" },
   { key: "accounts", label: "Управление учетными записями" },
+  { key: "norm_control", label: "Нормаконтроль" },
 ];
 
 const ROLE_DEFAULT_ACCESS = {
-  admin: ["schedule", "compact", "ppt", "buildings", "project_manager_dashboard", "accounts"],
+  admin: ["schedule", "compact", "ppt", "buildings", "accounts", "norm_control"],
   architect: ["schedule", "compact", "ppt", "buildings"],
   designer: ["schedule", "compact", "ppt", "buildings"],
-  project_manager: ["project_manager_dashboard", "schedule", "compact", "ppt", "buildings"],
   customer_service: ["schedule", "compact", "ppt", "buildings"],
   external: ["schedule", "compact", "buildings"],
+  norm_controller: ["norm_control"],
   employee: ["schedule", "compact", "ppt", "buildings"],
 };
 
@@ -478,11 +482,6 @@ function normalizeAccessElements(value, role = "designer") {
   if (!Array.isArray(parsed)) return fallback;
 
   const cleaned = parsed.filter((item) => allowedKeys.includes(item));
-  const normalizedRole = normalizeAccountRole(role);
-  if (normalizedRole === "project_manager") {
-    const merged = [...new Set([...(cleaned.length ? cleaned : []), ...ROLE_DEFAULT_ACCESS.project_manager])];
-    return merged.filter((item) => allowedKeys.includes(item));
-  }
   return cleaned.length ? cleaned : fallback;
 }
 
@@ -493,24 +492,14 @@ function hasAccess(user, elementKey) {
 }
 
 function normalizeAccountRole(role) {
-  const raw = String(role || "").trim();
-  const normalized = raw.toLowerCase();
-  if (normalized === "employee") return "designer";
-  if (normalized === "architect" || normalized === "arhitect" || normalized === "архитектор") return "architect";
-  if (normalized === "projectant" || normalized === "proektant") return "designer";
-  if (normalized === "project_manager" || normalized === "project-manager" || normalized === "pm" || normalized === "руководитель проекта") return "project_manager";
-  if (normalized === "customer" || normalized === "client" || normalized === "zakazchik") return "customer_service";
-  if (normalized === "other" || normalized === "guest" || normalized === "external_people") return "external";
-  if (["admin", "architect", "designer", "project_manager", "customer_service", "external"].includes(normalized)) return normalized;
+  if (role === "employee") return "designer";
+  if (role === "architect" || role === "arhitect" || role === "архитектор") return "architect";
+  if (role === "projectant" || role === "proektant") return "designer";
+  if (role === "customer" || role === "client" || role === "zakazchik") return "customer_service";
+  if (role === "other" || role === "guest" || role === "external_people") return "external";
+  if (["norm_controller", "normcontrol", "norm_control", "normal_controller", "нормаконтролер", "нормоконтролер"].includes(role)) return "norm_controller";
+  if (["admin", "architect", "designer", "customer_service", "external", "norm_controller"].includes(role)) return role;
   return "designer";
-}
-
-function formatAccountSaveError(error) {
-  const message = error?.message || String(error || "Неизвестная ошибка");
-  if (message.includes("employees_role_check")) {
-    return "В Supabase не обновлено ограничение employees_role_check. Выполните SQL-файл supabase_sql/N_185_employees_project_manager_role_check.sql и повторите действие.";
-  }
-  return message;
 }
 
 const scheduleItems = [
@@ -2313,82 +2302,6 @@ function createEmptyAccount() {
   };
 }
 
-const projectManagerSections = [
-  {
-    key: "info",
-    title: "Общая информация",
-    description: "Здания комплекса: назначение, площади, описание и основные картинки.",
-    metric: `${buildingPages.length} зданий`,
-  },
-  {
-    key: "graphs",
-    title: "Графики",
-    description: "Выбор графиков: проектирование, ППТ и РНС.",
-    metric: "3 графика",
-  },
-  {
-    key: "meetings",
-    title: "Совещания",
-    description: "Последние протоколы, актуальная повестка и задачи по ответственным.",
-    metric: "оперативный блок",
-  },
-  {
-    key: "finance",
-    title: "Финансирование",
-    description: "Потребность в финансировании на ближайшие 3 месяца.",
-    metric: "3 месяца",
-  },
-];
-
-const projectManagerMeetings = {
-  protocols: [
-    {
-      date: "20.05.2026",
-      title: "Протокол совещания по статусу проектирования",
-      status: "последний",
-      summary: "Зафиксированы критичные разделы, сроки передачи исходных данных и порядок закрытия замечаний.",
-    },
-    {
-      date: "13.05.2026",
-      title: "Протокол по ППТ и внешним согласованиям",
-      status: "рабочий",
-      summary: "Обсуждены материалы для ППТ, запросы в органы и подготовка дорожной карты по РНС.",
-    },
-    {
-      date: "06.05.2026",
-      title: "Протокол по зданиям и разделам стадии П",
-      status: "архив",
-      summary: "Согласованы приоритетные здания, перечень первоочередных разделов и формат обмена файлами.",
-    },
-  ],
-  agenda: [
-    "Проверить готовность разделов по зданиям с ближайшими контрольными сроками.",
-    "Сверить перечень исходных данных для ППТ и РНС.",
-    "Подтвердить статус замечаний и ответственных за закрытие.",
-    "Уточнить потребность в финансировании на ближайший трехмесячный период.",
-  ],
-  tasks: [
-    { owner: "ГИП", task: "Собрать сводку по критичным разделам и загрузкам с сайта", due: "до ближайшего совещания", status: "в работе" },
-    { owner: "Архитектор", task: "Актуализировать карточки зданий и изображения", due: "текущая неделя", status: "в работе" },
-    { owner: "ППТ", task: "Подготовить статус согласований и запросов", due: "текущая неделя", status: "контроль" },
-    { owner: "Финансовый блок", task: "Проверить план потребности на 3 месяца", due: "до следующего отчета", status: "ожидает данных" },
-  ],
-};
-
-const projectManagerFinancePlan = [
-  { month: "Июнь 2026", amount: 42, label: "42 млн ₽", note: "проектирование и первоочередные согласования" },
-  { month: "Июль 2026", amount: 58, label: "58 млн ₽", note: "ППТ, РНС и инженерные исходные данные" },
-  { month: "Август 2026", amount: 64, label: "64 млн ₽", note: "закрытие замечаний и подготовка следующего пакета" },
-];
-
-const projectManagerRnsItems = [
-  { code: "РНС-1", title: "Сбор исходных данных для разрешения на строительство", start: "2026-06-01", end: "2026-06-18", progress: 35 },
-  { code: "РНС-2", title: "Подготовка комплектности проектной документации", start: "2026-06-12", end: "2026-07-10", progress: 20 },
-  { code: "РНС-3", title: "Проверка замечаний и корректировка материалов", start: "2026-07-05", end: "2026-07-28", progress: 10 },
-  { code: "РНС-4", title: "Подача пакета на получение РНС", start: "2026-08-01", end: "2026-08-14", progress: 0 },
-];
-
-
 function dateToTime(value) {
   return new Date(`${value}T00:00:00`).getTime();
 }
@@ -2586,20 +2499,11 @@ function App() {
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
-  const [projectManagerView, setProjectManagerView] = useState("home");
-  const [projectManagerGraphType, setProjectManagerGraphType] = useState("design");
-  const [gapaHistoryOpen, setGapaHistoryOpen] = useState(false);
-  const [gapaHistoryTab, setGapaHistoryTab] = useState("full");
-  const [gapaHistoryRows, setGapaHistoryRows] = useState([]);
-  const [gapaPendingRows, setGapaPendingRows] = useState([]);
-  const [gapaHistoryLoading, setGapaHistoryLoading] = useState(false);
-  const [gapaHistoryError, setGapaHistoryError] = useState("");
-  const [gapaCancelLoadingId, setGapaCancelLoadingId] = useState("");
-  const [deleteRequestLoadingId, setDeleteRequestLoadingId] = useState("");
+  const [selectedNormProjectKey, setSelectedNormProjectKey] = useState("");
+  const [selectedNormSectionId, setSelectedNormSectionId] = useState("");
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
-  const siteActionHistoryTable = import.meta.env.VITE_SITE_ACTION_HISTORY_TABLE || "opr_site_action_history";
   const siteFilesBucket = import.meta.env.VITE_SITE_FILES_BUCKET || "";
 
   const scheduleBounds = useMemo(() => getScheduleBounds(scheduleRows), [scheduleRows]);
@@ -2654,6 +2558,47 @@ function App() {
     return Array.from(map.values()).sort((a, b) => String(a.title).localeCompare(String(b.title), "ru"));
   }, [siteSections]);
 
+
+  const normReadySections = useMemo(() => {
+    return siteSections
+      .filter(isSectionReadyForNormControl)
+      .sort((a, b) => {
+        const projectCompare = getNormProjectTitle(a).localeCompare(getNormProjectTitle(b), "ru");
+        if (projectCompare !== 0) return projectCompare;
+        const stageOrder = { "П": 1, "Р": 2 };
+        const stageCompare = (stageOrder[normalizeStage(a.stage)] || 99) - (stageOrder[normalizeStage(b.stage)] || 99);
+        if (stageCompare !== 0) return stageCompare;
+        return String(a.section_code || "").localeCompare(String(b.section_code || ""), "ru");
+      });
+  }, [siteSections]);
+
+  const normProjects = useMemo(() => {
+    const map = new Map();
+    normReadySections.forEach((section) => {
+      const key = getNormProjectKey(section);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          title: getNormProjectTitle(section),
+          projectKey: section.project_key || "opr_donetsk",
+          gpNo: section.building_gp_no || "",
+          name: section.building_name || "",
+          sections: [],
+        });
+      }
+      map.get(key).sections.push(section);
+    });
+    return Array.from(map.values()).sort((a, b) => String(a.title).localeCompare(String(b.title), "ru"));
+  }, [normReadySections]);
+
+  const selectedNormProjectSections = useMemo(() => {
+    if (!selectedNormProjectKey) return [];
+    return normReadySections.filter((section) => getNormProjectKey(section) === selectedNormProjectKey);
+  }, [normReadySections, selectedNormProjectKey]);
+
+  const selectedNormSection = useMemo(() => {
+    return selectedNormProjectSections.find((section) => section.id === selectedNormSectionId) || selectedNormProjectSections[0] || null;
+  }, [selectedNormProjectSections, selectedNormSectionId]);
 
   const filteredSiteBuildings = useMemo(() => {
     const query = siteBuildingSearch.trim().toLowerCase();
@@ -2724,13 +2669,29 @@ function App() {
   function siteSectionHasProjectFile(section) {
     if (!section) return false;
     if (String(section.common_latest_version_name || "").trim()) return true;
-    const sectionId = section.id;
+    const sectionId = String(section.id || "").trim();
     return siteFiles.some((file) => {
       if (file.active === false) return false;
-      if (file.section_id !== sectionId && file.site_section_id !== sectionId) return false;
+      const fileSectionId = String(file.site_section_id || file.section_id || "").trim();
+      if (fileSectionId !== sectionId) return false;
       if (getArchitectFileCategory(file) !== "project_file") return false;
-      return Boolean(String(file.file_name || file.original_name || file.file_url || getArchitectFileYandexPath(file) || "").trim());
+      return Boolean(String(file.file_name || file.original_name || file.file_url || file.download_url || file.public_url || file.web_url || file.href || getArchitectFileYandexPath(file) || "").trim());
     });
+  }
+
+  function resolveNormControlFileYandexPath(file) {
+    const rawPath = String(file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "").trim();
+    if (rawPath) return toYandexDiskPath(rawPath);
+
+    const cardId = String(file?.document_card_id || "").trim();
+    if (cardId) {
+      const linkedCard = siteFiles.find((item) => String(item.id || "") === cardId);
+      const linkedPath = getArchitectFileYandexPath(linkedCard);
+      if (linkedPath) return toYandexDiskPath(linkedPath);
+    }
+
+    const localPath = String(file?.local_file_path || file?.path || "").trim();
+    return localPath ? toYandexDiskPath(localPath) : "";
   }
 
   const isAdmin = currentUser?.role === "admin";
@@ -2807,16 +2768,37 @@ function App() {
     if (currentUser?.role === "architect" && interfaceChoice === "specialized") {
       loadSiteDirectory();
     }
-    if (currentUser?.role === "project_manager") {
+    if (currentUser?.role === "norm_controller" || activeTab === "norm_control") {
       loadSiteDirectory();
     }
-  }, [currentUser, interfaceChoice]);
+  }, [currentUser, interfaceChoice, activeTab]);
 
   useEffect(() => {
     if (!selectedSiteBuildingKey && siteBuildings.length > 0) {
       setSelectedSiteBuildingKey(siteBuildings[0].key);
     }
   }, [siteBuildings, selectedSiteBuildingKey]);
+
+  useEffect(() => {
+    if (!selectedNormProjectKey && normProjects.length > 0) {
+      setSelectedNormProjectKey(normProjects[0].key);
+      return;
+    }
+    if (selectedNormProjectKey && !normProjects.some((project) => project.key === selectedNormProjectKey)) {
+      setSelectedNormProjectKey(normProjects[0]?.key || "");
+    }
+  }, [normProjects, selectedNormProjectKey]);
+
+  useEffect(() => {
+    if (selectedNormProjectSections.length > 0) {
+      const exists = selectedNormProjectSections.some((section) => section.id === selectedNormSectionId);
+      if (!exists) {
+        setSelectedNormSectionId(selectedNormProjectSections[0].id);
+      }
+    } else {
+      setSelectedNormSectionId("");
+    }
+  }, [selectedNormProjectSections, selectedNormSectionId]);
 
   useEffect(() => {
     if (selectedSiteBuildingSections.length > 0) {
@@ -2862,230 +2844,6 @@ function App() {
       setSiteDirectoryError(`Ошибка загрузки справочника сайта: ${error.message}`);
     } finally {
       setSiteDirectoryLoading(false);
-    }
-  }
-
-  function makeHistorySectionText(row) {
-    const parts = [];
-    if (row?.building_gp_no || row?.building_name) parts.push(`${row?.building_gp_no || "—"} — ${row?.building_name || "Здание не указано"}`);
-    if (row?.stage || row?.section_code) parts.push(`стадия ${normalizeStage(row?.stage || "") || "—"} / ${row?.section_code || "—"}`);
-    if (row?.section_title) parts.push(row.section_title);
-    return parts.join(" / ") || "—";
-  }
-
-  function mapActionHistoryRow(row) {
-    return {
-      id: `action:${row.id || Math.random()}`,
-      source: "action",
-      eventAt: row.event_at || row.created_at || "",
-      actor: row.actor_name || row.actor_login || "—",
-      action: row.action_title || getHistoryActionLabel(row.action_type),
-      fileName: row.file_name || "—",
-      category: getFileCategoryLabel(row.target_area),
-      sectionText: makeHistorySectionText(row),
-      status: row.status || "—",
-      basis: row.comment || row.decision || "—",
-      details: row.yandex_path || row.file_url || "",
-    };
-  }
-
-  function mapIncomingUploadHistoryRow(row) {
-    return {
-      id: `incoming-upload:${row.id}`,
-      source: "incoming",
-      eventAt: row.uploaded_at || row.created_at || "",
-      actor: row.uploaded_by || row.uploaded_by_email || "—",
-      action: getIncomingRequestLabel(row),
-      fileName: row.original_filename || row.stored_filename || "—",
-      category: getFileCategoryLabel(row.target_area),
-      sectionText: makeHistorySectionText(row),
-      status: getIncomingStatusLabel(row.status, row.gip_decision),
-      basis: row.user_comment || "—",
-      details: row.final_yandex_path || row.yandex_temp_path || "",
-    };
-  }
-
-  function mapIncomingDecisionHistoryRow(row) {
-    const status = normalizeIncomingStatus(row.status, row.gip_decision);
-    const isRejected = status === "rejected";
-    const isCancelled = status === "cancelled";
-    const isError = status === "error";
-    return {
-      id: `incoming-decision:${row.id}`,
-      source: "incoming",
-      eventAt: row.processed_at || row.updated_at || row.created_at || row.uploaded_at || "",
-      actor: isCancelled ? (row.uploaded_by || row.uploaded_by_email || "пользователь сайта") : (row.processing_by || "ГИП"),
-      action: isCancelled
-        ? (isIncomingDeleteRequest(row) ? "Отмена заявки на удаление" : "Отмена загрузки ГИПу")
-        : isRejected
-          ? (isIncomingDeleteRequest(row) ? "Удаление отклонено ГИПом" : "Отклонение ГИПом")
-          : isError
-            ? "Ошибка обработки ГИПом"
-            : (isIncomingDeleteRequest(row) ? "Удаление подтверждено ГИПом" : "Принятие ГИПом"),
-      fileName: row.original_filename || row.stored_filename || "—",
-      category: getFileCategoryLabel(row.target_area),
-      sectionText: makeHistorySectionText(row),
-      status: getIncomingStatusLabel(row.status, row.gip_decision),
-      basis: row.gip_comment || row.error_message || row.gip_decision || "—",
-      details: row.final_yandex_path || row.yandex_temp_path || "",
-    };
-  }
-
-  function buildHistoryFromIncomingRows(incomingRows, actionRows) {
-    const rows = [];
-    const visibleIncoming = (incomingRows || []).filter((row) => row && row.active !== false || normalizeIncomingStatus(row?.status, row?.gip_decision) === "cancelled");
-
-    visibleIncoming.forEach((row) => {
-      rows.push(mapIncomingUploadHistoryRow(row));
-      if (isIncomingFinalStatus(row.status, row.gip_decision)) {
-        rows.push(mapIncomingDecisionHistoryRow(row));
-      }
-    });
-
-    (actionRows || [])
-      .filter((row) => !["upload_to_gip", "delete_request_to_gip", "cancel_upload"].includes(String(row.action_type || "")))
-      .forEach((row) => rows.push(mapActionHistoryRow(row)));
-
-    return rows.sort((a, b) => String(b.eventAt || "").localeCompare(String(a.eventAt || "")));
-  }
-
-  async function logSiteAction(actionType, payload = {}) {
-    if (!isSupabaseReady || !supabase) return;
-    try {
-      await supabase.from(siteActionHistoryTable).insert({
-        project_key: payload.project_key || payload.projectKey || "opr_donetsk",
-        action_type: actionType,
-        action_title: payload.action_title || getHistoryActionLabel(actionType),
-        actor_name: currentUser?.name || currentUser?.login || "",
-        actor_login: currentUser?.login || "",
-        actor_role: currentUser?.role || "",
-        site_section_id: payload.site_section_id || payload.section_id || "",
-        incoming_file_id: payload.incoming_file_id || "",
-        document_card_id: payload.document_card_id || payload.file_id || "",
-        building_gp_no: payload.building_gp_no || "",
-        building_name: payload.building_name || "",
-        stage: payload.stage || "",
-        section_code: payload.section_code || "",
-        section_title: payload.section_title || "",
-        target_area: payload.target_area || "",
-        file_name: payload.file_name || "",
-        file_size: payload.file_size || null,
-        yandex_path: payload.yandex_path || "",
-        file_url: payload.file_url || "",
-        status: payload.status || "",
-        decision: payload.decision || "",
-        comment: payload.comment || "",
-        details: payload.details || {},
-        active: true,
-      });
-    } catch {
-      // Журнал действий не должен блокировать скачивание или загрузку файла.
-    }
-  }
-
-  async function loadGapaActionHistory() {
-    if (!isSupabaseReady || !supabase) {
-      setGapaHistoryError("GIP API не подключён. Историю действий загрузить нельзя.");
-      return;
-    }
-
-    setGapaHistoryLoading(true);
-    setGapaHistoryError("");
-
-    try {
-      const { data: incomingData, error: incomingError } = await supabase
-        .from(siteIncomingTable)
-        .select("*")
-        .order("uploaded_at", { ascending: false });
-      if (incomingError) throw incomingError;
-
-      let actionData = [];
-      const { data, error } = await supabase
-        .from(siteActionHistoryTable)
-        .select("*")
-        .order("event_at", { ascending: false });
-      if (error) {
-        setGapaHistoryError("Таблица истории действий ещё не создана. Выполните SQL из supabase_sql/N_207_gapa_action_history.sql. Пока показана история из очереди входящих файлов.");
-      } else {
-        actionData = data || [];
-      }
-
-      const incomingRows = incomingData || [];
-      const pendingRows = incomingRows
-        .filter((row) => row?.active !== false && !isIncomingFinalStatus(row.status, row.gip_decision))
-        .sort((a, b) => String(b.uploaded_at || b.created_at || "").localeCompare(String(a.uploaded_at || a.created_at || "")));
-
-      setGapaPendingRows(pendingRows);
-      setGapaHistoryRows(buildHistoryFromIncomingRows(incomingRows, actionData));
-    } catch (error) {
-      setGapaHistoryError(`Ошибка загрузки истории действий: ${error.message}`);
-    } finally {
-      setGapaHistoryLoading(false);
-    }
-  }
-
-  async function openGapaActionHistory() {
-    setGapaHistoryOpen(true);
-    await loadGapaActionHistory();
-  }
-
-  async function cancelIncomingUpload(row) {
-    if (!row?.id || !isIncomingCancelable(row)) return;
-    const confirmed = window.confirm(`Отменить загрузку ГИПу?\n\nФайл: ${row.original_filename || row.stored_filename || "—"}\nРаздел: ${row.section_code || "—"}\n\nЗаявка будет снята из активной очереди ГИПа.`);
-    if (!confirmed) return;
-
-    setGapaCancelLoadingId(row.id);
-    setGapaHistoryError("");
-    const nowIso = new Date().toISOString();
-    const basePayload = {
-      active: false,
-      status: "cancelled",
-      gip_decision: "cancelled_by_uploader",
-      gip_comment: "отменено загрузившим пользователем",
-      processed_at: nowIso,
-      processing_by: currentUser?.name || currentUser?.login || "пользователь сайта",
-    };
-
-    try {
-      let updateResult = await supabase
-        .from(siteIncomingTable)
-        .update(basePayload)
-        .eq("id", row.id);
-
-      if (updateResult.error) {
-        const message = String(updateResult.error.message || updateResult.error || "");
-        if (message.includes("status") || message.includes("check")) {
-          updateResult = await supabase
-            .from(siteIncomingTable)
-            .update({ ...basePayload, status: "rejected" })
-            .eq("id", row.id);
-        }
-      }
-
-      if (updateResult.error) throw updateResult.error;
-
-      await logSiteAction("cancel_upload", {
-        incoming_file_id: row.id,
-        site_section_id: row.site_section_id,
-        building_gp_no: row.building_gp_no,
-        building_name: row.building_name,
-        stage: row.stage,
-        section_code: row.section_code,
-        section_title: row.section_title,
-        target_area: row.target_area,
-        file_name: row.original_filename || row.stored_filename,
-        file_size: row.file_size,
-        yandex_path: row.yandex_temp_path,
-        status: "cancelled",
-        decision: "cancelled_by_uploader",
-        comment: "отменено загрузившим пользователем",
-      });
-
-      await loadGapaActionHistory();
-    } catch (error) {
-      setGapaHistoryError(`Не удалось отменить загрузку: ${error.message}`);
-    } finally {
-      setGapaCancelLoadingId("");
     }
   }
 
@@ -3255,7 +3013,7 @@ function App() {
     }
   }
 
-  async function openYandexDiskFile(path, metadata = {}) {
+  async function openYandexDiskFile(path) {
     if (!path) return;
     if (!isSupabaseReady || !supabase) {
       setSiteDirectoryError("GIP API не подключён. Невозможно получить ссылку на скачивание.");
@@ -3267,12 +3025,6 @@ function App() {
       if (!data?.href) throw new Error("Яндекс.Диск не вернул ссылку на скачивание.");
 
       window.open(data.href, "_blank", "noopener,noreferrer");
-      logSiteAction("download_file", {
-        ...metadata,
-        yandex_path: path,
-        file_name: metadata.file_name || String(path).split("/").pop() || "",
-        comment: "скачивание через Яндекс.Диск",
-      });
     } catch (error) {
       setSiteDirectoryError(`Ошибка получения ссылки Яндекс.Диска: ${error.message}`);
     }
@@ -3317,18 +3069,6 @@ function App() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      logSiteAction("download_archive", {
-        site_section_id: section.id || "",
-        building_gp_no: section.building_gp_no || "",
-        building_name: section.building_name || "",
-        stage: normalizeStage(section.stage || ""),
-        section_code: section.section_code || "",
-        section_title: section.section_title || "",
-        target_area: category,
-        file_name: `${archiveName}.zip`,
-        comment: `архив: ${categoryInfo?.label || category}; файлов: ${downloadableFiles.length}`,
-        details: { files_count: downloadableFiles.length },
-      });
     } catch (error) {
       setSiteDirectoryError(`Ошибка скачивания архива: ${error.message}`);
     } finally {
@@ -3336,82 +3076,58 @@ function App() {
     }
   }
 
+  async function downloadNormControlArchive(section) {
+    if (!section) {
+      setSiteDirectoryError("Выберите раздел для нормаконтроля.");
+      return;
+    }
 
-  async function requestFileDeletion(file, category) {
-    const section = modalSiteSection || selectedSiteSection;
-    if (!section || !file) return;
-    const yandexPath = getArchitectFileYandexPath(file);
-    const fileName = file.file_name || file.original_name || "Файл";
-    const categoryLabel = getFileCategoryLabel(category);
-    const confirmed = window.confirm(
-      `Отправить ГИПу заявку на удаление файла?\n\nФайл: ${fileName}\nТип: ${categoryLabel}\nРаздел: ${section.building_gp_no || "—"} / ${normalizeStage(section.stage)} / ${section.section_code || "—"}\n\nФайл не будет удалён сайтом. ГИП должен подтвердить заявку в программе.`
-    );
-    if (!confirmed) return;
+    const sourceFiles = normalizeNormControlFiles(section.norm_control_files);
+    const downloadableFiles = sourceFiles
+      .map((file) => ({ ...file, resolved_yandex_path: resolveNormControlFileYandexPath(file) }))
+      .filter((file) => file.resolved_yandex_path);
 
-    const loadingKey = file.id || yandexPath || fileName;
-    setDeleteRequestLoadingId(loadingKey);
-    setIncomingUploadError("");
-    setIncomingUploadNotice("");
+    if (!downloadableFiles.length) {
+      setSiteDirectoryError("В выбранном разделе нет файлов с путем для формирования архива нормаконтроля.");
+      return;
+    }
+
+    const archiveKey = `norm:${section.id || "section"}`;
+    const archiveName = sanitizeZipPart([
+      section.building_gp_no || "GP",
+      normalizeStage(section.stage || "П"),
+      section.section_code || "section",
+      "Нормаконтроль",
+    ].filter(Boolean).join("_"));
+
+    setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: true }));
+    setSiteDirectoryError("");
+    setNotice("");
 
     try {
-      if (!isSupabaseReady || !supabase) {
-        throw new Error("GIP API не подключён. Заявку на удаление отправить нельзя.");
+      const zip = new JSZip();
+      const usedNames = new Set();
+
+      for (const file of downloadableFiles) {
+        const blob = await fetchYandexFileBlob(file.resolved_yandex_path);
+        const zipName = makeUniqueZipName(usedNames, file.name || String(file.resolved_yandex_path).split("/").pop() || "file");
+        zip.file(zipName, blob);
       }
-      const requestPayload = {
-        project_key: section.project_key || "opr_donetsk",
-        request_type: "delete_file",
-        site_section_id: section.id,
-        document_card_id: file.id || "",
-        source_yandex_path: yandexPath || "",
-        source_local_path: file.local_file_path || "",
-        source_document_group: file.document_group || "",
-        building_gp_no: section.building_gp_no || "",
-        building_name: section.building_name || "",
-        stage: normalizeStage(section.stage || ""),
-        section_code: section.section_code || "",
-        section_title: section.section_title || "",
-        target_area: category,
-        target_yandex_folder: getYandexCatalogsForSection(section).find((item) => item.value === category)?.path || "",
-        original_filename: fileName,
-        stored_filename: fileName,
-        yandex_temp_path: yandexPath || file.local_file_path || fileName,
-        file_size: file.size_bytes || null,
-        sha256: file.source_hash || "",
-        mime_type: "",
-        uploaded_by: currentUser?.name || currentUser?.login || "",
-        uploaded_by_email: currentUser?.email || "",
-        user_comment: `Заявка на удаление файла. Тип: ${categoryLabel}.`,
-        status: "pending",
-        active: true,
-      };
 
-      const { data, error } = await supabase.from(siteIncomingTable).insert(requestPayload);
-      if (error) throw error;
-
-      await logSiteAction("delete_request_to_gip", {
-        incoming_file_id: data?.[0]?.id || data?.id || "",
-        site_section_id: section.id || "",
-        document_card_id: file.id || "",
-        building_gp_no: section.building_gp_no || "",
-        building_name: section.building_name || "",
-        stage: normalizeStage(section.stage || ""),
-        section_code: section.section_code || "",
-        section_title: section.section_title || "",
-        target_area: category,
-        file_name: fileName,
-        file_size: file.size_bytes || null,
-        yandex_path: yandexPath,
-        status: "pending",
-        decision: "delete_requested",
-        comment: "заявка на удаление файла ГИПу",
-      });
-
-      setIncomingUploadNotice(`Заявка на удаление отправлена ГИПу: ${fileName}`);
-      if (gapaHistoryOpen) await loadGapaActionHistory();
+      const archiveBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(archiveBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${archiveName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setNotice(`Архив нормаконтроля подготовлен. Файлов: ${downloadableFiles.length}.`);
     } catch (error) {
-      setIncomingUploadError(`Не удалось отправить заявку на удаление: ${error.message}`);
+      setSiteDirectoryError(`Ошибка формирования архива нормаконтроля: ${error.message}`);
     } finally {
-      setDeleteRequestLoadingId("");
+      setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
     }
   }
 
@@ -3495,29 +3211,13 @@ function App() {
           active: true,
         };
 
-        const uploadResult = await uploadIncomingFileInChunks(uploadFile, {
+        await uploadIncomingFileInChunks(uploadFile, {
           uploadId,
           diskPath,
           contentType: uploadFile.type || "application/octet-stream",
           sha256,
           incomingTable: siteIncomingTable,
           payload,
-        });
-
-        logSiteAction("upload_to_gip", {
-          incoming_file_id: uploadResult?.incoming?.id || uploadResult?.data?.id || "",
-          site_section_id: targetSection.id || "",
-          building_gp_no: targetSection.building_gp_no || "",
-          building_name: targetSection.building_name || "",
-          stage: normalizeStage(targetSection.stage || ""),
-          section_code: targetSection.section_code || "",
-          section_title: targetSection.section_title || "",
-          target_area: fileCategory,
-          file_name: uploadFile.name,
-          file_size: uploadFile.size,
-          yandex_path: diskPath,
-          status: "pending",
-          comment: fileComment.trim(),
         });
       }
 
@@ -3600,9 +3300,8 @@ function App() {
       setCurrentUser(normalizedUser);
       if (normalizedUser.role === "architect") {
         setInterfaceChoice(null);
-      } else if (normalizedUser.role === "project_manager") {
-        setInterfaceChoice("project_manager");
-        setProjectManagerView("home");
+      } else if (normalizedUser.role === "norm_controller") {
+        setInterfaceChoice("norm_control");
       } else {
         setInterfaceChoice("general");
       }
@@ -3616,7 +3315,9 @@ function App() {
               ? "buildings"
               : hasAccess(normalizedUser, "accounts")
                 ? "accounts"
-                : "schedule";
+                : hasAccess(normalizedUser, "norm_control")
+                  ? "norm_control"
+                  : "schedule";
       setActiveTab(firstAvailableTab);
       await loadAccounts();
     } catch (error) {
@@ -3634,10 +3335,10 @@ function App() {
     setLoginError("");
     setNotice("");
     setInterfaceChoice(null);
-    setProjectManagerView("home");
-    setProjectManagerGraphType("design");
     setSiteSections([]);
     setSiteFiles([]);
+    setSelectedNormProjectKey("");
+    setSelectedNormSectionId("");
   }
 
   async function addAccount(event) {
@@ -3667,22 +3368,19 @@ function App() {
       setNotice("Учетная запись добавлена.");
       await loadAccounts();
     } catch (error) {
-      setNotice(`Ошибка добавления учетной записи: ${formatAccountSaveError(error)}`);
+      setNotice(`Ошибка добавления учетной записи: ${error.message}`);
     }
   }
 
   async function updateAccount(account, patch) {
     setNotice("");
 
-    const nextRole = patch.role ? normalizeAccountRole(patch.role) : normalizeAccountRole(account.role);
     const normalizedPatch = {
       ...patch,
-      ...(patch.role ? { role: nextRole } : {}),
+      ...(patch.role ? { role: normalizeAccountRole(patch.role) } : {}),
       ...(patch.allowed_elements
-        ? { allowed_elements: normalizeAccessElements(patch.allowed_elements, nextRole) }
-        : patch.role
-          ? { allowed_elements: ROLE_DEFAULT_ACCESS[nextRole] || ROLE_DEFAULT_ACCESS.designer }
-          : {}),
+        ? { allowed_elements: normalizeAccessElements(patch.allowed_elements, patch.role || account.role) }
+        : {}),
     };
 
     try {
@@ -3696,7 +3394,7 @@ function App() {
       setNotice("Учетная запись обновлена.");
       await loadAccounts();
     } catch (error) {
-      setNotice(`Ошибка обновления учетной записи: ${formatAccountSaveError(error)}`);
+      setNotice(`Ошибка обновления учетной записи: ${error.message}`);
     }
   }
 
@@ -4183,6 +3881,155 @@ function App() {
     );
   }
 
+  function renderNormControllerWorkspace() {
+    const selectedFiles = normalizeNormControlFiles(selectedNormSection?.norm_control_files);
+    const downloadKey = `norm:${selectedNormSection?.id || "section"}`;
+
+    return (
+      <main className="architectShell normControllerShell">
+        <header className="architectHero">
+          <div>
+            <p className="eyebrow">Нормаконтроль</p>
+            <h1>Кабинет нормоконтролера</h1>
+            <p>Показаны только проекты, где есть разделы, готовые к нормаконтролю, и нормаконтроль еще не завершен.</p>
+          </div>
+          <div className="architectHeroActions">
+            <div className="roleBadge">{ROLE_LABELS[currentUser?.role] || currentUser?.role}</div>
+            <button className="ghostButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
+              {siteDirectoryLoading ? "Обновляю..." : "Обновить"}
+            </button>
+            <button className="ghostButton" onClick={logout}>Выйти</button>
+          </div>
+        </header>
+
+        {siteDirectoryError && <div className="errorBox architectError">{siteDirectoryError}</div>}
+        {notice && <div className="noticeBox architectError">{notice}</div>}
+
+        <section className="architectWorkspaceGrid normWorkspaceGrid">
+          <aside className="architectPanel normProjectPanel">
+            <div className="cardHeaderLine">
+              <div>
+                <p className="eyebrow">Лист 1</p>
+                <h3>Проекты</h3>
+              </div>
+              <strong>{normProjects.length}</strong>
+            </div>
+
+            <div className="normProjectList" role="listbox" aria-label="Проекты для нормаконтроля">
+              {normProjects.map((project) => (
+                <button
+                  key={project.key}
+                  type="button"
+                  className={selectedNormProjectKey === project.key ? "normProjectItem active" : "normProjectItem"}
+                  onClick={() => {
+                    setSelectedNormProjectKey(project.key);
+                    setSelectedNormSectionId(project.sections[0]?.id || "");
+                  }}
+                >
+                  <span>{project.title}</span>
+                  <small>{project.sections.length} разделов</small>
+                </button>
+              ))}
+              {!normProjects.length && (
+                <div className="emptyFileBox">Нет проектов с разделами, готовыми к нормаконтролю.</div>
+              )}
+            </div>
+          </aside>
+
+          <section className="architectPanel mainArchitectPanel normSectionPanel">
+            <div className="cardHeaderLine sectionListHeader">
+              <div>
+                <p className="eyebrow">Лист 2</p>
+                <h3>Разделы выбранного проекта</h3>
+              </div>
+              <button
+                type="button"
+                className="primaryButton"
+                onClick={() => downloadNormControlArchive(selectedNormSection)}
+                disabled={!selectedNormSection || archiveDownloadState[downloadKey]}
+              >
+                {archiveDownloadState[downloadKey] ? "Готовлю архив..." : "Загрузить файлы"}
+              </button>
+            </div>
+
+            <div className="architectSectionTableWrap">
+              <table className="architectSectionTable normSectionTable">
+                <thead>
+                  <tr>
+                    <th>Стадия</th>
+                    <th>Раздел</th>
+                    <th>Наименование</th>
+                    <th>Шифр</th>
+                    <th>Файлов</th>
+                    <th>Готовность</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedNormProjectSections.map((section) => {
+                    const files = normalizeNormControlFiles(section.norm_control_files);
+                    return (
+                      <tr
+                        key={section.id}
+                        className={selectedNormSection?.id === section.id ? "selectedRow" : ""}
+                        onClick={() => setSelectedNormSectionId(section.id)}
+                      >
+                        <td>{normalizeStage(section.stage)}</td>
+                        <td><strong>{section.section_code}</strong></td>
+                        <td>{section.section_title}</td>
+                        <td>{section.cipher || "—"}</td>
+                        <td>{files.length}</td>
+                        <td><span className="readyBadge">Готов к нормаконтролю</span></td>
+                      </tr>
+                    );
+                  })}
+                  {!selectedNormProjectSections.length && (
+                    <tr>
+                      <td colSpan="6" className="emptyCell">Для выбранного проекта нет разделов, готовых к нормаконтролю.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedNormSection && (
+              <section className="normFilesPanel">
+                <div className="cardHeaderLine">
+                  <div>
+                    <p className="eyebrow">Файлы выбранного раздела</p>
+                    <h3>{selectedNormSection.section_code} — {selectedNormSection.section_title}</h3>
+                  </div>
+                  <span>{selectedFiles.length}</span>
+                </div>
+                <div className="fileList">
+                  {selectedFiles.map((file, index) => {
+                    const diskPath = resolveNormControlFileYandexPath(file);
+                    return (
+                      <article className="fileCard" key={file.key || file.document_card_id || `${file.name}:${index}`}>
+                        <div>
+                          <strong>{file.name || "Файл"}</strong>
+                          <small>{file.kind || file.document_type || "файл"}</small>
+                          <small>{diskPath ? "Путь найден" : "Нет пути для архива"}</small>
+                        </div>
+                        {diskPath ? (
+                          <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
+                            Открыть
+                          </button>
+                        ) : (
+                          <span className="fileNoLink">Нет ссылки</span>
+                        )}
+                      </article>
+                    );
+                  })}
+                  {!selectedFiles.length && <div className="emptyFileBox">В разделе нет сохраненного списка файлов для нормаконтроля.</div>}
+                </div>
+              </section>
+            )}
+          </section>
+        </section>
+      </main>
+    );
+  }
+
   function renderArchitectInterfaceChoice() {
     return (
       <main className="loginOnlyPage">
@@ -4235,14 +4082,9 @@ function App() {
               <p className="eyebrow">Справочник из локальной программы ГИПа</p>
               <h2>Здания и разделы</h2>
             </div>
-            <div className="sectionHeaderActions">
-              <button className="secondaryButton" onClick={openGapaActionHistory} disabled={gapaHistoryLoading}>
-                {gapaHistoryLoading && gapaHistoryOpen ? "Загружаю историю..." : "История действий"}
-              </button>
-              <button className="secondaryButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
-                {siteDirectoryLoading ? "Обновление..." : "Обновить"}
-              </button>
-            </div>
+            <button className="secondaryButton" onClick={loadSiteDirectory} disabled={siteDirectoryLoading}>
+              {siteDirectoryLoading ? "Обновление..." : "Обновить"}
+            </button>
           </div>
 
           {notice && <div className="noticeBox">{notice}</div>}
@@ -4330,7 +4172,7 @@ function App() {
                       const hasProjectFile = siteSectionHasProjectFile(section);
                       const rowClassName = [
                         selectedSiteSection?.id === section.id ? "selectedRow" : "",
-                        hasProjectFile ? "" : "missingProjectFileRow",
+                        hasProjectFile ? "project-file-attached-row" : "missingProjectFileRow",
                       ].filter(Boolean).join(" ");
                       return (
                         <tr
@@ -4365,7 +4207,6 @@ function App() {
           </div>
         </section>
         {renderArchitectSectionModal()}
-        {renderGapaActionHistoryModal()}
       </main>
     );
   }
@@ -4436,60 +4277,17 @@ function App() {
                               {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
                               {getArchitectFileDate(file) ? <small>Дата: {getArchitectFileDate(file)}</small> : null}
                             </div>
-                            <div className="fileCardActions">
-                              {file.file_url ? (
-                                <button
-                                  className="smallButton"
-                                  onClick={() => {
-                                    window.open(file.file_url, "_blank", "noopener,noreferrer");
-                                    logSiteAction("download_file", {
-                                      site_section_id: modalSiteSection.id || "",
-                                      document_card_id: file.id || "",
-                                      building_gp_no: modalSiteSection.building_gp_no || "",
-                                      building_name: modalSiteSection.building_name || "",
-                                      stage: normalizeStage(modalSiteSection.stage || ""),
-                                      section_code: modalSiteSection.section_code || "",
-                                      section_title: modalSiteSection.section_title || "",
-                                      target_area: category.value,
-                                      file_name: file.file_name || file.original_name || "",
-                                      file_size: file.size_bytes || null,
-                                      file_url: file.file_url,
-                                      comment: "скачивание по прямой ссылке",
-                                    });
-                                  }}
-                                >
-                                  Скачать / открыть
-                                </button>
-                              ) : getArchitectFileYandexPath(file) ? (
-                                <button
-                                  className="smallButton"
-                                  onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file), {
-                                    site_section_id: modalSiteSection.id || "",
-                                    document_card_id: file.id || "",
-                                    building_gp_no: modalSiteSection.building_gp_no || "",
-                                    building_name: modalSiteSection.building_name || "",
-                                    stage: normalizeStage(modalSiteSection.stage || ""),
-                                    section_code: modalSiteSection.section_code || "",
-                                    section_title: modalSiteSection.section_title || "",
-                                    target_area: category.value,
-                                    file_name: file.file_name || file.original_name || "",
-                                    file_size: file.size_bytes || null,
-                                  })}
-                                >
-                                  Скачать
-                                </button>
-                              ) : (
-                                <span className="fileNoLink">Нет ссылки</span>
-                              )}
-                              <button
-                                type="button"
-                                className="dangerButton deleteFileButton"
-                                onClick={() => requestFileDeletion(file, category.value)}
-                                disabled={deleteRequestLoadingId === (file.id || getArchitectFileYandexPath(file) || file.file_name)}
-                              >
-                                {deleteRequestLoadingId === (file.id || getArchitectFileYandexPath(file) || file.file_name) ? "Отправляю..." : "Удалить"}
+                            {file.file_url ? (
+                              <button className="smallButton" onClick={() => window.open(file.file_url, "_blank", "noopener,noreferrer")}>
+                                Скачать / открыть
                               </button>
-                            </div>
+                            ) : getArchitectFileYandexPath(file) ? (
+                              <button className="smallButton" onClick={() => openYandexDiskFile(getArchitectFileYandexPath(file))}>
+                                Скачать
+                              </button>
+                            ) : (
+                              <span className="fileNoLink">Нет ссылки</span>
+                            )}
                           </article>
                         ))}
                         {!files.length && <div className="emptyFileBox">Нет зарегистрированных документов этого типа.</div>}
@@ -4614,21 +4412,7 @@ function App() {
                               {item.modified && <small>{item.modified}</small>}
                             </div>
                             {item.type !== "dir" && (
-                              <button
-                                className="smallButton"
-                                type="button"
-                                onClick={() => openYandexDiskFile(item.path, {
-                                  site_section_id: modalSiteSection.id || "",
-                                  building_gp_no: modalSiteSection.building_gp_no || "",
-                                  building_name: modalSiteSection.building_name || "",
-                                  stage: normalizeStage(modalSiteSection.stage || ""),
-                                  section_code: modalSiteSection.section_code || "",
-                                  section_title: modalSiteSection.section_title || "",
-                                  target_area: catalog.value,
-                                  file_name: item.name || "",
-                                  file_size: item.size || null,
-                                })}
-                              >
+                              <button className="smallButton" type="button" onClick={() => openYandexDiskFile(item.path)}>
                                 Скачать
                               </button>
                             )}
@@ -4642,138 +4426,6 @@ function App() {
             </section>
             )}
           </div>
-        </section>
-      </div>
-    );
-  }
-
-  function renderGapaActionHistoryModal() {
-    if (!gapaHistoryOpen) return null;
-
-    const activeRows = gapaHistoryTab === "pending" ? gapaPendingRows : gapaHistoryRows;
-
-    return (
-      <div className="architectModalBackdrop historyModalBackdrop" onClick={() => setGapaHistoryOpen(false)}>
-        <section className="architectSectionModal gapaHistoryModal" onClick={(event) => event.stopPropagation()}>
-          <div className="modalHeader">
-            <div>
-              <p className="eyebrow">ГАПА</p>
-              <h2>История действий</h2>
-              <p className="modalSubline">
-                Скачивания с сайта, загрузки файлов ГИПу и решения ГИПа по входящим файлам.
-              </p>
-            </div>
-            <div className="modalHeaderActions">
-              <button className="secondaryButton" type="button" onClick={loadGapaActionHistory} disabled={gapaHistoryLoading}>
-                {gapaHistoryLoading ? "Обновляю..." : "Обновить"}
-              </button>
-              <button className="ghostButton" type="button" onClick={() => setGapaHistoryOpen(false)}>Закрыть</button>
-            </div>
-          </div>
-
-          <div className="historyTabs">
-            <button
-              type="button"
-              className={gapaHistoryTab === "full" ? "historyTab active" : "historyTab"}
-              onClick={() => setGapaHistoryTab("full")}
-            >
-              Полная история
-              <span>{gapaHistoryRows.length}</span>
-            </button>
-            <button
-              type="button"
-              className={gapaHistoryTab === "pending" ? "historyTab active" : "historyTab"}
-              onClick={() => setGapaHistoryTab("pending")}
-            >
-              Что подвешено у ГИПа
-              <span>{gapaPendingRows.length}</span>
-            </button>
-          </div>
-
-          {gapaHistoryError && <div className="errorBox compactError">{gapaHistoryError}</div>}
-
-          {gapaHistoryTab === "full" ? (
-            <div className="historyTableWrap">
-              <table className="historyTable">
-                <thead>
-                  <tr>
-                    <th>Когда</th>
-                    <th>Кто</th>
-                    <th>Действие</th>
-                    <th>Файл</th>
-                    <th>Куда</th>
-                    <th>Тип</th>
-                    <th>Статус / основание</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeRows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{formatActionDate(row.eventAt)}</td>
-                      <td>{row.actor}</td>
-                      <td><strong>{row.action}</strong></td>
-                      <td>
-                        <div className="historyFileCell">
-                          <strong>{row.fileName}</strong>
-                          {row.details ? <small>{row.details}</small> : null}
-                        </div>
-                      </td>
-                      <td>{row.sectionText}</td>
-                      <td>{row.category}</td>
-                      <td>
-                        <div className="historyStatusCell">
-                          <span>{row.status}</span>
-                          <small>{row.basis}</small>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {!activeRows.length && (
-                    <tr>
-                      <td colSpan="7" className="emptyCell">История пока пустая.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="pendingHistoryList">
-              {gapaPendingRows.map((row) => {
-                const cancelable = isIncomingCancelable(row);
-                return (
-                  <article className="pendingHistoryCard" key={row.id}>
-                    <div>
-                      <div className="pendingHistoryHeader">
-                        <strong>{row.original_filename || row.stored_filename || "Файл"}</strong>
-                        <span>{getIncomingStatusLabel(row.status, row.gip_decision)}</span>
-                      </div>
-                      <p>{makeHistorySectionText(row)}</p>
-                      <div className="pendingHistoryMeta">
-                        <span>{formatActionDate(row.uploaded_at || row.created_at)}</span>
-                        <span>{row.uploaded_by || row.uploaded_by_email || "—"}</span>
-                        <span>{getIncomingRequestLabel(row)}</span>
-                        <span>{getFileCategoryLabel(row.target_area)}</span>
-                        {row.file_size ? <span>{formatFileSize(row.file_size)}</span> : null}
-                      </div>
-                      {row.user_comment && <div className="pendingHistoryComment">{row.user_comment}</div>}
-                    </div>
-                    <button
-                      type="button"
-                      className="dangerButton"
-                      onClick={() => cancelIncomingUpload(row)}
-                      disabled={!cancelable || gapaCancelLoadingId === row.id}
-                      title={cancelable ? "Снять заявку из активной очереди ГИПа" : "Заявка уже взята в обработку или не может быть отменена"}
-                    >
-                      {getIncomingCancelButtonLabel(row, gapaCancelLoadingId === row.id)}
-                    </button>
-                  </article>
-                );
-              })}
-              {!gapaPendingRows.length && (
-                <div className="emptyFileBox">Нет файлов, подвешенных у ГИПа.</div>
-              )}
-            </div>
-          )}
         </section>
       </div>
     );
@@ -5428,383 +5080,6 @@ function App() {
     );
   }
 
-
-  function openProjectManagerBuilding(buildingId) {
-    setSelectedBuildingId(buildingId);
-    setProjectManagerView("buildingDetail");
-  }
-
-  function renderProjectManagerHeader(title, subtitle) {
-    return (
-      <header className="topBar projectManagerTopBar">
-        <div>
-          <p className="eyebrow">Кабинет руководителя проекта</p>
-          <h1>{title}</h1>
-          {subtitle && <p className="projectManagerSubtitle">{subtitle}</p>}
-        </div>
-
-        <div className="userPanel">
-          <div>
-            <strong>{currentUser.name}</strong>
-            <span>{ROLE_LABELS[currentUser.role] || currentUser.role}</span>
-          </div>
-          {projectManagerView !== "home" && (
-            <button className="secondaryButton" onClick={() => setProjectManagerView("home")}>К 4 разделам</button>
-          )}
-          <button className="ghostButton" onClick={logout}>Выйти</button>
-        </div>
-      </header>
-    );
-  }
-
-  function renderProjectManagerHome() {
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader(
-          "Руководитель проекта",
-          "Стартовый экран с четырьмя основными блоками контроля проекта."
-        )}
-
-        <section className="projectManagerHero">
-          <div>
-            <p className="eyebrow">Обзор</p>
-            <h2>Выберите раздел для просмотра</h2>
-          </div>
-          <div className="projectManagerHeroStats">
-            <span>{buildingPages.length} зданий</span>
-            <span>{scheduleRows.length} задач проектирования</span>
-            <span>{projectManagerFinancePlan.length} месяца финансирования</span>
-          </div>
-        </section>
-
-        <section className="projectManagerTileGrid">
-          {projectManagerSections.map((section, index) => (
-            <button
-              key={section.key}
-              type="button"
-              className="projectManagerTile"
-              onClick={() => setProjectManagerView(section.key)}
-            >
-              <span className="projectManagerTileNumber">{index + 1}</span>
-              <strong>{section.title}</strong>
-              <p>{section.description}</p>
-              <small>{section.metric}</small>
-            </button>
-          ))}
-        </section>
-      </main>
-    );
-  }
-
-  function renderProjectManagerInfo() {
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader(
-          "Общая информация",
-          "Информация по зданиям: описание, площадь и картинки из карточек здания."
-        )}
-
-        <section className="projectManagerSectionBlock">
-          <div className="sectionHeader">
-            <div>
-              <p className="eyebrow">Здания комплекса</p>
-              <h2>Общее описание и изображения</h2>
-            </div>
-            <div className="roleBadge">{buildingPages.length} зданий</div>
-          </div>
-
-          <div className="projectManagerBuildingGrid">
-            {buildingPages.map((building) => {
-              const details = buildingDetails[building.id] || {};
-              const assets = buildingAssets[building.id] || {};
-              return (
-                <article className="projectManagerBuildingCard" key={building.id}>
-                  <button
-                    type="button"
-                    className="projectManagerBuildingImage"
-                    onClick={() => openProjectManagerBuilding(building.id)}
-                  >
-                    {assets.view ? (
-                      <img src={assets.view} alt={`${building.title}. Вид здания`} />
-                    ) : (
-                      <span>Изображение будет добавлено</span>
-                    )}
-                  </button>
-                  <div className="projectManagerBuildingBody">
-                    <div className="projectManagerBuildingMeta">
-                      <span>Здание {building.number}</span>
-                      <span>{building.area}</span>
-                    </div>
-                    <h3>{building.title}</h3>
-                    <p>{details.description || "Описание будет добавлено после уточнения исходных данных."}</p>
-                    <button className="smallButton" onClick={() => openProjectManagerBuilding(building.id)}>
-                      Открыть карточку
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        {imageViewer && (
-          <div className="imageViewerOverlay" onClick={closeImageViewer}>
-            <div className="imageViewerDialog" onClick={(event) => event.stopPropagation()}>
-              <div className="imageViewerHeader">
-                <strong>{imageViewer.title}</strong>
-                <button onClick={closeImageViewer}>Закрыть</button>
-              </div>
-              <img src={imageViewer.src} alt={imageViewer.title} />
-            </div>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  function renderProjectManagerBuildingDetail() {
-    const building = buildingPages.find((item) => item.id === selectedBuildingId) || buildingPages[0];
-    const details = buildingDetails[building.id] || {
-      description: "Описание будет добавлено после уточнения исходных данных.",
-      floors: [],
-      explication: [],
-    };
-    const assets = buildingAssets[building.id] || { view: "", floors: [] };
-
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader(building.title, "Карточка здания для руководителя проекта.")}
-
-        <section className="contentStack buildingDetailPage">
-          <div className="sectionHeader">
-            <div>
-              <p className="eyebrow">Страница здания</p>
-              <h2>{building.title}</h2>
-            </div>
-            <button className="secondaryButton" onClick={() => setProjectManagerView("info")}>К списку зданий</button>
-          </div>
-
-          <div className="buildingInfoGrid">
-            <div className="buildingInfoCard"><span>Номер</span><strong>{building.number}</strong></div>
-            <div className="buildingInfoCard"><span>Лист исходного PDF</span><strong>{building.sourcePage}</strong></div>
-            <div className="buildingInfoCard"><span>Площадь</span><strong>{building.area}</strong></div>
-          </div>
-
-          <div className="buildingPageGrid">
-            <div className="buildingVisualCard">
-              <p className="eyebrow">Вид здания</p>
-              {assets.view ? (
-                <button className="buildingImageButton" onClick={() => openImageViewer(assets.view, `${building.title}. Вид здания`)}>
-                  <img src={assets.view} alt={`${building.title}. Вид здания`} />
-                </button>
-              ) : (
-                <div className="buildingImagePlaceholder"><strong>Картинка здания</strong><span>Изображение будет добавлено после обработки листа</span></div>
-              )}
-              <div className="buildingImageCaption">Нажмите на изображение, чтобы открыть его крупно.</div>
-            </div>
-
-            <div className="buildingDescriptionCard">
-              <p className="eyebrow">Описание</p>
-              <h3>Функциональное назначение</h3>
-              <p>{details.description}</p>
-            </div>
-          </div>
-
-          <div className="buildingDataGrid">
-            <div className="buildingDataCard buildingPlansCard">
-              <div className="cardHeaderLine"><p className="eyebrow">Планы и экспликации</p><h3>Поэтажные планы</h3></div>
-              <div className="floorImageList">
-                {(assets.floors || []).map((floor, index) => (
-                  <article className="floorImageItem" key={`${building.id}-pm-floor-${index}`}>
-                    <div className="floorImageHeader"><strong>{floor.title}</strong>{details.floors[index] && <span>{details.floors[index]}</span>}</div>
-                    <div className="floorSplitGrid">
-                      <div className="floorSplitBlock">
-                        <div className="floorSplitTitle">План этажа</div>
-                        {floor.plan ? (
-                          <button className="buildingImageButton floorImageButton" onClick={() => openImageViewer(floor.plan, `${building.title}. ${floor.title}. План`)}>
-                            <img src={floor.plan} alt={`${building.title}. ${floor.title}. План`} />
-                          </button>
-                        ) : <div className="imageMissingBox">План не найден</div>}
-                      </div>
-                      <div className="floorSplitBlock">
-                        <div className="floorSplitTitle">Экспликация</div>
-                        {floor.explication ? (
-                          <button className="buildingImageButton floorImageButton" onClick={() => openImageViewer(floor.explication, `${building.title}. ${floor.title}. Экспликация`)}>
-                            <img src={floor.explication} alt={`${building.title}. ${floor.title}. Экспликация`} />
-                          </button>
-                        ) : <div className="imageMissingBox">Экспликация не найдена</div>}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <div className="buildingDataCard">
-              <div className="cardHeaderLine"><p className="eyebrow">Экспликация</p><h3>Основные помещения и зоны</h3></div>
-              <div className="explicationList">
-                {(details.explication || []).map((item, index) => (
-                  <div className="explicationItem" key={`${building.id}-pm-exp-${index}`}><span>{index + 1}</span><p>{item}</p></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {imageViewer && (
-          <div className="imageViewerOverlay" onClick={closeImageViewer}>
-            <div className="imageViewerDialog" onClick={(event) => event.stopPropagation()}>
-              <div className="imageViewerHeader"><strong>{imageViewer.title}</strong><button onClick={closeImageViewer}>Закрыть</button></div>
-              <img src={imageViewer.src} alt={imageViewer.title} />
-            </div>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  function renderProjectManagerGraphs() {
-    const graphOptions = [
-      { key: "design", title: "Проектирование", description: "Сводный график проектирования по разделам." },
-      { key: "ppt", title: "ППТ", description: "График мероприятий по проекту планировки территории." },
-      { key: "rns", title: "РНС", description: "Дорожная карта получения разрешения на строительство." },
-    ];
-    const rnsBounds = getScheduleBounds(projectManagerRnsItems);
-
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader("Графики", "Выберите нужный график: проектирование, ППТ или РНС.")}
-
-        <section className="projectManagerSectionBlock">
-          <div className="projectManagerGraphChooser">
-            {graphOptions.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                className={projectManagerGraphType === option.key ? "projectManagerGraphButton active" : "projectManagerGraphButton"}
-                onClick={() => setProjectManagerGraphType(option.key)}
-              >
-                <strong>{option.title}</strong>
-                <span>{option.description}</span>
-              </button>
-            ))}
-          </div>
-
-          {projectManagerGraphType === "design" && renderSchedulePage()}
-          {projectManagerGraphType === "ppt" && renderCompactPptPage()}
-          {projectManagerGraphType === "rns" && (
-            <section className="contentStack">
-              <div className="sectionHeader">
-                <div><p className="eyebrow">График РНС</p><h2>Разрешение на строительство</h2></div>
-                <div className="roleBadge">дорожная карта</div>
-              </div>
-              <div className="scheduleList">
-                {projectManagerRnsItems.map((item) => (
-                  <article className="scheduleRow" key={item.code}>
-                    <div className="scheduleInfo">
-                      <strong>{item.code}</strong>
-                      <span>{item.title}</span>
-                      <small>{formatDate(item.start)} — {formatDate(item.end)}</small>
-                    </div>
-                    <div className="timelineTrack">
-                      <div className="timelineBar" style={getBarStyle(item, rnsBounds)}>
-                        <span>{item.progress}%</span>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-        </section>
-      </main>
-    );
-  }
-
-  function renderProjectManagerMeetings() {
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader("Совещания", "Последние протоколы, актуальная повестка и задачи по ответственным.")}
-
-        <section className="projectManagerMeetingGrid">
-          <div className="projectManagerPanel wide">
-            <div className="cardHeaderLine"><p className="eyebrow">Протоколы</p><h2>Последние протоколы</h2></div>
-            <div className="projectManagerProtocolList">
-              {projectManagerMeetings.protocols.map((protocol) => (
-                <article className="projectManagerProtocol" key={`${protocol.date}-${protocol.title}`}>
-                  <div><strong>{protocol.date}</strong><span>{protocol.status}</span></div>
-                  <h3>{protocol.title}</h3>
-                  <p>{protocol.summary}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <div className="projectManagerPanel">
-            <div className="cardHeaderLine"><p className="eyebrow">Повестка</p><h2>Актуальная повестка</h2></div>
-            <ol className="projectManagerAgendaList">
-              {projectManagerMeetings.agenda.map((item) => <li key={item}>{item}</li>)}
-            </ol>
-          </div>
-
-          <div className="projectManagerPanel wide">
-            <div className="cardHeaderLine"><p className="eyebrow">Задачи</p><h2>Кому какие задачи поставлены</h2></div>
-            <div className="projectManagerTaskList">
-              {projectManagerMeetings.tasks.map((task) => (
-                <article className="projectManagerTask" key={`${task.owner}-${task.task}`}>
-                  <strong>{task.owner}</strong>
-                  <p>{task.task}</p>
-                  <span>{task.due}</span>
-                  <small>{task.status}</small>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  function renderProjectManagerFinance() {
-    const maxAmount = Math.max(...projectManagerFinancePlan.map((item) => item.amount), 1);
-    const total = projectManagerFinancePlan.reduce((sum, item) => sum + item.amount, 0);
-
-    return (
-      <main className="appShell projectManagerShell">
-        {renderProjectManagerHeader("Финансирование", "График потребности в финансах на ближайшие 3 месяца.")}
-
-        <section className="projectManagerSectionBlock">
-          <div className="sectionHeader">
-            <div><p className="eyebrow">Финансы</p><h2>Потребность на 3 месяца</h2></div>
-            <div className="roleBadge">Итого: {total} млн ₽</div>
-          </div>
-
-          <div className="projectManagerFinanceChart">
-            {projectManagerFinancePlan.map((item) => (
-              <article className="projectManagerFinanceBar" key={item.month}>
-                <div className="projectManagerFinanceBarTop"><strong>{item.month}</strong><span>{item.label}</span></div>
-                <div className="projectManagerFinanceTrack"><div style={{ width: `${Math.round((item.amount / maxAmount) * 100)}%` }} /></div>
-                <p>{item.note}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  function renderProjectManagerWorkspace() {
-    if (!hasAccess(currentUser, "project_manager_dashboard")) {
-      return renderAccessDenied("Кабинет руководителя проекта");
-    }
-    if (projectManagerView === "info") return renderProjectManagerInfo();
-    if (projectManagerView === "buildingDetail") return renderProjectManagerBuildingDetail();
-    if (projectManagerView === "graphs") return renderProjectManagerGraphs();
-    if (projectManagerView === "meetings") return renderProjectManagerMeetings();
-    if (projectManagerView === "finance") return renderProjectManagerFinance();
-    return renderProjectManagerHome();
-  }
-
   function renderAccountManagement() {
     if (!hasAccess(currentUser, "accounts")) {
       return renderAccessDenied("Управление учетными записями");
@@ -5993,16 +5268,16 @@ function App() {
     return renderLoginPage();
   }
 
+  if (currentUser.role === "norm_controller") {
+    return renderNormControllerWorkspace();
+  }
+
   if (currentUser.role === "architect" && !interfaceChoice) {
     return renderArchitectInterfaceChoice();
   }
 
   if (currentUser.role === "architect" && interfaceChoice === "specialized") {
     return renderArchitectWorkspace();
-  }
-
-  if (currentUser.role === "project_manager") {
-    return renderProjectManagerWorkspace();
   }
 
   return (
@@ -6065,6 +5340,15 @@ function App() {
           </button>
         )}
 
+        {hasAccess(currentUser, "norm_control") && (
+          <button
+            className={activeTab === "norm_control" ? "tabButton active" : "tabButton"}
+            onClick={() => setActiveTab("norm_control")}
+          >
+            Нормаконтроль
+          </button>
+        )}
+
         {hasAccess(currentUser, "accounts") && (
           <button
             className={activeTab === "accounts" ? "tabButton active" : "tabButton"}
@@ -6082,6 +5366,7 @@ function App() {
       {activeTab === "buildingDetail" && renderBuildingDetailPage()}
       {activeTab === "editItem" && renderEditItemPage()}
       {activeTab === "accounts" && renderAccountManagement()}
+      {activeTab === "norm_control" && renderNormControllerWorkspace()}
 
       {imageViewer && (
         <div className="imageViewerOverlay" onClick={closeImageViewer}>

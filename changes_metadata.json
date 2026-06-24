@@ -1,0 +1,18 @@
+{
+  "version": "N_266",
+  "date": "2026-06-24",
+  "base_version": "N_182 + N_201",
+  "type": "full_site_archive_for_autodeploy",
+  "changes": [
+    "Добавлена роль norm_controller / Нормаконтролер.",
+    "Добавлен отдельный кабинет нормаконтролера с двумя листами: проекты и разделы выбранного проекта.",
+    "Добавлено формирование ZIP-архива по файлам norm_control_files выбранного раздела.",
+    "Встроен патч N_201: зеленая подсветка разделов с файлом проекта.",
+    "Добавлена миграция supabase_sql/N_266_norm_controller_site.sql."
+  ],
+  "sql_migrations": [
+    "supabase_sql/N_266_norm_controller_site.sql"
+  ],
+  "env_changes": [],
+  "telegram_webhook_reinstall_required": false
+}

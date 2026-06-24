@@ -3,8 +3,3 @@ dist/
 .env
 .env.local
 *.log
-
-
-# Local generated files, added by N_118 auto deploy
-_deploy_backups/
-_chatgpt_logs/
