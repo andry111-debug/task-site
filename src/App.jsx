@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_267";
-const APP_DEPLOY_NAME = "N_268_project_site_norm_controller_sql_fix";
+const APP_VERSION = "N_270";
+const APP_DEPLOY_NAME = "N_270_project_site_norm_controller_columns";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";

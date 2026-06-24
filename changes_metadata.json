@@ -1,16 +1,14 @@
 {
-  "version": "N_269",
+  "version": "N_270",
   "date": "2026-06-24",
-  "base_version": "N_268_project_site_norm_controller_sql_fix",
-  "title": "Account management layout fix",
+  "base_version": "N_269_project_site_account_layout_fix",
+  "title": "Norm-controller two-column workspace layout",
   "changes": [
-    "Aligned Add account card to the top of account-management grid.",
-    "Moved account action buttons to a separate row under role/password controls.",
-    "Kept exactly one current SQL migration file in supabase_sql."
+    "Placed norm-controller project list and section list side by side on wide screens.",
+    "Added explicit grid display and column sizing for norm-controller workspace.",
+    "Removed SQL migrations from this layout-only release because there are no database changes."
   ],
-  "sql_migrations": [
-    "supabase_sql/N_269_norm_controller_complete.sql"
-  ],
+  "sql_migrations": [],
   "vercel_env_changes": [],
   "telegram_webhook_reinstall_required": false,
   "gip_api_changes_required": false
