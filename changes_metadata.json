@@ -1,17 +1,17 @@
 {
-  "version": "N_268",
-  "name": "project_site_norm_controller_sql_fix",
+  "version": "N_269",
   "date": "2026-06-24",
-  "base_version": "N_267_project_site_norm_controller_accounts_fix",
+  "base_version": "N_268_project_site_norm_controller_sql_fix",
+  "title": "Account management layout fix",
   "changes": [
-    "Fixed employees_role_check migration by preserving existing role values and adding norm_controller aliases.",
-    "Merged required N_266 norm-control schema changes into one N_268 SQL file.",
-    "Removed obsolete SQL migration files from supabase_sql so autodeploy shows only the SQL needed for this package."
+    "Aligned Add account card to the top of account-management grid.",
+    "Moved account action buttons to a separate row under role/password controls.",
+    "Kept exactly one current SQL migration file in supabase_sql."
   ],
   "sql_migrations": [
-    "supabase_sql/N_268_norm_controller_complete.sql"
+    "supabase_sql/N_269_norm_controller_complete.sql"
   ],
   "vercel_env_changes": [],
-  "gip_api_changes": false,
-  "telegram_webhook_reinstall_required": false
+  "telegram_webhook_reinstall_required": false,
+  "gip_api_changes_required": false
 }

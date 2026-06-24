@@ -5099,8 +5099,8 @@ function App() {
 
         {notice && <div className="noticeBox">{notice}</div>}
 
-        <div className="adminGrid">
-          <div className="adminCard">
+        <div className="adminGrid accountAdminGrid">
+          <div className="adminCard accountAddCard">
             <h3>Добавить учетную запись</h3>
 
             <form className="formStack" onSubmit={addAccount}>
@@ -5177,7 +5177,7 @@ function App() {
             </form>
           </div>
 
-          <div className="adminCard wideCard">
+          <div className="adminCard wideCard accountListCard">
             <h3>Список учетных записей</h3>
 
             <div className="accountList">
@@ -5203,32 +5203,34 @@ function App() {
                     ))}
                   </div>
 
-                  <div className="accountControls">
-                    <select
-                      value={normalizeAccountRole(account.role)}
-                      onChange={(event) =>
-                        updateAccount(account, { role: event.target.value })
-                      }
-                    >
-                      {ROLE_OPTIONS.map((role) => (
-                        <option key={role.value} value={role.value}>
-                          {role.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="accountControls accountControlsStack">
+                    <div className="accountRolePasswordRow">
+                      <select
+                        value={normalizeAccountRole(account.role)}
+                        onChange={(event) =>
+                          updateAccount(account, { role: event.target.value })
+                        }
+                      >
+                        {ROLE_OPTIONS.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
 
-                    <input
-                      value={passwordChanges[account.id] || ""}
-                      onChange={(event) =>
-                        setPasswordChanges((current) => ({
-                          ...current,
-                          [account.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="Новый пароль"
-                    />
+                      <input
+                        value={passwordChanges[account.id] || ""}
+                        onChange={(event) =>
+                          setPasswordChanges((current) => ({
+                            ...current,
+                            [account.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Новый пароль"
+                      />
+                    </div>
 
-                    <div className="accountActionButtons">
+                    <div className="accountActionButtons accountActionButtonsUnderRole">
                       <button
                         className="smallButton"
                         onClick={() => changeAccountPassword(account)}

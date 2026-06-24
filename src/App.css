@@ -3745,3 +3745,99 @@ h3 {
     grid-column: 1;
   }
 }
+
+
+/* N_269: rigid account-management alignment fix. */
+.accountAdminGrid {
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+.accountAddCard {
+  align-self: start !important;
+  align-content: start !important;
+  justify-content: stretch !important;
+  min-height: auto !important;
+}
+
+.accountAddCard h3,
+.accountListCard h3 {
+  margin: 0 !important;
+}
+
+.accountAddCard .formStack {
+  align-content: start !important;
+  justify-content: stretch !important;
+  gap: 14px !important;
+}
+
+.accountAddCard .formStack label {
+  margin: 0 !important;
+}
+
+.accountListCard {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.accountListCard .accountList {
+  min-width: 0 !important;
+}
+
+.accountListCard .accountRow {
+  grid-template-columns: minmax(190px, 230px) minmax(190px, 0.85fr) minmax(260px, 1fr) !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.accountControlsStack {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  align-items: start !important;
+  min-width: 0 !important;
+}
+
+.accountRolePasswordRow {
+  display: grid !important;
+  grid-template-columns: minmax(180px, 240px) minmax(150px, 1fr) !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+.accountRolePasswordRow select,
+.accountRolePasswordRow input {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.accountActionButtonsUnderRole {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+}
+
+.accountActionButtonsUnderRole button {
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 1280px) {
+  .accountListCard .accountRow {
+    grid-template-columns: minmax(180px, 220px) minmax(180px, 0.8fr) minmax(240px, 1fr) !important;
+  }
+
+  .accountRolePasswordRow {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .accountAdminGrid,
+  .accountListCard .accountRow {
+    grid-template-columns: 1fr !important;
+  }
+}
