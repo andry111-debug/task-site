@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_285";
-const APP_DEPLOY_NAME = "N_285_project_site_gap_blank_fix";
+const APP_VERSION = "N_286";
+const APP_DEPLOY_NAME = "N_286_project_site_gap_remove_yandex_check";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -4556,18 +4556,7 @@ function App() {
             <button className="ghostButton" onClick={() => setSiteSectionModalId("")}>Закрыть</button>
           </div>
 
-          <div className="modalToolsLine">
-            <button
-              type="button"
-              className="secondaryButton"
-              onClick={() => setShowYandexCatalogTester((value) => !value)}
-            >
-              {showYandexCatalogTester ? "Скрыть проверку каталогов" : "Проверить каталоги Яндекс.Диска"}
-            </button>
-            <span>Проверка каталогов нужна для диагностики сопоставления путей. В обычной работе она может быть скрыта.</span>
-          </div>
-
-          <div className={showYandexCatalogTester ? "modalContentGrid" : "modalContentGrid singleColumn"}>
+          <div className="modalContentGrid singleColumn">
             <section className="modalBlock">
               <div className="cardHeaderLine">
                 <p className="eyebrow">Карточки из базы сайта</p>
@@ -4676,81 +4665,6 @@ function App() {
               </form>
             </section>
 
-            {showYandexCatalogTester && (
-            <section className="modalBlock yandexReadOnlyBlock">
-              <div className="cardHeaderLine">
-                <p className="eyebrow">Яндекс.Диск / только чтение</p>
-                <h3>Проверка сопоставления каталогов</h3>
-              </div>
-
-              <div className="readOnlyNotice">
-                На этом этапе запись отключена: сайт только читает существующие каталоги Яндекс.Диска и получает ссылки на скачивание.
-              </div>
-
-              <div className="yandexCatalogList">
-                {getYandexCatalogsForSection(modalSiteSection).map((catalog) => {
-                  const stateKey = yandexCatalogKey(modalSiteSection, catalog);
-                  const readState = yandexCatalogState[stateKey] || {};
-                  const files = Array.isArray(readState.items) ? readState.items : [];
-
-                  return (
-                    <article className="yandexCatalogCard" key={catalog.value}>
-                      <div className="yandexCatalogHeader">
-                        <div>
-                          <strong>{catalog.label}</strong>
-                          <span>{catalog.source}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="smallButton"
-                          onClick={() => readYandexCatalog(modalSiteSection, catalog)}
-                          disabled={readState.loading}
-                        >
-                          {readState.loading ? "Читаю..." : "Проверить каталог"}
-                        </button>
-                      </div>
-
-                      <div className="diskPathBox">{catalog.path || "Путь не определен"}</div>
-                      <p className="catalogDescription">{catalog.description}</p>
-
-                      {readState.error && <div className="errorBox compactError">{readState.error}</div>}
-                      {readState.missing && (
-                        <div className="missingCatalogBox">
-                          {readState.missingMessage}
-                          {readState.normalizedPath && (
-                            <span>Проверенный путь: <strong>{readState.normalizedPath}</strong></span>
-                          )}
-                        </div>
-                      )}
-
-                      {readState.normalizedPath && !readState.error && !readState.missing && (
-                        <div className="catalogResultInfo">
-                          Прочитан путь: <strong>{readState.normalizedPath}</strong>. Найдено: <strong>{files.length}</strong>
-                        </div>
-                      )}
-
-                      <div className="diskFileList">
-                        {files.map((item) => (
-                          <div className="diskFileRow" key={item.path || item.name}>
-                            <div>
-                              <strong>{item.name}</strong>
-                              <span>{item.type === "dir" ? "Папка" : "Файл"}{item.size ? ` / ${formatFileSize(item.size)}` : ""}</span>
-                              {item.modified && <small>{item.modified}</small>}
-                            </div>
-                            {item.type !== "dir" && (
-                              <button className="smallButton" type="button" onClick={() => openYandexDiskFile(item.path)}>
-                                Скачать
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-            )}
           </div>
         </section>
       </div>
