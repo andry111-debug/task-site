@@ -454,6 +454,7 @@ function makeNormControlResultDiskPath(section, fileName) {
 
 function isNormControlResultFileCard(file, section) {
   if (!file || !section) return false;
+  if (file.active === false) return false;
   const fileSectionId = String(file.site_section_id || file.section_id || "");
   const sectionId = String(section.id || section.section_id || "");
   if (!fileSectionId || !sectionId || fileSectionId !== sectionId) return false;
@@ -3320,6 +3321,42 @@ function App() {
     }
   }
 
+  async function deleteNormControlResultFile(file) {
+    const fileId = String(file?.id || "").trim();
+    const fileName = file?.file_name || file?.original_name || "файл";
+
+    setSiteDirectoryError("");
+    setNotice("");
+
+    if (!fileId) {
+      setSiteDirectoryError("Не удалось удалить запись: у файла нет идентификатора в БД.");
+      return;
+    }
+
+    const answer = window.confirm(`Удалить запись результата нормоконтроля «${fileName}» из списка? Файл на диске не удаляется.`);
+    if (!answer) return;
+
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from(siteFilesTable)
+        .update({
+          active: false,
+          status: "deleted",
+          modified_at: now,
+        })
+        .eq("id", fileId)
+        .eq("document_group", "norm_control_result");
+
+      if (error) throw error;
+
+      setSiteFiles((items) => items.map((item) => (String(item.id || "") === fileId ? { ...item, active: false, status: "deleted", modified_at: now } : item)));
+      setNotice(`Запись результата нормоконтроля удалена из списка: ${fileName}.`);
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка удаления результата нормоконтроля: ${error.message}`);
+    }
+  }
+
   async function addFileToSiteSection(event) {
     event.preventDefault();
     setNotice("");
@@ -4291,13 +4328,18 @@ function App() {
                         {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
                         {file.registered_at ? <small>Дата: {file.registered_at}</small> : null}
                       </div>
-                      {diskPath ? (
-                        <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
-                          Открыть
+                      <div className="normResultFileActions">
+                        {diskPath ? (
+                          <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
+                            Открыть
+                          </button>
+                        ) : (
+                          <span className="fileNoLink">Нет ссылки</span>
+                        )}
+                        <button className="dangerButton" type="button" onClick={() => deleteNormControlResultFile(file)}>
+                          Удалить
                         </button>
-                      ) : (
-                        <span className="fileNoLink">Нет ссылки</span>
-                      )}
+                      </div>
                     </article>
                   );
                 })}

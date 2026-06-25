@@ -4000,3 +4000,11 @@ h3 {
 .normControllerShell .normWorkspaceGrid > .normProjectPanel {
   min-height: 100% !important;
 }
+
+.normResultFileActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
