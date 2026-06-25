@@ -1,16 +1,15 @@
 {
-  "version": "N_275",
-  "name": "N_275_project_site_norm_controller_chunked_results_upload",
+  "version": "N_277",
   "date": "2026-06-25",
-  "base_version": "N_274_project_site_norm_controller_results_path_height_fix",
+  "base_version": "N_276_project_site_blank_login",
+  "type": "full_site_archive",
   "changes": [
-    "Загрузка результатов нормоконтроля переведена на chunked upload через GIP API.",
-    "Устранена ошибка Request Entity Too Large / FUNCTION_PAYLOAD_TOO_LARGE при отправке крупных файлов через Vercel.",
-    "Карточки результатов нормоконтроля продолжают создаваться в opr_site_section_files с document_group=norm_control_result.",
-    "SQL-миграции не требуются."
+    "Removed mime_type from opr_site_section_files payload for norm-control result uploads.",
+    "Kept chunked upload through GIP API N_169.",
+    "No database migration is required."
   ],
-  "sql_required": false,
-  "vercel_env_changes": false,
-  "telegram_webhook_reinstall_required": false,
-  "gip_api_required": "N_169 or compatible chunked upload API"
+  "sql_migrations": [],
+  "vercel_env_changes": [],
+  "gip_api_changes": false,
+  "telegram_webhook_reinstall_required": false
 }

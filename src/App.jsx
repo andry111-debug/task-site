@@ -48,7 +48,7 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_275";
+const APP_VERSION = "N_276";
 const APP_DEPLOY_NAME = "N_275_project_site_norm_controller_chunked_results_upload";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -2475,8 +2475,8 @@ function removeLocalPptItems() {
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [login, setLogin] = useState("admin");
-  const [password, setPassword] = useState("1111");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
@@ -3266,7 +3266,6 @@ function App() {
           storage_path: diskPath,
           local_file_path: "",
           size_bytes: file.size,
-          mime_type: file.type || "application/octet-stream",
           modified_at: registeredAt,
           registered_at: registeredAt,
           registered_by: currentUser?.name || currentUser?.login || "",
@@ -3522,8 +3521,8 @@ function App() {
   function logout() {
     setCurrentUser(null);
     setActiveTab("schedule");
-    setLogin("admin");
-    setPassword("1111");
+    setLogin("");
+    setPassword("");
     setLoginError("");
     setNotice("");
     setInterfaceChoice(null);
