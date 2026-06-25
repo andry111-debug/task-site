@@ -1,15 +1,10 @@
 {
-  "version": "N_277",
+  "version": "N_278",
   "date": "2026-06-25",
-  "base_version": "N_276_project_site_blank_login",
-  "type": "full_site_archive",
+  "base_version": "N_277_project_site_norm_result_schema_fix",
   "changes": [
-    "Removed mime_type from opr_site_section_files payload for norm-control result uploads.",
-    "Kept chunked upload through GIP API N_169.",
-    "No database migration is required."
-  ],
-  "sql_migrations": [],
-  "vercel_env_changes": [],
-  "gip_api_changes": false,
-  "telegram_webhook_reinstall_required": false
+    "Исправлена ошибка загрузки результата нормоконтроля: сайт больше не передает строковый id вида norm_result_* в uuid-поле таблицы opr_site_section_files.",
+    "ID карточки результата теперь создается самой БД через default gen_random_uuid().",
+    "SQL-миграции не требуются."
+  ]
 }

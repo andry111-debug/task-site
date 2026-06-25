@@ -3243,11 +3243,9 @@ function App() {
         const safeName = makeUniqueZipName(usedDiskNames, file.name);
         const diskPath = makeNormControlResultDiskPath(section, safeName);
         const registeredAt = new Date().toISOString();
-        const cardId = `norm_result_${Date.now()}_${index}_${Math.random().toString(16).slice(2)}`;
         const uploadId = randomUploadId();
 
         const payload = {
-          id: cardId,
           project_key: section.project_key || "opr_donetsk",
           section_id: section.id,
           site_section_id: section.id,
