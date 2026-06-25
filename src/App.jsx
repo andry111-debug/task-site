@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_286";
-const APP_DEPLOY_NAME = "N_286_project_site_gap_remove_yandex_check";
+const APP_VERSION = "N_315";
+const APP_DEPLOY_NAME = "N_315_project_site_norm_controller_download_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -301,7 +301,7 @@ function getArchitectFileComment(file) {
 }
 
 function getArchitectFileYandexPath(file) {
-  return file?.yandex_disk_path || file?.yandex_path || "";
+  return file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "";
 }
 
 function getArchitectFileDate(file) {
@@ -2708,16 +2708,73 @@ function App() {
     });
   }
 
-  function resolveNormControlFileYandexPath(file) {
-    const rawPath = String(file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "").trim();
-    if (rawPath) return toYandexDiskPath(rawPath);
+  function normalizeFileNameForMatch(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\\/g, "/")
+      .split("/")
+      .pop();
+  }
+
+  function getNormControlFileCategory(file) {
+    const normalized = normalizeDocumentType(file?.document_type || file?.document_group || file?.source_kind || file?.kind || "");
+    if (normalized) return normalized;
+    const text = [file?.kind, file?.name, file?.file_name, file?.original_name].filter(Boolean).join(" ").toLowerCase();
+    if (text.includes("тз") || text.includes("technical task")) return "tz";
+    if (text.includes("исход")) return "source";
+    if (text.includes("договор")) return "contract";
+    if (text.includes("замеч")) return "remark";
+    if (text.includes("проект") || text.includes("pdf")) return "project_file";
+    return "";
+  }
+
+  function findSiteFileCardForNormControlFile(file, section) {
+    const sectionId = String(section?.id || file?.section_id || file?.site_section_id || "").trim();
+    if (!sectionId) return null;
+
+    const requestedName = normalizeFileNameForMatch(file?.name || file?.file_name || file?.original_name || file?.stored_filename || file?.path || file?.local_file_path);
+    const requestedType = getNormControlFileCategory(file);
+    const requestedCardId = String(file?.document_card_id || "").trim();
+
+    const candidates = siteFiles
+      .filter((item) => {
+        if (!item || item.active === false) return false;
+        const itemSectionId = String(item.section_id || item.site_section_id || "").trim();
+        if (itemSectionId !== sectionId) return false;
+        return Boolean(getArchitectFileYandexPath(item));
+      })
+      .map((item) => {
+        let score = 0;
+        const itemId = String(item.id || "").trim();
+        const itemName = normalizeFileNameForMatch(item.file_name || item.original_name || item.stored_filename || getArchitectFileYandexPath(item));
+        const itemType = getArchitectFileCategory(item);
+        if (requestedCardId && itemId && requestedCardId === itemId) score += 200;
+        if (requestedName && itemName && requestedName === itemName) score += 100;
+        if (requestedName && itemName && (requestedName.includes(itemName) || itemName.includes(requestedName))) score += 40;
+        if (requestedType && itemType && requestedType === itemType) score += 25;
+        return { item, score };
+      })
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    return candidates[0]?.item || null;
+  }
+
+  function resolveNormControlFileYandexPath(file, section = selectedNormSection) {
+    const linkedCard = findSiteFileCardForNormControlFile(file, section);
+    const linkedPath = getArchitectFileYandexPath(linkedCard);
+    if (linkedPath) return toYandexDiskPath(linkedPath);
 
     const cardId = String(file?.document_card_id || "").trim();
     if (cardId) {
-      const linkedCard = siteFiles.find((item) => String(item.id || "") === cardId);
-      const linkedPath = getArchitectFileYandexPath(linkedCard);
-      if (linkedPath) return toYandexDiskPath(linkedPath);
+      const exactCard = siteFiles.find((item) => String(item.id || "") === cardId);
+      const exactPath = getArchitectFileYandexPath(exactCard);
+      if (exactPath) return toYandexDiskPath(exactPath);
     }
+
+    const rawPath = String(file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "").trim();
+    if (rawPath) return toYandexDiskPath(rawPath);
 
     const localPath = String(file?.local_file_path || file?.path || "").trim();
     return localPath ? toYandexDiskPath(localPath) : "";
@@ -3128,7 +3185,7 @@ function App() {
 
     const sourceFiles = normalizeNormControlFiles(section.norm_control_files);
     const downloadableFiles = sourceFiles
-      .map((file) => ({ ...file, resolved_yandex_path: resolveNormControlFileYandexPath(file) }))
+      .map((file) => ({ ...file, resolved_yandex_path: resolveNormControlFileYandexPath(file, section) }))
       .filter((file) => file.resolved_yandex_path);
 
     if (!downloadableFiles.length) {
@@ -4227,7 +4284,7 @@ function App() {
                 </div>
                 <div className="fileList">
                   {selectedFiles.map((file, index) => {
-                    const diskPath = resolveNormControlFileYandexPath(file);
+                    const diskPath = resolveNormControlFileYandexPath(file, selectedNormSection);
                     return (
                       <article className="fileCard" key={file.key || file.document_card_id || `${file.name}:${index}`}>
                         <div>
