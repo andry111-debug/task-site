@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_317";
-const APP_DEPLOY_NAME = "N_317_project_site_norm_controller_show_file_paths";
+const APP_VERSION = "N_328";
+const APP_DEPLOY_NAME = "N_328_project_site_norm_controller_published_path_priority";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -382,13 +382,18 @@ function normalizeNormControlFiles(value) {
     .filter((item) => item && typeof item === "object")
     .map((item, index) => {
       const name = String(item.name || item.file_name || item.original_name || item.stored_filename || "").trim();
+      const publishedPath = String(item.published_yandex_path || item.norm_control_published_yandex_path || "").trim();
       const yandexPath = String(item.yandex_disk_path || item.yandex_path || item.storage_path || "").trim();
       const localPath = String(item.local_file_path || item.path || "").trim();
+      const displayPath = publishedPath || yandexPath;
       return {
         ...item,
-        name: name || yandexPath.split("/").pop() || localPath.split(/[\\/]/).pop() || `file_${index + 1}`,
+        name: name || displayPath.split("/").pop() || localPath.split(/[\\/]/).pop() || `file_${index + 1}`,
         kind: String(item.kind || item.document_group || item.document_type || "файл").trim(),
-        yandex_disk_path: yandexPath,
+        yandex_disk_path: displayPath,
+        yandex_path: displayPath,
+        published_yandex_path: publishedPath,
+        norm_control_published_yandex_path: publishedPath,
         local_file_path: localPath,
       };
     });
@@ -2762,9 +2767,15 @@ function App() {
   }
 
   function resolveNormControlFileYandexPath(file, section = selectedNormSection) {
-    const linkedCard = findSiteFileCardForNormControlFile(file, section);
-    const linkedPath = getArchitectFileYandexPath(linkedCard);
-    if (linkedPath) return toYandexDiskPath(linkedPath);
+    // For norm-control the package-specific published path has priority.
+    // Ordinary file cards can still keep /Папка ГИПа/... or other internal paths,
+    // but the norm-controller must open the copy prepared under
+    // /Внутренняя технологии/Нормаконтролер/... when that path exists.
+    const publishedPath = String(file?.published_yandex_path || file?.norm_control_published_yandex_path || "").trim();
+    if (publishedPath) return toYandexDiskPath(publishedPath);
+
+    const rawPath = String(file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "").trim();
+    if (rawPath) return toYandexDiskPath(rawPath);
 
     const cardId = String(file?.document_card_id || "").trim();
     if (cardId) {
@@ -2773,8 +2784,9 @@ function App() {
       if (exactPath) return toYandexDiskPath(exactPath);
     }
 
-    const rawPath = String(file?.yandex_disk_path || file?.yandex_path || file?.storage_path || "").trim();
-    if (rawPath) return toYandexDiskPath(rawPath);
+    const linkedCard = findSiteFileCardForNormControlFile(file, section);
+    const linkedPath = getArchitectFileYandexPath(linkedCard);
+    if (linkedPath) return toYandexDiskPath(linkedPath);
 
     const localPath = String(file?.local_file_path || file?.path || "").trim();
     return localPath ? toYandexDiskPath(localPath) : "";
