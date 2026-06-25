@@ -1,17 +1,15 @@
 {
-  "version": "N_273",
-  "date": "2026-06-25",
-  "base_version": "N_272_project_site_norm_controller_two_columns",
-  "type": "full_site_archive",
+  "version": "N_274",
+  "date": "2026-06-25T07:01:50",
+  "base_version": "N_273_project_site_norm_controller_results_upload",
+  "package": "N_274_project_site_norm_controller_results_path_height_fix.zip",
   "changes": [
-    "Растянут левый лист проектов в кабинете нормоконтролера до высоты правого листа разделов.",
-    "Добавлен нижний лист Результаты проверки с drag-and-drop выбором файлов.",
-    "Добавлена загрузка результатов проверки на Яндекс.Диск в папку ДСП выбранного проекта/раздела.",
-    "Добавлено сохранение карточек загруженных результатов в opr_site_section_files как document_group=norm_control_result.",
-    "Добавлен прогресс загрузки."
+    "Папка результатов нормоконтроля изменена с ДСП на нормаконтроль внутри папки выбранного раздела.",
+    "Левый лист Проекты в кабинете нормоконтролера растягивается по высоте до правого листа Разделы выбранного проекта.",
+    "SQL-миграции не требуются."
   ],
-  "sql_migrations": [],
-  "vercel_env_changes": [],
+  "sql_required": false,
+  "vercel_env_changed": false,
   "telegram_webhook_reinstall_required": false,
-  "gip_api_update_required": false
+  "gip_api_change_required": false
 }

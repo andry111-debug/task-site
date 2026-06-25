@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_273";
-const APP_DEPLOY_NAME = "N_273_project_site_norm_controller_results_upload";
+const APP_VERSION = "N_274";
+const APP_DEPLOY_NAME = "N_274_project_site_norm_controller_results_path_height_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -447,8 +447,8 @@ function makeIncomingDiskPath(section, uploadId, fileName) {
 function makeNormControlResultDiskPath(section, fileName) {
   const baseFolder = toYandexDiskPath(section?.common_storage_folder || section?.project_files_yandex_path || "");
   const uploadFolder = baseFolder
-    ? joinDiskPath(baseFolder, "ДСП")
-    : joinDiskPath(YANDEX_DISK_ROOT, "ДСП", safeDiskPart(getNormProjectTitle(section)));
+    ? joinDiskPath(baseFolder, "нормаконтроль")
+    : joinDiskPath(YANDEX_DISK_ROOT, safeDiskPart(getNormProjectTitle(section)), normalizeStage(section?.stage || "П"), safeDiskPart(section?.section_code || "section"), "нормаконтроль");
   return joinDiskPath(uploadFolder, safeUploadFileName(fileName));
 }
 
