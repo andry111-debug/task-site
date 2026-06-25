@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_315";
-const APP_DEPLOY_NAME = "N_315_project_site_norm_controller_download_fix";
+const APP_VERSION = "N_317";
+const APP_DEPLOY_NAME = "N_317_project_site_norm_controller_show_file_paths";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -4291,6 +4291,7 @@ function App() {
                           <strong>{file.name || "Файл"}</strong>
                           <small>{file.kind || file.document_type || "файл"}</small>
                           <small>{diskPath ? "Путь найден" : "Нет пути для архива"}</small>
+                          <small className="normFilePath" title={diskPath || ""}>Путь: {diskPath || "—"}</small>
                         </div>
                         {diskPath ? (
                           <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>

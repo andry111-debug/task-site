@@ -4008,3 +4008,13 @@ h3 {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+
+/* N_317: show source path in norm controller file cards. */
+.normFilePath {
+  display: block;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
