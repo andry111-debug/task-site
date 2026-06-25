@@ -1,15 +1,13 @@
 {
-  "version": "N_270",
-  "date": "2026-06-24",
-  "base_version": "N_269_project_site_account_layout_fix",
-  "title": "Norm-controller two-column workspace layout",
+  "version": "N_272",
+  "date": "2026-06-25",
+  "base_version": "N_270_project_site_norm_controller_columns",
   "changes": [
-    "Placed norm-controller project list and section list side by side on wide screens.",
-    "Added explicit grid display and column sizing for norm-controller workspace.",
-    "Removed SQL migrations from this layout-only release because there are no database changes."
+    "Кабинет нормоконтролера: список проектов и список разделов размещены в две колонки.",
+    "Удалены подписи «Лист 1» и «Лист 2».",
+    "Изменений базы данных нет."
   ],
-  "sql_migrations": [],
-  "vercel_env_changes": [],
-  "telegram_webhook_reinstall_required": false,
-  "gip_api_changes_required": false
+  "sql_required": false,
+  "vercel_env_changes": false,
+  "telegram_webhook_reinstall": false
 }

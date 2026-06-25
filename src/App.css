@@ -3848,3 +3848,38 @@ h3 {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* N_272: norm-controller panels side by side without list captions. */
+.normControllerShell .normWorkspaceGrid {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 0.42fr) minmax(620px, 1fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+
+.normControllerShell .normProjectPanel,
+.normControllerShell .normSectionPanel {
+  align-self: start !important;
+  min-width: 0 !important;
+}
+
+.normControllerShell .normProjectPanel {
+  height: fit-content !important;
+}
+
+.normControllerShell .normSectionPanel {
+  height: fit-content !important;
+}
+
+.normControllerShell .normProjectPanel .cardHeaderLine,
+.normControllerShell .normSectionPanel > .cardHeaderLine {
+  align-items: center !important;
+}
+
+@media (max-width: 1180px) {
+  .normControllerShell .normWorkspaceGrid {
+    grid-template-columns: 1fr !important;
+  }
+}

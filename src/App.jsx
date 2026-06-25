@@ -48,7 +48,7 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_270";
+const APP_VERSION = "N_272";
 const APP_DEPLOY_NAME = "N_270_project_site_norm_controller_columns";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -3909,7 +3909,6 @@ function App() {
           <aside className="architectPanel normProjectPanel">
             <div className="cardHeaderLine">
               <div>
-                <p className="eyebrow">Лист 1</p>
                 <h3>Проекты</h3>
               </div>
               <strong>{normProjects.length}</strong>
@@ -3939,7 +3938,6 @@ function App() {
           <section className="architectPanel mainArchitectPanel normSectionPanel">
             <div className="cardHeaderLine sectionListHeader">
               <div>
-                <p className="eyebrow">Лист 2</p>
                 <h3>Разделы выбранного проекта</h3>
               </div>
               <button
