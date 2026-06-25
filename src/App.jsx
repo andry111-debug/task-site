@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_272";
-const APP_DEPLOY_NAME = "N_270_project_site_norm_controller_columns";
+const APP_VERSION = "N_273";
+const APP_DEPLOY_NAME = "N_273_project_site_norm_controller_results_upload";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -442,6 +442,23 @@ function makeIncomingDiskPath(section, uploadId, fileName) {
   const year = String(now.getFullYear());
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return joinDiskPath(YANDEX_GIP_ROOT, YANDEX_INCOMING_FOLDER, year, month, uploadId, fileName);
+}
+
+function makeNormControlResultDiskPath(section, fileName) {
+  const baseFolder = toYandexDiskPath(section?.common_storage_folder || section?.project_files_yandex_path || "");
+  const uploadFolder = baseFolder
+    ? joinDiskPath(baseFolder, "ДСП")
+    : joinDiskPath(YANDEX_DISK_ROOT, "ДСП", safeDiskPart(getNormProjectTitle(section)));
+  return joinDiskPath(uploadFolder, safeUploadFileName(fileName));
+}
+
+function isNormControlResultFileCard(file, section) {
+  if (!file || !section) return false;
+  const fileSectionId = String(file.site_section_id || file.section_id || "");
+  const sectionId = String(section.id || section.section_id || "");
+  if (!fileSectionId || !sectionId || fileSectionId !== sectionId) return false;
+  const group = normalizeDocumentType(file.document_group || file.document_type || "");
+  return ["norm_control_result", "norm_control_return", "norm_control_checked"].includes(group);
 }
 
 const ACCESS_ELEMENTS = [
@@ -2501,6 +2518,10 @@ function App() {
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
   const [selectedNormProjectKey, setSelectedNormProjectKey] = useState("");
   const [selectedNormSectionId, setSelectedNormSectionId] = useState("");
+  const [normResultFiles, setNormResultFiles] = useState([]);
+  const [normResultUploading, setNormResultUploading] = useState(false);
+  const [normResultUploadProgress, setNormResultUploadProgress] = useState({ percent: 0, message: "" });
+  const [normResultDragActive, setNormResultDragActive] = useState(false);
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
@@ -2599,6 +2620,13 @@ function App() {
   const selectedNormSection = useMemo(() => {
     return selectedNormProjectSections.find((section) => section.id === selectedNormSectionId) || selectedNormProjectSections[0] || null;
   }, [selectedNormProjectSections, selectedNormSectionId]);
+
+  const selectedNormResultCards = useMemo(() => {
+    if (!selectedNormSection) return [];
+    return siteFiles
+      .filter((file) => isNormControlResultFileCard(file, selectedNormSection))
+      .sort((a, b) => String(b.registered_at || b.created_at || "").localeCompare(String(a.registered_at || a.created_at || "")));
+  }, [siteFiles, selectedNormSection]);
 
   const filteredSiteBuildings = useMemo(() => {
     const query = siteBuildingSearch.trim().toLowerCase();
@@ -2799,6 +2827,12 @@ function App() {
       setSelectedNormSectionId("");
     }
   }, [selectedNormProjectSections, selectedNormSectionId]);
+
+  useEffect(() => {
+    setNormResultFiles([]);
+    setNormResultUploadProgress({ percent: 0, message: "" });
+    setNormResultDragActive(false);
+  }, [selectedNormSectionId]);
 
   useEffect(() => {
     if (selectedSiteBuildingSections.length > 0) {
@@ -3128,6 +3162,141 @@ function App() {
       setSiteDirectoryError(`Ошибка формирования архива нормаконтроля: ${error.message}`);
     } finally {
       setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
+    }
+  }
+
+  async function uploadYandexFileBase64(file, diskPath, overwrite = false) {
+    const buffer = await file.arrayBuffer();
+    const fileBase64 = arrayBufferToBase64(buffer);
+    return invokeYandexReadonly({
+      action: "upload",
+      path: diskPath,
+      file_base64: fileBase64,
+      content_type: file.type || "application/octet-stream",
+      overwrite,
+    });
+  }
+
+  function handleNormResultFilesPicked(files) {
+    const picked = Array.from(files || []);
+    if (!picked.length) return;
+    const existingKeys = new Set(normResultFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+    const nextFiles = [...normResultFiles];
+    picked.forEach((file) => {
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      if (!existingKeys.has(key)) {
+        existingKeys.add(key);
+        nextFiles.push(file);
+      }
+    });
+    setNormResultFiles(nextFiles);
+    setNormResultUploadProgress({ percent: 0, message: `Выбрано файлов: ${nextFiles.length}` });
+  }
+
+  async function uploadNormControlResultFiles() {
+    const section = selectedNormSection;
+    const filesToUpload = Array.isArray(normResultFiles) ? normResultFiles : [];
+
+    setSiteDirectoryError("");
+    setNotice("");
+    if (!section) {
+      setSiteDirectoryError("Выберите раздел для загрузки результатов проверки.");
+      return;
+    }
+    if (!filesToUpload.length) {
+      setSiteDirectoryError("Добавьте один или несколько файлов результатов проверки.");
+      return;
+    }
+    if (!isSupabaseReady || !supabase) {
+      setSiteDirectoryError("GIP API не подключён. Загрузка результатов проверки невозможна.");
+      return;
+    }
+
+    for (const file of filesToUpload) {
+      if (file.size <= 0) {
+        setSiteDirectoryError(`Пустой файл нельзя загрузить: ${file.name}.`);
+        return;
+      }
+      if (file.size > MAX_INCOMING_UPLOAD_BYTES) {
+        setSiteDirectoryError(`Файл слишком большой: ${file.name}. Ограничение: ${formatFileSize(MAX_INCOMING_UPLOAD_BYTES)}.`);
+        return;
+      }
+      if (isBlockedUploadFile(file.name)) {
+        setSiteDirectoryError(`Этот тип файла запрещен для загрузки: ${file.name}.`);
+        return;
+      }
+    }
+
+    setNormResultUploading(true);
+    setNormResultUploadProgress({ percent: 1, message: "Подготовка загрузки." });
+
+    try {
+      const usedDiskNames = new Set();
+      for (let index = 0; index < filesToUpload.length; index += 1) {
+        const file = filesToUpload[index];
+        const baseProgress = Math.round((index / filesToUpload.length) * 100);
+        const safeName = makeUniqueZipName(usedDiskNames, file.name);
+        const diskPath = makeNormControlResultDiskPath(section, safeName);
+        const registeredAt = new Date().toISOString();
+        const cardId = `norm_result_${Date.now()}_${index}_${Math.random().toString(16).slice(2)}`;
+
+        setNormResultUploadProgress({ percent: Math.max(1, baseProgress), message: `Подготовка файла ${index + 1} из ${filesToUpload.length}: ${file.name}` });
+        await uploadYandexFileBase64(file, diskPath, false);
+
+        setNormResultUploadProgress({
+          percent: Math.min(99, Math.round(((index + 0.8) / filesToUpload.length) * 100)),
+          message: `Сохраняю карточку файла ${index + 1} из ${filesToUpload.length}.`,
+        });
+
+        const payload = {
+          id: cardId,
+          project_key: section.project_key || "opr_donetsk",
+          section_id: section.id,
+          site_section_id: section.id,
+          building_gp_no: section.building_gp_no || "",
+          building_name: section.building_name || "",
+          stage: normalizeStage(section.stage || ""),
+          section_code: section.section_code || "",
+          section_title: section.section_title || "",
+          document_type: "remark",
+          document_group: "norm_control_result",
+          file_name: file.name,
+          original_name: file.name,
+          file_url: "",
+          yandex_path: diskPath,
+          yandex_disk_path: diskPath,
+          storage_path: diskPath,
+          local_file_path: "",
+          size_bytes: file.size,
+          mime_type: file.type || "application/octet-stream",
+          modified_at: registeredAt,
+          registered_at: registeredAt,
+          registered_by: currentUser?.name || currentUser?.login || "",
+          uploaded_by: currentUser?.name || currentUser?.login || "",
+          comment: "[file_category:norm_control_result] Результат проверки нормоконтроля.",
+          status: "uploaded",
+          active: true,
+          source_hash: "",
+          source_exists: true,
+          source_updated_at: registeredAt,
+        };
+
+        const { error } = await supabase.from(siteFilesTable).insert(payload);
+        if (error) throw new Error(error.message || "Не удалось сохранить карточку результата проверки.");
+
+        setNormResultUploadProgress({
+          percent: Math.round(((index + 1) / filesToUpload.length) * 100),
+          message: `Загружено файлов: ${index + 1} из ${filesToUpload.length}.`,
+        });
+      }
+
+      setNormResultFiles([]);
+      setNotice(`Результаты проверки загружены. Файлов: ${filesToUpload.length}.`);
+      await loadSiteDirectory();
+    } catch (error) {
+      setSiteDirectoryError(`Ошибка загрузки результатов проверки: ${error.message}`);
+    } finally {
+      setNormResultUploading(false);
     }
   }
 
@@ -3884,6 +4053,7 @@ function App() {
   function renderNormControllerWorkspace() {
     const selectedFiles = normalizeNormControlFiles(selectedNormSection?.norm_control_files);
     const downloadKey = `norm:${selectedNormSection?.id || "section"}`;
+    const resultTargetPath = selectedNormSection ? makeNormControlResultDiskPath(selectedNormSection, "<файл>") : "";
 
     return (
       <main className="architectShell normControllerShell">
@@ -4023,32 +4193,98 @@ function App() {
               </section>
             )}
           </section>
-        </section>
-      </main>
-    );
-  }
 
-  function renderArchitectInterfaceChoice() {
-    return (
-      <main className="loginOnlyPage">
-        <section className="loginCard interfaceChoiceCard">
-          <p className="eyebrow">Выбор интерфейса</p>
-          <div className="appVersionBadge">Версия сайта: {APP_VERSION}</div>
-          <h1>Какой интерфейс использовать?</h1>
-          <p className="choiceText">
-            Для учетной записи архитектора доступен общий интерфейс сайта и специализированный интерфейс для работы со зданиями, разделами и файлами.
-          </p>
-          <div className="choiceGrid">
-            <button className="choiceButton" onClick={() => chooseArchitectInterface("general")}>
-              <strong>Общий интерфейс</strong>
-              <span>Графики, здания и остальные разделы сайта.</span>
-            </button>
-            <button className="choiceButton primaryChoice" onClick={() => chooseArchitectInterface("specialized")}>
-              <strong>Специализированный интерфейс</strong>
-              <span>Выбор здания, список разделов и чтение файлов с Яндекс.Диска.</span>
-            </button>
-          </div>
-          <button className="ghostButton choiceLogoutButton" onClick={logout}>Выйти</button>
+          <section className="architectPanel normResultPanel">
+            <div className="cardHeaderLine sectionListHeader">
+              <div>
+                <h3>Результаты проверки</h3>
+                {selectedNormSection ? (
+                  <p>Папка: <strong>{resultTargetPath}</strong></p>
+                ) : (
+                  <p>Выберите раздел, чтобы загрузить результаты проверки.</p>
+                )}
+              </div>
+              <button
+                type="button"
+                className="primaryButton"
+                onClick={uploadNormControlResultFiles}
+                disabled={!selectedNormSection || normResultUploading || !normResultFiles.length}
+              >
+                {normResultUploading ? "Обработка..." : "Загрузить"}
+              </button>
+            </div>
+
+            <div
+              className={normResultDragActive ? "normResultDropZone active" : "normResultDropZone"}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (!normResultUploading) setNormResultDragActive(true);
+              }}
+              onDragLeave={() => setNormResultDragActive(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setNormResultDragActive(false);
+                if (!normResultUploading) handleNormResultFilesPicked(event.dataTransfer.files);
+              }}
+            >
+              <strong>Перетащите сюда файлы результатов проверки</strong>
+              <span>или выберите их через поле ниже</span>
+              <input
+                type="file"
+                multiple
+                disabled={normResultUploading || !selectedNormSection}
+                onChange={(event) => handleNormResultFilesPicked(event.target.files)}
+              />
+            </div>
+
+            {normResultFiles.length > 0 && (
+              <div className="selectedUploadFileInfo normResultSelectedFiles">
+                Выбрано файлов: <strong>{normResultFiles.length}</strong>
+                <button type="button" className="smallButton" onClick={() => setNormResultFiles([])} disabled={normResultUploading}>Очистить</button>
+                <ul>
+                  {normResultFiles.map((file) => (
+                    <li key={`${file.name}:${file.size}:${file.lastModified}`}>{file.name} / {formatFileSize(file.size)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {(normResultUploading || normResultUploadProgress.message) && (
+              <div className="normResultProgressBox">
+                <progress value={normResultUploadProgress.percent || 0} max="100" />
+                <div>{normResultUploadProgress.percent || 0}% — {normResultUploadProgress.message}</div>
+              </div>
+            )}
+
+            <div className="normUploadedResults">
+              <div className="cardHeaderLine compactHeaderLine">
+                <p className="eyebrow">Загруженные результаты</p>
+                <span>{selectedNormResultCards.length}</span>
+              </div>
+              <div className="fileList">
+                {selectedNormResultCards.map((file) => {
+                  const diskPath = getArchitectFileYandexPath(file) || file.storage_path || "";
+                  return (
+                    <article className="fileCard" key={file.id || `${file.file_name}:${file.registered_at}`}>
+                      <div>
+                        <strong>{file.file_name || file.original_name || "Файл"}</strong>
+                        {file.size_bytes ? <small>Размер: {formatFileSize(file.size_bytes)}</small> : null}
+                        {file.registered_at ? <small>Дата: {file.registered_at}</small> : null}
+                      </div>
+                      {diskPath ? (
+                        <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
+                          Открыть
+                        </button>
+                      ) : (
+                        <span className="fileNoLink">Нет ссылки</span>
+                      )}
+                    </article>
+                  );
+                })}
+                {!selectedNormResultCards.length && <div className="emptyFileBox">Результаты проверки по выбранному разделу еще не загружены.</div>}
+              </div>
+            </div>
+          </section>
         </section>
       </main>
     );

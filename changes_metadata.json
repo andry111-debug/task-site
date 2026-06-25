@@ -1,13 +1,17 @@
 {
-  "version": "N_272",
+  "version": "N_273",
   "date": "2026-06-25",
-  "base_version": "N_270_project_site_norm_controller_columns",
+  "base_version": "N_272_project_site_norm_controller_two_columns",
+  "type": "full_site_archive",
   "changes": [
-    "Кабинет нормоконтролера: список проектов и список разделов размещены в две колонки.",
-    "Удалены подписи «Лист 1» и «Лист 2».",
-    "Изменений базы данных нет."
+    "Растянут левый лист проектов в кабинете нормоконтролера до высоты правого листа разделов.",
+    "Добавлен нижний лист Результаты проверки с drag-and-drop выбором файлов.",
+    "Добавлена загрузка результатов проверки на Яндекс.Диск в папку ДСП выбранного проекта/раздела.",
+    "Добавлено сохранение карточек загруженных результатов в opr_site_section_files как document_group=norm_control_result.",
+    "Добавлен прогресс загрузки."
   ],
-  "sql_required": false,
-  "vercel_env_changes": false,
-  "telegram_webhook_reinstall": false
+  "sql_migrations": [],
+  "vercel_env_changes": [],
+  "telegram_webhook_reinstall_required": false,
+  "gip_api_update_required": false
 }
