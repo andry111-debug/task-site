@@ -4018,3 +4018,40 @@ h3 {
   overflow-wrap: anywhere;
   line-height: 1.35;
 }
+
+.normFileActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 130px;
+}
+
+.smallDiagnosticButton {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.normDiagnosticsBox {
+  margin-top: 16px;
+  border: 1px solid #cfe0f6;
+  border-radius: 18px;
+  background: #f8fbff;
+  padding: 14px;
+}
+
+.normDiagnosticsBox textarea {
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: 1px solid #bfd3ed;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: pre;
+  overflow: auto;
+}

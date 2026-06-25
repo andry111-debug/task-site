@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_328";
-const APP_DEPLOY_NAME = "N_328_project_site_norm_controller_published_path_priority";
+const APP_VERSION = "N_331";
+const APP_DEPLOY_NAME = "N_331_project_site_diagnostics_gitignore_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2528,6 +2528,7 @@ function App() {
   const [normResultUploading, setNormResultUploading] = useState(false);
   const [normResultUploadProgress, setNormResultUploadProgress] = useState({ percent: 0, message: "" });
   const [normResultDragActive, setNormResultDragActive] = useState(false);
+  const [normDiagnostics, setNormDiagnostics] = useState({ loading: false, log: "" });
   const siteSectionsTable = import.meta.env.VITE_SITE_SECTIONS_TABLE || "opr_site_sections";
   const siteFilesTable = import.meta.env.VITE_SITE_FILES_TABLE || "opr_site_section_files";
   const siteIncomingTable = import.meta.env.VITE_SITE_INCOMING_TABLE || "opr_site_incoming_files";
@@ -3124,6 +3125,162 @@ function App() {
         },
       }));
     }
+  }
+
+  function getYandexParentPath(path) {
+    const normalized = toYandexDiskPath(path || "");
+    if (!normalized || normalized === "/") return "/";
+    const parts = normalized.split("/").filter(Boolean);
+    parts.pop();
+    return `/${parts.join("/")}`;
+  }
+
+  function getYandexFileNameFromPath(path) {
+    const normalized = toYandexDiskPath(path || "");
+    return normalized.split("/").filter(Boolean).pop() || "";
+  }
+
+  function getNormDiagnosticPathVariants(path) {
+    const normalized = toYandexDiskPath(path || "");
+    const variants = [];
+    const add = (value, note) => {
+      const normalizedValue = toYandexDiskPath(value || "");
+      if (normalizedValue && !variants.some((item) => item.path === normalizedValue)) {
+        variants.push({ path: normalizedValue, note });
+      }
+    };
+    add(normalized, "как указано в карточке");
+    if (normalized.includes("/Внутренняя технологии/")) {
+      add(normalized.replace("/Внутренняя технологии/", "/Внутренняя Технологии/"), "вариант с заглавной буквой Т");
+    }
+    if (normalized.includes("/Внутренняя Технологии/")) {
+      add(normalized.replace("/Внутренняя Технологии/", "/Внутренняя технологии/"), "вариант со строчной буквой т");
+    }
+    return variants;
+  }
+
+  function summarizeYandexItems(items, expectedName) {
+    const expected = String(expectedName || "").trim().toLowerCase();
+    return (items || []).slice(0, 80).map((item) => {
+      const name = String(item?.name || item?.file_name || "");
+      return {
+        name,
+        type: item?.type || "",
+        path: item?.path || item?.resource_id || "",
+        size: item?.size || item?.size_bytes || null,
+        name_matches_requested_file: Boolean(expected && name.trim().toLowerCase() === expected),
+      };
+    });
+  }
+
+  function buildNormFileDiagnosticsIntro(file, section, diskPath, linkedCard) {
+    return {
+      app_version: APP_VERSION,
+      checked_at: new Date().toISOString(),
+      section: {
+        id: section?.id || "",
+        stage: normalizeStage(section?.stage),
+        section_code: section?.section_code || "",
+        section_title: section?.section_title || "",
+        cipher: section?.cipher || "",
+      },
+      file_from_norm_control_files: {
+        name: file?.name || "",
+        file_name: file?.file_name || "",
+        kind: file?.kind || "",
+        document_type: file?.document_type || "",
+        document_group: file?.document_group || "",
+        source_path: file?.source_path || file?.local_file_path || file?.path || "",
+        published_yandex_path: file?.published_yandex_path || "",
+        norm_control_published_yandex_path: file?.norm_control_published_yandex_path || "",
+        yandex_disk_path: file?.yandex_disk_path || "",
+        yandex_path: file?.yandex_path || "",
+        storage_path: file?.storage_path || "",
+        document_card_id: file?.document_card_id || "",
+      },
+      resolved_path_used_by_site: diskPath || "",
+      resolved_parent_path: getYandexParentPath(diskPath),
+      resolved_file_name: getYandexFileNameFromPath(diskPath),
+      matched_site_file_card: linkedCard ? {
+        id: linkedCard.id || "",
+        file_name: linkedCard.file_name || "",
+        original_name: linkedCard.original_name || "",
+        document_type: linkedCard.document_type || "",
+        document_group: linkedCard.document_group || "",
+        storage_path: linkedCard.storage_path || "",
+        yandex_disk_path: linkedCard.yandex_disk_path || "",
+        yandex_path: linkedCard.yandex_path || "",
+        active: linkedCard.active,
+        status: linkedCard.status || "",
+      } : null,
+    };
+  }
+
+  async function diagnoseNormControlFile(file, section = selectedNormSection) {
+    const diskPath = resolveNormControlFileYandexPath(file, section);
+    const linkedCard = findSiteFileCardForNormControlFile(file, section);
+    const log = {
+      summary: "Диагностика скачивания файла нормоконтроля. Временные ссылки скачивания в лог не выводятся.",
+      input: buildNormFileDiagnosticsIntro(file, section, diskPath, linkedCard),
+      tests: [],
+    };
+
+    setNormDiagnostics({ loading: true, log: "Выполняется диагностика..." });
+    setSiteDirectoryError("");
+
+    if (!diskPath) {
+      log.tests.push({ step: "resolve_path", ok: false, error: "Сайт не смог вычислить путь для файла." });
+      setNormDiagnostics({ loading: false, log: JSON.stringify(log, null, 2) });
+      return;
+    }
+
+    const variants = getNormDiagnosticPathVariants(diskPath);
+    for (const variant of variants) {
+      const parentPath = getYandexParentPath(variant.path);
+      const fileName = getYandexFileNameFromPath(variant.path);
+      const entry = {
+        step: "check_variant",
+        note: variant.note,
+        path: variant.path,
+        parent_path: parentPath,
+        file_name: fileName,
+        list_parent: null,
+        download_link_check: null,
+      };
+
+      try {
+        const listData = await invokeYandexReadonly({ action: "list", path: parentPath });
+        const items = Array.isArray(listData?.items) ? listData.items : [];
+        entry.list_parent = {
+          ok: true,
+          returned_path: listData?.path || parentPath,
+          items_count: items.length,
+          items: summarizeYandexItems(items, fileName),
+        };
+      } catch (error) {
+        entry.list_parent = { ok: false, error: error?.message || String(error) };
+      }
+
+      try {
+        const downloadData = await invokeYandexReadonly({ action: "download", path: variant.path });
+        entry.download_link_check = {
+          ok: Boolean(downloadData?.href),
+          href_received: Boolean(downloadData?.href),
+          response_keys: downloadData ? Object.keys(downloadData).filter((key) => key !== "href") : [],
+        };
+      } catch (error) {
+        entry.download_link_check = { ok: false, error: error?.message || String(error) };
+      }
+
+      log.tests.push(entry);
+    }
+
+    const successful = log.tests.find((item) => item.download_link_check?.ok);
+    log.conclusion = successful
+      ? `Рабочий путь найден: ${successful.path}`
+      : "Рабочий путь не найден. Сравните path, parent_path и список items: обычно причина в точном имени папки/файла, регистре букв или символах в пути.";
+
+    setNormDiagnostics({ loading: false, log: JSON.stringify(log, null, 2) });
   }
 
   async function openYandexDiskFile(path) {
@@ -4305,18 +4462,43 @@ function App() {
                           <small>{diskPath ? "Путь найден" : "Нет пути для архива"}</small>
                           <small className="normFilePath" title={diskPath || ""}>Путь: {diskPath || "—"}</small>
                         </div>
-                        {diskPath ? (
-                          <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
-                            Открыть
+                        <div className="normFileActions">
+                          {diskPath ? (
+                            <button className="smallButton" type="button" onClick={() => openYandexDiskFile(diskPath)}>
+                              Открыть
+                            </button>
+                          ) : (
+                            <span className="fileNoLink">Нет ссылки</span>
+                          )}
+                          <button
+                            className="secondaryButton smallDiagnosticButton"
+                            type="button"
+                            onClick={() => diagnoseNormControlFile(file, selectedNormSection)}
+                            disabled={normDiagnostics.loading}
+                          >
+                            Диагностика
                           </button>
-                        ) : (
-                          <span className="fileNoLink">Нет ссылки</span>
-                        )}
+                        </div>
                       </article>
                     );
                   })}
                   {!selectedFiles.length && <div className="emptyFileBox">В разделе нет сохраненного списка файлов для нормаконтроля.</div>}
                 </div>
+                {normDiagnostics.log && (
+                  <div className="normDiagnosticsBox">
+                    <div className="cardHeaderLine compactHeaderLine">
+                      <p className="eyebrow">Лог диагностики скачивания</p>
+                      <button
+                        type="button"
+                        className="smallButton"
+                        onClick={() => navigator.clipboard?.writeText(normDiagnostics.log)}
+                      >
+                        Скопировать лог
+                      </button>
+                    </div>
+                    <textarea readOnly value={normDiagnostics.log} />
+                  </div>
+                )}
               </section>
             )}
           </section>

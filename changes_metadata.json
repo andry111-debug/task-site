@@ -1,11 +1,14 @@
 {
-  "version": "N_328",
-  "name": "project_site_norm_controller_published_path_priority",
-  "base_version": "N_317_project_site_norm_controller_show_file_paths",
-  "date": "2026-06-25",
+  "version": "N_331",
+  "name": "project_site_diagnostics_gitignore_fix",
+  "date": "2026-06-26",
+  "base_version": "N_330_project_site_norm_controller_yandex_diagnostics",
   "changes": [
-    "В кабинете нормоконтролера путь файла теперь берется с приоритетом из published_yandex_path / norm_control_published_yandex_path.",
-    "Обычная карточка файла раздела используется только как резервный источник пути.",
-    "Нормоконтролер видит путь из /Внутренняя технологии/Нормаконтролер/... если он подготовлен программой ГИПа."
-  ]
+    "Убрана папка dist из deploy-архива, чтобы автодеплой не пытался выполнить git add для игнорируемых сборочных файлов.",
+    "Сохранена диагностика скачивания файлов нормоконтролера.",
+    "SQL-миграции не требуются."
+  ],
+  "sql_required": false,
+  "vercel_env_changed": false,
+  "telegram_webhook_reinstall_required": false
 }
