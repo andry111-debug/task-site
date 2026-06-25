@@ -1,15 +1,16 @@
 {
-  "version": "N_274",
-  "date": "2026-06-25T07:01:50",
-  "base_version": "N_273_project_site_norm_controller_results_upload",
-  "package": "N_274_project_site_norm_controller_results_path_height_fix.zip",
+  "version": "N_275",
+  "name": "N_275_project_site_norm_controller_chunked_results_upload",
+  "date": "2026-06-25",
+  "base_version": "N_274_project_site_norm_controller_results_path_height_fix",
   "changes": [
-    "Папка результатов нормоконтроля изменена с ДСП на нормаконтроль внутри папки выбранного раздела.",
-    "Левый лист Проекты в кабинете нормоконтролера растягивается по высоте до правого листа Разделы выбранного проекта.",
+    "Загрузка результатов нормоконтроля переведена на chunked upload через GIP API.",
+    "Устранена ошибка Request Entity Too Large / FUNCTION_PAYLOAD_TOO_LARGE при отправке крупных файлов через Vercel.",
+    "Карточки результатов нормоконтроля продолжают создаваться в opr_site_section_files с document_group=norm_control_result.",
     "SQL-миграции не требуются."
   ],
   "sql_required": false,
-  "vercel_env_changed": false,
+  "vercel_env_changes": false,
   "telegram_webhook_reinstall_required": false,
-  "gip_api_change_required": false
+  "gip_api_required": "N_169 or compatible chunked upload API"
 }

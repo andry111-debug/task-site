@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_274";
-const APP_DEPLOY_NAME = "N_274_project_site_norm_controller_results_path_height_fix";
+const APP_VERSION = "N_275";
+const APP_DEPLOY_NAME = "N_275_project_site_norm_controller_chunked_results_upload";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2932,13 +2932,18 @@ function App() {
   async function uploadIncomingFileInChunks(file, options) {
     const chunkSize = Math.max(256 * 1024, Number(INCOMING_UPLOAD_CHUNK_BYTES || 2 * 1024 * 1024));
     const totalChunks = Math.ceil(file.size / chunkSize);
+    const noticePrefix = options.noticePrefix || "Загружаю файл";
 
     for (let index = 0; index < totalChunks; index += 1) {
       const start = index * chunkSize;
       const end = Math.min(file.size, start + chunkSize);
       const chunkBuffer = await file.slice(start, end).arrayBuffer();
       const chunkBase64 = arrayBufferToBase64(chunkBuffer);
-      setIncomingUploadNotice(`Загружаю файл: часть ${index + 1} из ${totalChunks}.`);
+      if (typeof options.onChunkProgress === "function") {
+        options.onChunkProgress({ chunkIndex: index, totalChunks, bytesSent: end, totalBytes: file.size });
+      } else {
+        setIncomingUploadNotice(`${noticePrefix}: часть ${index + 1} из ${totalChunks}.`);
+      }
       await invokeGipJson("/incoming/upload-chunk", {
         upload_id: options.uploadId,
         chunk_index: index,
@@ -2947,7 +2952,11 @@ function App() {
       });
     }
 
-    setIncomingUploadNotice("Завершаю загрузку файла и создаю заявку для ГИПа.");
+    if (typeof options.onFinishStart === "function") {
+      options.onFinishStart({ totalChunks, totalBytes: file.size });
+    } else {
+      setIncomingUploadNotice(options.finishNotice || "Завершаю загрузку файла и создаю заявку для ГИПа.");
+    }
     return invokeGipJson("/incoming/finish-upload", {
       upload_id: options.uploadId,
       total_chunks: totalChunks,
@@ -2957,7 +2966,7 @@ function App() {
       sha256: options.sha256 || "",
       incoming_table: options.incomingTable,
       incoming_payload: options.payload,
-      overwrite: false,
+      overwrite: Boolean(options.overwrite),
     });
   }
 
@@ -3207,10 +3216,6 @@ function App() {
       setSiteDirectoryError("Добавьте один или несколько файлов результатов проверки.");
       return;
     }
-    if (!isSupabaseReady || !supabase) {
-      setSiteDirectoryError("GIP API не подключён. Загрузка результатов проверки невозможна.");
-      return;
-    }
 
     for (const file of filesToUpload) {
       if (file.size <= 0) {
@@ -3239,14 +3244,7 @@ function App() {
         const diskPath = makeNormControlResultDiskPath(section, safeName);
         const registeredAt = new Date().toISOString();
         const cardId = `norm_result_${Date.now()}_${index}_${Math.random().toString(16).slice(2)}`;
-
-        setNormResultUploadProgress({ percent: Math.max(1, baseProgress), message: `Подготовка файла ${index + 1} из ${filesToUpload.length}: ${file.name}` });
-        await uploadYandexFileBase64(file, diskPath, false);
-
-        setNormResultUploadProgress({
-          percent: Math.min(99, Math.round(((index + 0.8) / filesToUpload.length) * 100)),
-          message: `Сохраняю карточку файла ${index + 1} из ${filesToUpload.length}.`,
-        });
+        const uploadId = randomUploadId();
 
         const payload = {
           id: cardId,
@@ -3281,8 +3279,33 @@ function App() {
           source_updated_at: registeredAt,
         };
 
-        const { error } = await supabase.from(siteFilesTable).insert(payload);
-        if (error) throw new Error(error.message || "Не удалось сохранить карточку результата проверки.");
+        setNormResultUploadProgress({ percent: Math.max(1, baseProgress), message: `Подготовка файла ${index + 1} из ${filesToUpload.length}: ${file.name}` });
+        const sha256 = await fileSha256(file);
+
+        await uploadIncomingFileInChunks(file, {
+          uploadId,
+          diskPath,
+          contentType: file.type || "application/octet-stream",
+          sha256,
+          incomingTable: siteFilesTable,
+          payload,
+          overwrite: false,
+          noticePrefix: "Обработка результата нормоконтроля",
+          onChunkProgress: ({ chunkIndex, totalChunks }) => {
+            const chunkShare = totalChunks > 0 ? (chunkIndex / totalChunks) : 0;
+            const percent = Math.min(98, Math.round(((index + chunkShare) / filesToUpload.length) * 100));
+            setNormResultUploadProgress({
+              percent: Math.max(1, percent),
+              message: `Обработка файла ${index + 1} из ${filesToUpload.length}: часть ${chunkIndex + 1} из ${totalChunks}.`,
+            });
+          },
+          onFinishStart: () => {
+            setNormResultUploadProgress({
+              percent: Math.min(99, Math.round(((index + 0.95) / filesToUpload.length) * 100)),
+              message: `Завершаю обработку файла ${index + 1} из ${filesToUpload.length}.`,
+            });
+          },
+        });
 
         setNormResultUploadProgress({
           percent: Math.round(((index + 1) / filesToUpload.length) * 100),
