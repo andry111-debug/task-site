@@ -1,14 +1,10 @@
 {
-  "version": "N_284",
-  "date": "2026-06-25T11:25:00",
-  "base_version": "N_278_project_site_norm_result_uuid_fix",
+  "version": "N_285",
+  "date": "2026-06-25",
+  "base_version": "N_284_project_site_norm_result_delete",
   "changes": [
-    "Добавлена кнопка удаления записи результата нормоконтроля в кабинете нормоконтролера.",
-    "Удаление выполняется мягко: active=false, status=deleted в opr_site_section_files.",
-    "Файл на диске не удаляется; из списка скрывается только запись результата нормоконтроля."
-  ],
-  "sql_migrations": [],
-  "env_changes": [],
-  "gip_api_changes": false,
-  "telegram_webhook_reinstall_required": false
+    "Исправлено пустое окно при входе в кабинет ГАПа: восстановлено окно выбора интерфейса.",
+    "Исправлена случайная ошибка в запросе входа employees.",
+    "Логика удаления результатов нормоконтроля из N_284 сохранена."
+  ]
 }

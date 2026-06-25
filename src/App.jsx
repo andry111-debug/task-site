@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_276";
-const APP_DEPLOY_NAME = "N_275_project_site_norm_controller_chunked_results_upload";
+const APP_VERSION = "N_285";
+const APP_DEPLOY_NAME = "N_285_project_site_gap_blank_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -4347,6 +4347,36 @@ function App() {
               </div>
             </div>
           </section>
+        </section>
+      </main>
+    );
+  }
+
+  function renderArchitectInterfaceChoice() {
+    return (
+      <main className="loginOnlyPage">
+        <section className="loginCard interfaceChoiceCard">
+          <h1>Выбор интерфейса</h1>
+          <div className="appVersionBadge">Версия сайта: {APP_VERSION}</div>
+          <p className="choiceText">
+            Выберите режим работы для учетной записи ГАПа.
+          </p>
+
+          <div className="choiceGrid">
+            <button className="choiceButton primaryChoice" type="button" onClick={() => chooseArchitectInterface("specialized")}>
+              <strong>Кабинет ГАПа</strong>
+              <span>Работа со зданиями, разделами, файлами проекта и входящими материалами.</span>
+            </button>
+
+            <button className="choiceButton" type="button" onClick={() => chooseArchitectInterface("general")}>
+              <strong>Общий интерфейс</strong>
+              <span>Графики, здания и доступные разделы общего личного кабинета.</span>
+            </button>
+          </div>
+
+          <button className="ghostButton choiceLogoutButton" type="button" onClick={logout}>
+            Выйти
+          </button>
         </section>
       </main>
     );
