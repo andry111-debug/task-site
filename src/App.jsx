@@ -49,7 +49,7 @@ const PROJECT_FILE_TYPES = new Set([
 
 
 const APP_VERSION = "N_339";
-const APP_DEPLOY_NAME = "N_339_project_site_archive_progress_render_fix";
+const APP_DEPLOY_NAME = "N_340_project_site_archive_local_download_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
