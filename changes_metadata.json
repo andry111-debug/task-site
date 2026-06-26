@@ -1,15 +1,16 @@
 {
-  "version": "N_332",
-  "name": "project_site_yandex_open_case_resolver",
+  "version": "N_336",
   "date": "2026-06-26",
-  "base_version": "N_331_project_site_diagnostics_gitignore_fix",
+  "base_version": "N_335",
+  "site_base": "N_332",
+  "gip_api_base": "N_333",
   "changes": [
-    "Кнопка Открыть в кабинете нормоконтролера теперь принимает corrected/resolved path от GIP API.",
-    "Если GIP API исправил регистр папок Яндекс.Диска, сайт показывает уведомление с уточненным путем.",
-    "Диагностика скачивания сохранена."
+    "Kept archive diagnostics from N_335.",
+    "Site-only package: no GIP API update included.",
+    "No SQL migrations are required."
   ],
   "sql_required": false,
-  "vercel_env_changed": false,
-  "telegram_webhook_reinstall_required": false,
-  "gip_api_min_version": "N_333 для нечувствительного к регистру поиска пути"
+  "vercel_env_changes": false,
+  "telegram_webhook_required": false,
+  "component": "project_site"
 }

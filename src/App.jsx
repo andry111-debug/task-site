@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_332";
-const APP_DEPLOY_NAME = "N_331_project_site_diagnostics_gitignore_fix";
+const APP_VERSION = "N_335";
+const APP_DEPLOY_NAME = "N_335_project_site_archive_diagnostics";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -3041,12 +3041,23 @@ function App() {
     });
   }
 
-  async function fetchYandexFileBlob(path) {
+  async function fetchYandexFileBlobDetailed(path) {
+    const startedAt = performance?.now ? performance.now() : Date.now();
     const response = await fetch(getGipApiUrl("/yandex"), {
       method: "POST",
       headers: getGipApiHeaders(),
       body: JSON.stringify({ action: "content", path }),
     });
+
+    const info = {
+      ok: response.ok,
+      status: response.status,
+      status_text: response.statusText || "",
+      content_type: response.headers.get("Content-Type") || "",
+      content_length_header: response.headers.get("Content-Length") || "",
+      elapsed_ms: null,
+      blob_size: null,
+    };
 
     if (!response.ok) {
       const text = await response.text();
@@ -3057,10 +3068,21 @@ function App() {
         data = { raw: text };
       }
       const message = data?.error || data?.message || data?.description || data?.raw || `GIP API HTTP ${response.status}`;
-      throw new Error(String(message));
+      const error = new Error(String(message));
+      error.diagnostic = { ...info, error: String(message), response_keys: data ? Object.keys(data) : [] };
+      throw error;
     }
 
-    return response.blob();
+    const blob = await response.blob();
+    const endedAt = performance?.now ? performance.now() : Date.now();
+    info.elapsed_ms = Math.round(endedAt - startedAt);
+    info.blob_size = blob.size;
+    return { blob, info };
+  }
+
+  async function fetchYandexFileBlob(path) {
+    const detailed = await fetchYandexFileBlobDetailed(path);
+    return detailed.blob;
   }
 
   async function readYandexCatalog(section, catalog) {
@@ -3349,6 +3371,148 @@ function App() {
     } finally {
       setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
     }
+  }
+
+  async function diagnoseNormControlArchive(section) {
+    const log = {
+      summary: "Диагностика общего архива нормоконтроля. Временные ссылки скачивания и содержимое файлов в лог не выводятся.",
+      app_version: APP_VERSION,
+      checked_at: new Date().toISOString(),
+      section: section ? {
+        id: section.id || "",
+        stage: normalizeStage(section.stage),
+        section_code: section.section_code || "",
+        section_title: section.section_title || "",
+        cipher: section.cipher || "",
+      } : null,
+      input: {
+        source_files_count: 0,
+        downloadable_files_count: 0,
+        archive_name: "",
+      },
+      files: [],
+      zip_generate: null,
+      conclusion: "",
+    };
+
+    setNormDiagnostics({ loading: true, log: "Выполняется диагностика общего архива..." });
+    setSiteDirectoryError("");
+    setNotice("");
+
+    try {
+      if (!section) {
+        log.conclusion = "Раздел не выбран.";
+        setNormDiagnostics({ loading: false, log: JSON.stringify(log, null, 2) });
+        return;
+      }
+
+      const sourceFiles = normalizeNormControlFiles(section.norm_control_files);
+      const downloadableFiles = sourceFiles
+        .map((file) => ({ ...file, resolved_yandex_path: resolveNormControlFileYandexPath(file, section) }))
+        .filter((file) => file.resolved_yandex_path);
+
+      const archiveName = sanitizeZipPart([
+        section.building_gp_no || "GP",
+        normalizeStage(section.stage || "П"),
+        section.section_code || "section",
+        "Нормаконтроль",
+      ].filter(Boolean).join("_"));
+
+      log.input.source_files_count = sourceFiles.length;
+      log.input.downloadable_files_count = downloadableFiles.length;
+      log.input.archive_name = `${archiveName}.zip`;
+
+      if (!downloadableFiles.length) {
+        log.conclusion = "Нет файлов с вычисленным путем для архива.";
+        setNormDiagnostics({ loading: false, log: JSON.stringify(log, null, 2) });
+        return;
+      }
+
+      const zip = new JSZip();
+      const usedNames = new Set();
+      let addedCount = 0;
+
+      for (let index = 0; index < downloadableFiles.length; index += 1) {
+        const file = downloadableFiles[index];
+        const requestedPath = String(file.resolved_yandex_path || "");
+        const zipName = makeUniqueZipName(usedNames, file.name || requestedPath.split("/").pop() || "file");
+        const entry = {
+          index: index + 1,
+          name: file.name || "",
+          file_name: file.file_name || "",
+          kind: file.kind || "",
+          document_type: file.document_type || "",
+          document_group: file.document_group || "",
+          source_path: file.source_path || file.local_file_path || file.path || "",
+          requested_path: requestedPath,
+          zip_name: zipName,
+          parent_path: getYandexParentPath(requestedPath),
+          download_link_check: null,
+          content_fetch_check: null,
+          zip_add_check: null,
+        };
+
+        try {
+          const downloadData = await invokeYandexReadonly({ action: "download", path: requestedPath });
+          entry.download_link_check = {
+            ok: Boolean(downloadData?.href),
+            href_received: Boolean(downloadData?.href),
+            resolved_path: downloadData?.resolved_path || requestedPath,
+            path_was_resolved: Boolean(downloadData?.path_was_resolved),
+            response_keys: downloadData ? Object.keys(downloadData).filter((key) => key !== "href") : [],
+          };
+        } catch (error) {
+          entry.download_link_check = { ok: false, error: error?.message || String(error) };
+        }
+
+        try {
+          const detailed = await fetchYandexFileBlobDetailed(requestedPath);
+          entry.content_fetch_check = detailed.info;
+          zip.file(zipName, detailed.blob);
+          entry.zip_add_check = { ok: true };
+          addedCount += 1;
+        } catch (error) {
+          entry.content_fetch_check = error?.diagnostic || { ok: false, error: error?.message || String(error) };
+          entry.zip_add_check = { ok: false, skipped: true };
+        }
+
+        log.files.push(entry);
+      }
+
+      if (addedCount > 0) {
+        try {
+          const startedAt = performance?.now ? performance.now() : Date.now();
+          const archiveBlob = await zip.generateAsync({ type: "blob" });
+          const endedAt = performance?.now ? performance.now() : Date.now();
+          log.zip_generate = {
+            ok: true,
+            added_files_count: addedCount,
+            archive_blob_size: archiveBlob.size,
+            elapsed_ms: Math.round(endedAt - startedAt),
+          };
+        } catch (error) {
+          log.zip_generate = { ok: false, error: error?.message || String(error), added_files_count: addedCount };
+        }
+      } else {
+        log.zip_generate = { ok: false, error: "В ZIP не добавлен ни один файл.", added_files_count: 0 };
+      }
+
+      const linkErrors = log.files.filter((item) => !item.download_link_check?.ok);
+      const contentErrors = log.files.filter((item) => !item.content_fetch_check?.ok);
+      if (contentErrors.length) {
+        log.conclusion = `Проблема на получении содержимого файлов через action=content. Ошибочных файлов: ${contentErrors.length} из ${downloadableFiles.length}. Первый ошибочный файл: ${contentErrors[0].name || contentErrors[0].requested_path}`;
+      } else if (linkErrors.length) {
+        log.conclusion = `Ссылки download получены не для всех файлов, но content скачался. Ошибок download: ${linkErrors.length}. Проверь расхождение download/content в GIP API.`;
+      } else if (!log.zip_generate?.ok) {
+        log.conclusion = `Все файлы скачались, но сборка ZIP упала: ${log.zip_generate?.error || "ошибка JSZip"}.`;
+      } else {
+        log.conclusion = `Диагностика успешно скачала содержимое всех файлов и собрала ZIP в памяти. Если обычная кнопка всё равно не скачивает архив, причина в обработчике запуска скачивания в браузере или блокировке скачивания. Размер ZIP: ${log.zip_generate.archive_blob_size} байт.`;
+      }
+    } catch (error) {
+      log.conclusion = `Диагностика архива прервана общей ошибкой: ${error?.message || String(error)}`;
+    }
+
+    setNormDiagnostics({ loading: false, log: JSON.stringify(log, null, 2) });
   }
 
   async function downloadNormControlArchive(section) {
@@ -4398,14 +4562,24 @@ function App() {
               <div>
                 <h3>Разделы выбранного проекта</h3>
               </div>
-              <button
-                type="button"
-                className="primaryButton"
-                onClick={() => downloadNormControlArchive(selectedNormSection)}
-                disabled={!selectedNormSection || archiveDownloadState[downloadKey]}
-              >
-                {archiveDownloadState[downloadKey] ? "Готовлю архив..." : "Загрузить файлы"}
-              </button>
+              <div className="normArchiveActions">
+                <button
+                  type="button"
+                  className="secondaryButton"
+                  onClick={() => diagnoseNormControlArchive(selectedNormSection)}
+                  disabled={!selectedNormSection || normDiagnostics.loading || archiveDownloadState[downloadKey]}
+                >
+                  {normDiagnostics.loading ? "Диагностика..." : "Диагностика архива"}
+                </button>
+                <button
+                  type="button"
+                  className="primaryButton"
+                  onClick={() => downloadNormControlArchive(selectedNormSection)}
+                  disabled={!selectedNormSection || archiveDownloadState[downloadKey]}
+                >
+                  {archiveDownloadState[downloadKey] ? "Готовлю архив..." : "Загрузить файлы"}
+                </button>
+              </div>
             </div>
 
             <div className="architectSectionTableWrap">
@@ -4492,7 +4666,7 @@ function App() {
                 {normDiagnostics.log && (
                   <div className="normDiagnosticsBox">
                     <div className="cardHeaderLine compactHeaderLine">
-                      <p className="eyebrow">Лог диагностики скачивания</p>
+                      <p className="eyebrow">Лог диагностики скачивания / архива</p>
                       <button
                         type="button"
                         className="smallButton"
