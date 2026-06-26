@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_342";
-const APP_DEPLOY_NAME = "N_342_project_site_archive_download_explicit_route_fix";
+const APP_VERSION = "N_343";
+const APP_DEPLOY_NAME = "N_343_project_site_archive_download_query_route_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2971,22 +2971,30 @@ function App() {
   function normalizeArchiveDownloadHref(rawHref) {
     const text = String(rawHref || "").trim();
     if (!text) return "";
+
+    function buildQueryDownload(pathname) {
+      const marker = "/archive-download/";
+      const index = String(pathname || "").indexOf(marker);
+      if (index < 0) return "";
+      const rest = String(pathname || "").slice(index + marker.length);
+      const parts = rest.split("/").filter(Boolean);
+      if (parts.length < 2) return "";
+      const jobId = decodeURIComponent(parts[0] || "");
+      const fileName = decodeURIComponent(parts.slice(1).join("/") || "archive.zip");
+      const params = new URLSearchParams({ jobId, fileName });
+      return getGipApiUrl(`/archive-download?${params.toString()}`);
+    }
+
     try {
       const parsed = new URL(text, window.location.origin);
-      const marker = "/archive-download/";
-      const index = parsed.pathname.indexOf(marker);
-      if (index >= 0) {
-        const archivePath = parsed.pathname.slice(index);
-        return getGipApiUrl(`${archivePath}${parsed.search || ""}`);
-      }
+      const converted = buildQueryDownload(parsed.pathname);
+      if (converted) return converted;
     } catch {
       // fall through to text handling below
     }
-    const marker = "/archive-download/";
-    const index = text.indexOf(marker);
-    if (index >= 0) {
-      return getGipApiUrl(text.slice(index));
-    }
+
+    const converted = buildQueryDownload(text);
+    if (converted) return converted;
     return text;
   }
 

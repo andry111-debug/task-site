@@ -1,13 +1,12 @@
 {
-  "version": "N_342",
+  "version": "N_343",
   "date": "2026-06-26",
-  "base_version": "N_341_project_site_plus_gip_api_archive_download_proxy_fix",
-  "type": "site_only_fix",
+  "base_version": "N_342_project_site_archive_download_explicit_route_fix",
   "changes": [
-    "Added explicit Vercel API route api/archive-download/[...parts].js for ready archive downloads.",
-    "Fixed Vercel 404 NOT_FOUND when opening the ready norm-control ZIP archive.",
-    "Preserved async archive progress and existing GIP API integration."
+    "Changed finished archive download from nested Vercel route /api/archive-download/<jobId>/<fileName> to fixed query route /api/archive-download?jobId=...&fileName=... .",
+    "Added explicit Vercel API function api/archive-download.js, because nested catch-all route was not deployed/handled correctly.",
+    "Updated site version marker to N_343."
   ],
   "sql_required": false,
-  "gip_api_required_version": "N_340 or N_341"
+  "gip_api_required_version": "N_340 or newer"
 }
