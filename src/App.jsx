@@ -48,7 +48,7 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_335";
+const APP_VERSION = "N_337";
 const APP_DEPLOY_NAME = "N_335_project_site_archive_diagnostics";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -3392,6 +3392,7 @@ function App() {
       },
       files: [],
       zip_generate: null,
+      server_archive_check: null,
       conclusion: "",
     };
 
@@ -3497,16 +3498,51 @@ function App() {
         log.zip_generate = { ok: false, error: "В ZIP не добавлен ни один файл.", added_files_count: 0 };
       }
 
+      try {
+        const serverPayloadFiles = downloadableFiles.map((file) => ({
+          path: file.resolved_yandex_path,
+          name: file.name || file.file_name || String(file.resolved_yandex_path).split("/").pop() || "file",
+        }));
+        const serverArchive = await invokeYandexReadonly({
+          action: "archive",
+          path: "/",
+          archive_name: `${archiveName}.zip`,
+          dry_run: true,
+          files: serverPayloadFiles,
+        });
+        log.server_archive_check = {
+          ok: true,
+          dry_run: Boolean(serverArchive?.dry_run),
+          file_count: serverArchive?.file_count || 0,
+          source_bytes: serverArchive?.source_bytes || 0,
+          archive_bytes: serverArchive?.archive_bytes || 0,
+          files: Array.isArray(serverArchive?.files) ? serverArchive.files.map((item) => ({
+            index: item.index,
+            name: item.name,
+            requested_path: item.requested_path,
+            resolved_path: item.resolved_path,
+            path_was_resolved: Boolean(item.path_was_resolved),
+            bytes: item.bytes,
+          })) : [],
+        };
+      } catch (error) {
+        log.server_archive_check = { ok: false, error: error?.message || String(error) };
+      }
+
       const linkErrors = log.files.filter((item) => !item.download_link_check?.ok);
       const contentErrors = log.files.filter((item) => !item.content_fetch_check?.ok);
-      if (contentErrors.length) {
-        log.conclusion = `Проблема на получении содержимого файлов через action=content. Ошибочных файлов: ${contentErrors.length} из ${downloadableFiles.length}. Первый ошибочный файл: ${contentErrors[0].name || contentErrors[0].requested_path}`;
+      if (log.server_archive_check?.ok && contentErrors.length) {
+        log.conclusion = `Старый браузерный способ не смог получить содержимое ${contentErrors.length} файла(ов), первый: ${contentErrors[0].name || contentErrors[0].requested_path}. Новый серверный способ GIP API собрал архив в dry-run: ${log.server_archive_check.archive_bytes} байт. Обычная кнопка архива в N_337 использует серверный способ.`;
+      } else if (!log.server_archive_check?.ok) {
+        log.conclusion = `Новый серверный способ GIP API не смог собрать архив: ${log.server_archive_check?.error || "ошибка server archive"}.`;
+      } else if (contentErrors.length) {
+        log.conclusion = `Проблема на получении содержимого файлов через старый action=content. Ошибочных файлов: ${contentErrors.length} из ${downloadableFiles.length}. Первый ошибочный файл: ${contentErrors[0].name || contentErrors[0].requested_path}`;
       } else if (linkErrors.length) {
         log.conclusion = `Ссылки download получены не для всех файлов, но content скачался. Ошибок download: ${linkErrors.length}. Проверь расхождение download/content в GIP API.`;
       } else if (!log.zip_generate?.ok) {
         log.conclusion = `Все файлы скачались, но сборка ZIP упала: ${log.zip_generate?.error || "ошибка JSZip"}.`;
       } else {
-        log.conclusion = `Диагностика успешно скачала содержимое всех файлов и собрала ZIP в памяти. Если обычная кнопка всё равно не скачивает архив, причина в обработчике запуска скачивания в браузере или блокировке скачивания. Размер ZIP: ${log.zip_generate.archive_blob_size} байт.`;
+        log.conclusion = `Диагностика успешно скачала содержимое всех файлов браузером и серверный GIP API dry-run тоже собрал архив. Размер server ZIP: ${log.server_archive_check.archive_bytes} байт.`;
       }
     } catch (error) {
       log.conclusion = `Диагностика архива прервана общей ошибкой: ${error?.message || String(error)}`;
@@ -3517,7 +3553,7 @@ function App() {
 
   async function downloadNormControlArchive(section) {
     if (!section) {
-      setSiteDirectoryError("Выберите раздел для нормаконтроля.");
+      setSiteDirectoryError("Выберите раздел для нормоконтроля.");
       return;
     }
 
@@ -3527,7 +3563,7 @@ function App() {
       .filter((file) => file.resolved_yandex_path);
 
     if (!downloadableFiles.length) {
-      setSiteDirectoryError("В выбранном разделе нет файлов с путем для формирования архива нормаконтроля.");
+      setSiteDirectoryError("В выбранном разделе нет файлов с путем для формирования архива нормоконтроля.");
       return;
     }
 
@@ -3541,30 +3577,29 @@ function App() {
 
     setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: true }));
     setSiteDirectoryError("");
-    setNotice("");
+    setNotice("Готовлю общий архив на стороне GIP API...");
 
     try {
-      const zip = new JSZip();
-      const usedNames = new Set();
+      const payloadFiles = downloadableFiles.map((file) => ({
+        path: file.resolved_yandex_path,
+        name: file.name || file.file_name || String(file.resolved_yandex_path).split("/").pop() || "file",
+      }));
 
-      for (const file of downloadableFiles) {
-        const blob = await fetchYandexFileBlob(file.resolved_yandex_path);
-        const zipName = makeUniqueZipName(usedNames, file.name || String(file.resolved_yandex_path).split("/").pop() || "file");
-        zip.file(zipName, blob);
+      const result = await invokeYandexReadonly({
+        action: "archive",
+        path: "/",
+        archive_name: `${archiveName}.zip`,
+        files: payloadFiles,
+      });
+
+      if (!result?.href) {
+        throw new Error("GIP API не вернул ссылку на подготовленный архив.");
       }
 
-      const archiveBlob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(archiveBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${archiveName}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setNotice(`Архив нормаконтроля подготовлен. Файлов: ${downloadableFiles.length}.`);
+      window.open(result.href, "_blank", "noopener,noreferrer");
+      setNotice(`Архив нормоконтроля подготовлен через GIP API. Файлов: ${result.file_count || downloadableFiles.length}. Размер: ${formatBytes(result.archive_bytes || 0)}.`);
     } catch (error) {
-      setSiteDirectoryError(`Ошибка формирования архива нормаконтроля: ${error.message}`);
+      setSiteDirectoryError(`Ошибка формирования архива нормоконтроля через GIP API: ${error.message}`);
     } finally {
       setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: false }));
     }

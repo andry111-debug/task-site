@@ -1,16 +1,19 @@
 {
-  "version": "N_336",
+  "version": "N_337",
   "date": "2026-06-26",
   "base_version": "N_335",
-  "site_base": "N_332",
-  "gip_api_base": "N_333",
+  "components": {
+    "site": "N_337",
+    "gip_api": "N_337"
+  },
   "changes": [
-    "Kept archive diagnostics from N_335.",
-    "Site-only package: no GIP API update included.",
-    "No SQL migrations are required."
+    "Общий архив нормоконтроля перенесен на серверный способ через GIP API action=archive.",
+    "GIP API скачивает файлы с Яндекс.Диска, собирает ZIP на сервере, загружает временный архив на Яндекс.Диск и возвращает ссылку.",
+    "Это устраняет ошибку Failed to fetch при попытке браузера включить крупный ZIP-файл в общий архив.",
+    "Диагностика архива дополнена проверкой server_archive_check в режиме dry_run."
   ],
   "sql_required": false,
-  "vercel_env_changes": false,
-  "telegram_webhook_required": false,
-  "component": "project_site"
+  "env_changes": [
+    "Опционально: YANDEX_ARCHIVE_ROOT для выбора папки временных архивов. По умолчанию /Внутренняя Технологии/Временные архивы нормоконтроля"
+  ]
 }
