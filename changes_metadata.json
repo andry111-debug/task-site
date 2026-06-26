@@ -1,14 +1,15 @@
 {
-  "version": "N_331",
-  "name": "project_site_diagnostics_gitignore_fix",
+  "version": "N_332",
+  "name": "project_site_yandex_open_case_resolver",
   "date": "2026-06-26",
-  "base_version": "N_330_project_site_norm_controller_yandex_diagnostics",
+  "base_version": "N_331_project_site_diagnostics_gitignore_fix",
   "changes": [
-    "Убрана папка dist из deploy-архива, чтобы автодеплой не пытался выполнить git add для игнорируемых сборочных файлов.",
-    "Сохранена диагностика скачивания файлов нормоконтролера.",
-    "SQL-миграции не требуются."
+    "Кнопка Открыть в кабинете нормоконтролера теперь принимает corrected/resolved path от GIP API.",
+    "Если GIP API исправил регистр папок Яндекс.Диска, сайт показывает уведомление с уточненным путем.",
+    "Диагностика скачивания сохранена."
   ],
   "sql_required": false,
   "vercel_env_changed": false,
-  "telegram_webhook_reinstall_required": false
+  "telegram_webhook_reinstall_required": false,
+  "gip_api_min_version": "N_333 для нечувствительного к регистру поиска пути"
 }

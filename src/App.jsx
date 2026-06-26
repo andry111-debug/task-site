@@ -48,7 +48,7 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_331";
+const APP_VERSION = "N_332";
 const APP_DEPLOY_NAME = "N_331_project_site_diagnostics_gitignore_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
@@ -3293,6 +3293,11 @@ function App() {
     try {
       const data = await invokeYandexReadonly({ action: "download", path });
       if (!data?.href) throw new Error("Яндекс.Диск не вернул ссылку на скачивание.");
+
+      const resolvedPath = String(data.resolved_path || "").trim();
+      if (data.path_was_resolved && resolvedPath && resolvedPath !== path) {
+        setNotice(`Путь найден с уточнением регистра: ${resolvedPath}`);
+      }
 
       window.open(data.href, "_blank", "noopener,noreferrer");
     } catch (error) {
