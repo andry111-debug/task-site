@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_339";
-const APP_DEPLOY_NAME = "N_340_project_site_archive_local_download_fix";
+const APP_VERSION = "N_341";
+const APP_DEPLOY_NAME = "N_341_project_site_archive_download_proxy_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2968,6 +2968,28 @@ function App() {
     return `${GIP_API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
   }
 
+  function normalizeArchiveDownloadHref(rawHref) {
+    const text = String(rawHref || "").trim();
+    if (!text) return "";
+    try {
+      const parsed = new URL(text, window.location.origin);
+      const marker = "/archive-download/";
+      const index = parsed.pathname.indexOf(marker);
+      if (index >= 0) {
+        const archivePath = parsed.pathname.slice(index);
+        return getGipApiUrl(`${archivePath}${parsed.search || ""}`);
+      }
+    } catch {
+      // fall through to text handling below
+    }
+    const marker = "/archive-download/";
+    const index = text.indexOf(marker);
+    if (index >= 0) {
+      return getGipApiUrl(text.slice(index));
+    }
+    return text;
+  }
+
   function extractGipApiMessage(data, fallback) {
     return data?.error?.message || data?.error || data?.message || data?.description || data?.raw || fallback;
   }
@@ -3585,7 +3607,7 @@ function App() {
       const linkErrors = log.files.filter((item) => !item.download_link_check?.ok);
       const contentErrors = log.files.filter((item) => !item.content_fetch_check?.ok);
       if (log.server_archive_check?.ok && contentErrors.length) {
-        log.conclusion = `Старый браузерный способ не смог получить содержимое ${contentErrors.length} файла(ов), первый: ${contentErrors[0].name || contentErrors[0].requested_path}. Новый серверный способ GIP API собрал архив в dry-run: ${log.server_archive_check.archive_bytes} байт. Обычная кнопка архива в N_338 использует фоновый серверный способ.`;
+        log.conclusion = `Старый браузерный способ не смог получить содержимое ${contentErrors.length} файла(ов), первый: ${contentErrors[0].name || contentErrors[0].requested_path}. Новый серверный способ GIP API собрал архив в dry-run: ${log.server_archive_check.archive_bytes} байт. Обычная кнопка архива использует фоновый серверный способ GIP API.`;
       } else if (!log.server_archive_check?.ok) {
         log.conclusion = `Новый серверный способ GIP API не смог собрать архив: ${log.server_archive_check?.error || "ошибка server archive"}.`;
       } else if (contentErrors.length) {
@@ -3645,10 +3667,16 @@ function App() {
         throw new Error("GIP API не вернул ссылку на подготовленный архив.");
       }
 
+      const archiveHref = normalizeArchiveDownloadHref(result.href);
+      if (!archiveHref) {
+        throw new Error("GIP API вернул пустую ссылку на подготовленный архив.");
+      }
+
       setArchiveReadyState((prev) => ({
         ...prev,
         [archiveKey]: {
-          href: result.href,
+          href: archiveHref,
+          originalHref: result.href || "",
           archiveName: result.archive_name || `${archiveName}.zip`,
           archivePath: result.archive_path || "",
           fileCount: result.file_count || downloadableFiles.length,
@@ -3656,7 +3684,7 @@ function App() {
           checkedAt: new Date().toISOString(),
         },
       }));
-      const opened = window.open(result.href, "_blank", "noopener,noreferrer");
+      const opened = window.open(archiveHref, "_blank", "noopener,noreferrer");
       if (opened) {
         setNotice(`Архив нормоконтроля подготовлен через GIP API. Файлов: ${result.file_count || downloadableFiles.length}. Размер: ${formatFileSize(result.archive_bytes || 0)}.`);
       } else {

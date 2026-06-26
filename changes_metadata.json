@@ -1,16 +1,14 @@
 {
-  "version": "N_340",
+  "version": "N_341",
   "date": "2026-06-26",
-  "base_versions": {
-    "site": "N_339",
-    "gip_api": "N_338"
-  },
+  "base_version": "N_340_project_site_plus_gip_api_archive_local_download_fix",
+  "package_type": "combined_site_plus_gip_api",
   "changes": [
-    "Исправлено зависание общего архива нормоконтроля на 88%: GIP API больше не загружает готовый ZIP обратно на Яндекс.Диск.",
-    "Готовый ZIP сохраняется во временную папку GIP API и отдаётся через прямую ссылку /archive-download.",
-    "Прогресс-бар сохраняет этапы скачивания исходных файлов, сборки ZIP, сохранения на сервере и подготовки ссылки.",
-    "Сохранена нечувствительность к регистру путей Яндекс.Диска из N_333/N_338."
+    "Fixed ready archive download link: use /api/archive-download through Vercel proxy instead of Vercel page path /archive-download.",
+    "Added GIP API download route alias /api/archive-download/:jobId/:fileName.",
+    "Updated site link normalization for archive hrefs returned by GIP API.",
+    "Kept async archive job, progress bar, local server ZIP storage, and case-insensitive Yandex Disk path resolver."
   ],
   "sql_required": false,
-  "env_changes": "Необязательно: можно задать GIP_API_PUBLIC_URL, если автоматический публичный адрес GIP API определяется неверно."
+  "gip_api_required": true
 }
