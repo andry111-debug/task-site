@@ -49,7 +49,7 @@ const PROJECT_FILE_TYPES = new Set([
 
 
 const APP_VERSION = "N_337";
-const APP_DEPLOY_NAME = "N_335_project_site_archive_diagnostics";
+const APP_DEPLOY_NAME = "N_338_project_site_archive_progress_async";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2522,6 +2522,7 @@ function App() {
   const [yandexCatalogState, setYandexCatalogState] = useState({});
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
+  const [archiveProgressState, setArchiveProgressState] = useState({});
   const [selectedNormProjectKey, setSelectedNormProjectKey] = useState("");
   const [selectedNormSectionId, setSelectedNormSectionId] = useState("");
   const [normResultFiles, setNormResultFiles] = useState([]);
@@ -2998,6 +2999,58 @@ function App() {
 
   async function invokeYandexReadonly(payload) {
     return invokeGipJson("/yandex", payload);
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function normalizeArchiveProgress(job) {
+    const progress = Math.max(0, Math.min(100, Number(job?.progress_percent || 0)));
+    const filesDone = Number(job?.files_done || 0);
+    const filesTotal = Number(job?.files_total || 0);
+    const message = job?.message || job?.stage || "Готовлю архив";
+    return {
+      state: job?.state || "running",
+      stage: job?.stage || "",
+      message,
+      progress,
+      filesDone,
+      filesTotal,
+      currentFile: job?.current_file || "",
+      sourceBytes: Number(job?.source_bytes || 0),
+      archiveBytes: Number(job?.archive_bytes || 0),
+    };
+  }
+
+  async function startAndWaitNormArchiveJob(payloadFiles, archiveName, archiveKey, dryRun = false) {
+    const start = await invokeYandexReadonly({
+      action: "archive_start",
+      path: "/",
+      archive_name: `${archiveName}.zip`,
+      dry_run: Boolean(dryRun),
+      files: payloadFiles,
+    });
+    const jobId = start?.job_id || start?.job?.job_id || start?.job?.id;
+    if (!jobId) throw new Error("GIP API не вернул номер задачи архива.");
+
+    setArchiveProgressState((prev) => ({
+      ...prev,
+      [archiveKey]: normalizeArchiveProgress(start.job || { state: "queued", message: "Задача поставлена в очередь", progress_percent: 0 }),
+    }));
+
+    const startedAt = Date.now();
+    const timeoutMs = 30 * 60 * 1000;
+    while (true) {
+      await sleep(1500);
+      if (Date.now() - startedAt > timeoutMs) {
+        throw new Error("Превышено время ожидания формирования архива: 30 минут.");
+      }
+      const status = await invokeYandexReadonly({ action: "archive_status", path: "/", job_id: jobId });
+      setArchiveProgressState((prev) => ({ ...prev, [archiveKey]: normalizeArchiveProgress(status) }));
+      if (status?.state === "success") return status;
+      if (status?.state === "error") throw new Error(status?.error || status?.message || "Ошибка фоновой задачи архива.");
+    }
   }
 
   async function uploadIncomingFileInChunks(file, options) {
@@ -3503,13 +3556,12 @@ function App() {
           path: file.resolved_yandex_path,
           name: file.name || file.file_name || String(file.resolved_yandex_path).split("/").pop() || "file",
         }));
-        const serverArchive = await invokeYandexReadonly({
-          action: "archive",
-          path: "/",
-          archive_name: `${archiveName}.zip`,
-          dry_run: true,
-          files: serverPayloadFiles,
-        });
+        const serverArchive = await startAndWaitNormArchiveJob(
+          serverPayloadFiles,
+          archiveName,
+          `diag:${section.id || "section"}`,
+          true
+        );
         log.server_archive_check = {
           ok: true,
           dry_run: Boolean(serverArchive?.dry_run),
@@ -3532,7 +3584,7 @@ function App() {
       const linkErrors = log.files.filter((item) => !item.download_link_check?.ok);
       const contentErrors = log.files.filter((item) => !item.content_fetch_check?.ok);
       if (log.server_archive_check?.ok && contentErrors.length) {
-        log.conclusion = `Старый браузерный способ не смог получить содержимое ${contentErrors.length} файла(ов), первый: ${contentErrors[0].name || contentErrors[0].requested_path}. Новый серверный способ GIP API собрал архив в dry-run: ${log.server_archive_check.archive_bytes} байт. Обычная кнопка архива в N_337 использует серверный способ.`;
+        log.conclusion = `Старый браузерный способ не смог получить содержимое ${contentErrors.length} файла(ов), первый: ${contentErrors[0].name || contentErrors[0].requested_path}. Новый серверный способ GIP API собрал архив в dry-run: ${log.server_archive_check.archive_bytes} байт. Обычная кнопка архива в N_338 использует фоновый серверный способ.`;
       } else if (!log.server_archive_check?.ok) {
         log.conclusion = `Новый серверный способ GIP API не смог собрать архив: ${log.server_archive_check?.error || "ошибка server archive"}.`;
       } else if (contentErrors.length) {
@@ -3585,12 +3637,7 @@ function App() {
         name: file.name || file.file_name || String(file.resolved_yandex_path).split("/").pop() || "file",
       }));
 
-      const result = await invokeYandexReadonly({
-        action: "archive",
-        path: "/",
-        archive_name: `${archiveName}.zip`,
-        files: payloadFiles,
-      });
+      const result = await startAndWaitNormArchiveJob(payloadFiles, archiveName, archiveKey);
 
       if (!result?.href) {
         throw new Error("GIP API не вернул ссылку на подготовленный архив.");
@@ -4616,6 +4663,21 @@ function App() {
                 </button>
               </div>
             </div>
+
+            {archiveProgressState[downloadKey] && archiveDownloadState[downloadKey] && (
+              <div className="normArchiveProgressBox">
+                <div className="normArchiveProgressText">
+                  <strong>{archiveProgressState[downloadKey].message}</strong>
+                  <span>{Math.round(archiveProgressState[downloadKey].progress)}%</span>
+                </div>
+                <progress value={archiveProgressState[downloadKey].progress} max="100" />
+                <small>
+                  Файлов: {archiveProgressState[downloadKey].filesDone} из {archiveProgressState[downloadKey].filesTotal}
+                  {archiveProgressState[downloadKey].archiveBytes ? ` · Архив: ${formatBytes(archiveProgressState[downloadKey].archiveBytes)}` : ""}
+                  {archiveProgressState[downloadKey].sourceBytes ? ` · Получено: ${formatBytes(archiveProgressState[downloadKey].sourceBytes)}` : ""}
+                </small>
+              </div>
+            )}
 
             <div className="architectSectionTableWrap">
               <table className="architectSectionTable normSectionTable">
