@@ -1,12 +1,14 @@
 {
-  "version": "N_338",
+  "version": "N_339",
   "date": "2026-06-26",
-  "base_version": "N_337",
+  "base_version": "N_338_project_site_plus_gip_api_archive_progress_async",
+  "site_version": "N_339",
+  "gip_api_version": "N_338",
   "changes": [
-    "Кнопка общего архива нормоконтроля запускает фоновую задачу GIP API archive_start.",
-    "Добавлен прогресс-бар подготовки архива нормоконтроля.",
-    "Статус архива опрашивается короткими запросами archive_status, чтобы не попадать в timeout Vercel Function.",
-    "Диагностика архива использует фоновую dry-run задачу GIP API."
+    "Исправлено падение страницы при отображении прогресса общего архива нормоконтроля.",
+    "Используется formatFileSize вместо отсутствующей функции formatBytes.",
+    "Добавлен постоянный блок с готовой ссылкой на архив после завершения фоновой задачи.",
+    "GIP API оставлен на логике N_338: archive_start/archive_status и нечувствительный к регистру resolver путей."
   ],
   "sql_required": false
 }

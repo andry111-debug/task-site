@@ -4094,3 +4094,28 @@ h3 {
   font-weight: 800;
   color: #41506f;
 }
+
+
+.normArchiveReadyBox {
+  margin: 10px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.normArchiveReadyBox small {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.8;
+  word-break: break-word;
+}
+
+.normArchiveReadyLink {
+  text-decoration: none;
+  white-space: nowrap;
+}

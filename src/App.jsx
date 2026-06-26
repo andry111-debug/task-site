@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_337";
-const APP_DEPLOY_NAME = "N_338_project_site_archive_progress_async";
+const APP_VERSION = "N_339";
+const APP_DEPLOY_NAME = "N_339_project_site_archive_progress_render_fix";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -2523,6 +2523,7 @@ function App() {
   const [showYandexCatalogTester, setShowYandexCatalogTester] = useState(false);
   const [archiveDownloadState, setArchiveDownloadState] = useState({});
   const [archiveProgressState, setArchiveProgressState] = useState({});
+  const [archiveReadyState, setArchiveReadyState] = useState({});
   const [selectedNormProjectKey, setSelectedNormProjectKey] = useState("");
   const [selectedNormSectionId, setSelectedNormSectionId] = useState("");
   const [normResultFiles, setNormResultFiles] = useState([]);
@@ -3628,6 +3629,7 @@ function App() {
     ].filter(Boolean).join("_"));
 
     setArchiveDownloadState((prev) => ({ ...prev, [archiveKey]: true }));
+    setArchiveReadyState((prev) => ({ ...prev, [archiveKey]: null }));
     setSiteDirectoryError("");
     setNotice("Готовлю общий архив на стороне GIP API...");
 
@@ -3643,8 +3645,23 @@ function App() {
         throw new Error("GIP API не вернул ссылку на подготовленный архив.");
       }
 
-      window.open(result.href, "_blank", "noopener,noreferrer");
-      setNotice(`Архив нормоконтроля подготовлен через GIP API. Файлов: ${result.file_count || downloadableFiles.length}. Размер: ${formatBytes(result.archive_bytes || 0)}.`);
+      setArchiveReadyState((prev) => ({
+        ...prev,
+        [archiveKey]: {
+          href: result.href,
+          archiveName: result.archive_name || `${archiveName}.zip`,
+          archivePath: result.archive_path || "",
+          fileCount: result.file_count || downloadableFiles.length,
+          archiveBytes: result.archive_bytes || 0,
+          checkedAt: new Date().toISOString(),
+        },
+      }));
+      const opened = window.open(result.href, "_blank", "noopener,noreferrer");
+      if (opened) {
+        setNotice(`Архив нормоконтроля подготовлен через GIP API. Файлов: ${result.file_count || downloadableFiles.length}. Размер: ${formatFileSize(result.archive_bytes || 0)}.`);
+      } else {
+        setNotice("Архив готов, но браузер заблокировал автоматическое открытие. Нажмите ссылку «Скачать готовый архив» под прогресс-баром.");
+      }
     } catch (error) {
       setSiteDirectoryError(`Ошибка формирования архива нормоконтроля через GIP API: ${error.message}`);
     } finally {
@@ -4673,9 +4690,28 @@ function App() {
                 <progress value={archiveProgressState[downloadKey].progress} max="100" />
                 <small>
                   Файлов: {archiveProgressState[downloadKey].filesDone} из {archiveProgressState[downloadKey].filesTotal}
-                  {archiveProgressState[downloadKey].archiveBytes ? ` · Архив: ${formatBytes(archiveProgressState[downloadKey].archiveBytes)}` : ""}
-                  {archiveProgressState[downloadKey].sourceBytes ? ` · Получено: ${formatBytes(archiveProgressState[downloadKey].sourceBytes)}` : ""}
+                  {archiveProgressState[downloadKey].archiveBytes ? ` · Архив: ${formatFileSize(archiveProgressState[downloadKey].archiveBytes)}` : ""}
+                  {archiveProgressState[downloadKey].sourceBytes ? ` · Получено: ${formatFileSize(archiveProgressState[downloadKey].sourceBytes)}` : ""}
+                  {archiveProgressState[downloadKey].currentFile ? ` · Сейчас: ${archiveProgressState[downloadKey].currentFile}` : ""}
                 </small>
+              </div>
+            )}
+
+            {archiveReadyState[downloadKey]?.href && !archiveDownloadState[downloadKey] && (
+              <div className="normArchiveReadyBox">
+                <div>
+                  <strong>Архив готов.</strong>
+                  <span> Файлов: {archiveReadyState[downloadKey].fileCount}. Размер: {formatFileSize(archiveReadyState[downloadKey].archiveBytes)}.</span>
+                  {archiveReadyState[downloadKey].archivePath ? <small>Путь: {archiveReadyState[downloadKey].archivePath}</small> : null}
+                </div>
+                <a
+                  className="primaryButton normArchiveReadyLink"
+                  href={archiveReadyState[downloadKey].href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Скачать готовый архив
+                </a>
               </div>
             )}
 
