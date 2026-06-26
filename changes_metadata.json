@@ -1,14 +1,13 @@
 {
-  "version": "N_341",
+  "version": "N_342",
   "date": "2026-06-26",
-  "base_version": "N_340_project_site_plus_gip_api_archive_local_download_fix",
-  "package_type": "combined_site_plus_gip_api",
+  "base_version": "N_341_project_site_plus_gip_api_archive_download_proxy_fix",
+  "type": "site_only_fix",
   "changes": [
-    "Fixed ready archive download link: use /api/archive-download through Vercel proxy instead of Vercel page path /archive-download.",
-    "Added GIP API download route alias /api/archive-download/:jobId/:fileName.",
-    "Updated site link normalization for archive hrefs returned by GIP API.",
-    "Kept async archive job, progress bar, local server ZIP storage, and case-insensitive Yandex Disk path resolver."
+    "Added explicit Vercel API route api/archive-download/[...parts].js for ready archive downloads.",
+    "Fixed Vercel 404 NOT_FOUND when opening the ready norm-control ZIP archive.",
+    "Preserved async archive progress and existing GIP API integration."
   ],
   "sql_required": false,
-  "gip_api_required": true
+  "gip_api_required_version": "N_340 or N_341"
 }
