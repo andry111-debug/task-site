@@ -1,12 +1,19 @@
 {
-  "version": "N_343",
-  "date": "2026-06-26",
-  "base_version": "N_342_project_site_archive_download_explicit_route_fix",
+  "version": "N_372",
+  "base_version": "N_343_project_site_archive_download_query_route_fix",
+  "created_at": "2026-07-08 20:10:00",
+  "title": "Project site - norm-control results saved to internal safe answer folder",
   "changes": [
-    "Changed finished archive download from nested Vercel route /api/archive-download/<jobId>/<fileName> to fixed query route /api/archive-download?jobId=...&fileName=... .",
-    "Added explicit Vercel API function api/archive-download.js, because nested catch-all route was not deployed/handled correctly.",
-    "Updated site version marker to N_343."
+    "Norm-controller result uploads no longer use the technical-customer folder /Для Технического заказчика/.../нормаконтроль.",
+    "Result files are now written under the internal norm-control exchange root: /Внутренняя технологии/Нормаконтролер/<здание>/<раздел>/ответ/.",
+    "When the section already has norm-control source files published under /Внутренняя технологии/Нормаконтролер/<здание>/<раздел>/файлы/, the site derives the answer folder from that exact source folder and replaces only 'файлы' with 'ответ'.",
+    "Fallback path construction uses the selected section building name and section code if no published source path is available.",
+    "No SQL migration required. GIP API remains required for chunk upload and archive download routes."
   ],
   "sql_required": false,
-  "gip_api_required_version": "N_340 or newer"
+  "files": [
+    "site/src/App.jsx",
+    "site/changes_metadata.json",
+    "changes_metadata.json"
+  ]
 }

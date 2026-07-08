@@ -48,8 +48,8 @@ const PROJECT_FILE_TYPES = new Set([
 ]);
 
 
-const APP_VERSION = "N_343";
-const APP_DEPLOY_NAME = "N_343_project_site_archive_download_query_route_fix";
+const APP_VERSION = "N_372";
+const APP_DEPLOY_NAME = "N_372_project_site_norm_control_safe_answer_folder";
 const GIP_API_BASE_URL = String(import.meta.env.VITE_GIP_API_BASE_URL || "/api").trim().replace(/\/+$/g, "") || "/api";
 const GIP_API_KEY = import.meta.env.VITE_GIP_API_KEY || "";
 const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Программные файлы/OPR-site";
@@ -58,6 +58,9 @@ const YANDEX_SERVICE_ROOT = import.meta.env.VITE_YANDEX_SERVICE_ROOT || "/Про
 const YANDEX_DISK_ROOT = import.meta.env.VITE_YANDEX_DISK_ROOT || "/Для Технического заказчика";
 const YANDEX_GIP_ROOT = import.meta.env.VITE_YANDEX_GIP_ROOT || "/Папка ГИПа";
 const YANDEX_INCOMING_FOLDER = import.meta.env.VITE_YANDEX_INCOMING_FOLDER || "_Входящие_с_сайта";
+const NORM_CONTROL_INTERNAL_ROOT = import.meta.env.VITE_NORM_CONTROL_INTERNAL_ROOT || "/Внутренняя технологии/Нормаконтролер";
+const NORM_CONTROL_INTERNAL_FILES_FOLDER = import.meta.env.VITE_NORM_CONTROL_INTERNAL_FILES_FOLDER || "файлы";
+const NORM_CONTROL_INTERNAL_ANSWER_FOLDER = import.meta.env.VITE_NORM_CONTROL_INTERNAL_ANSWER_FOLDER || "ответ";
 const MAX_INCOMING_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_INCOMING_UPLOAD_BYTES || 150 * 1024 * 1024);
 const INCOMING_UPLOAD_CHUNK_BYTES = Number(import.meta.env.VITE_INCOMING_UPLOAD_CHUNK_BYTES || 2 * 1024 * 1024);
 const YANDEX_LOCAL_ROOTS = String(
@@ -449,11 +452,46 @@ function makeIncomingDiskPath(section, uploadId, fileName) {
   return joinDiskPath(YANDEX_GIP_ROOT, YANDEX_INCOMING_FOLDER, year, month, uploadId, fileName);
 }
 
+function normControlInternalProjectFolderName(section) {
+  const buildingName = String(section?.building_name || "").trim();
+  const gpNo = String(section?.building_gp_no || "").trim();
+  if (buildingName) return safeDiskPart(buildingName);
+  if (gpNo) return safeDiskPart(`№ ${gpNo}`);
+  return "project";
+}
+
+function normControlInternalSectionFolderName(section) {
+  const code = String(section?.section_code || "").trim();
+  const title = String(section?.section_title || "").trim();
+  return safeDiskPart(code || title || "section");
+}
+
+function normControlAnswerFolderFromPublishedFiles(section) {
+  const files = normalizeNormControlFiles(section?.norm_control_files || []);
+  const internalRoot = joinDiskPath(NORM_CONTROL_INTERNAL_ROOT);
+  const filesFolderMarker = `/${trimSlashes(NORM_CONTROL_INTERNAL_FILES_FOLDER)}/`;
+  for (const file of files) {
+    const rawPath = String(file?.published_yandex_path || file?.norm_control_published_yandex_path || file?.yandex_disk_path || file?.yandex_path || "").trim();
+    const diskPath = joinDiskPath(rawPath);
+    if (!diskPath) continue;
+    const diskPathLower = diskPath.toLowerCase();
+    if (!diskPathLower.startsWith(`${internalRoot.toLowerCase()}/`)) continue;
+    const markerIndex = diskPathLower.lastIndexOf(filesFolderMarker.toLowerCase());
+    if (markerIndex < 0) continue;
+    const sectionBase = diskPath.slice(0, markerIndex);
+    if (sectionBase) return joinDiskPath(sectionBase, NORM_CONTROL_INTERNAL_ANSWER_FOLDER);
+  }
+  return "";
+}
+
 function makeNormControlResultDiskPath(section, fileName) {
-  const baseFolder = toYandexDiskPath(section?.common_storage_folder || section?.project_files_yandex_path || "");
-  const uploadFolder = baseFolder
-    ? joinDiskPath(baseFolder, "нормаконтроль")
-    : joinDiskPath(YANDEX_DISK_ROOT, safeDiskPart(getNormProjectTitle(section)), normalizeStage(section?.stage || "П"), safeDiskPart(section?.section_code || "section"), "нормаконтроль");
+  const answerFolderFromSources = normControlAnswerFolderFromPublishedFiles(section);
+  const uploadFolder = answerFolderFromSources || joinDiskPath(
+    NORM_CONTROL_INTERNAL_ROOT,
+    normControlInternalProjectFolderName(section),
+    normControlInternalSectionFolderName(section),
+    NORM_CONTROL_INTERNAL_ANSWER_FOLDER
+  );
   return joinDiskPath(uploadFolder, safeUploadFileName(fileName));
 }
 
